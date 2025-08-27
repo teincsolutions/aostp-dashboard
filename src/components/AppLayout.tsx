@@ -1,175 +1,122 @@
 "use client";
 
-import { Layout, Menu, Avatar, Dropdown } from "antd";
+import { useState } from "react";
+import { Drawer } from "antd";
 import {
-  UserOutlined,
   DashboardOutlined,
-  UsergroupAddOutlined,
-  SettingOutlined,
-  LogoutOutlined,
   TeamOutlined,
   BoxPlotOutlined,
   FileTextOutlined,
   ContainerOutlined,
+  SettingOutlined,
+  UsergroupAddOutlined,
 } from "@ant-design/icons";
-import type { MenuProps } from "antd";
-import { ReactNode } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Header } from "@/components/layout/Header";
+import { UserMenu } from "@/components/layout/UserMenu";
+import type { ReactNode } from "react";
 
-const { Header, Sider, Content } = Layout;
-
-interface AppLayoutProps {
-  children: ReactNode;
-}
-
-const menuItems = [
+export const menuItems = [
   {
     key: "/dashboard",
     icon: <DashboardOutlined />,
-    label: <Link href="/dashboard">Dashboard</Link>,
+    label: "Dashboard",
   },
   {
     key: "/customers",
     icon: <TeamOutlined />,
-    label: <Link href="/customers">Customers</Link>,
+    label: "Customers",
   },
   {
     key: "/packages",
     icon: <BoxPlotOutlined />,
-    label: <Link href="/packages">Packages</Link>,
+    label: "Packages",
   },
   {
     key: "/package-intake",
     icon: <BoxPlotOutlined />,
-    label: <Link href="/package-intake">Package Intake</Link>,
+    label: "Package Intake",
   },
   {
     key: "/packing-lists",
     icon: <FileTextOutlined />,
-    label: <Link href="/packing-lists">Packing Lists</Link>,
+    label: "Packing Lists",
   },
   {
     key: "/containers",
     icon: <ContainerOutlined />,
-    label: <Link href="/containers">Containers</Link>,
+    label: "Containers",
   },
   {
     key: "/warehouse",
     icon: <BoxPlotOutlined />,
-    label: <Link href="/warehouse">Warehouse</Link>,
+    label: "Warehouse",
   },
   {
     key: "/payments",
     icon: <FileTextOutlined />,
-    label: <Link href="/payments">Payments</Link>,
+    label: "Payments",
   },
   {
     key: "/exchange-rate",
     icon: <SettingOutlined />,
-    label: <Link href="/exchange-rate">Exchange Rate</Link>,
+    label: "Exchange Rate",
   },
   {
     key: "/notifications",
     icon: <FileTextOutlined />,
-    label: <Link href="/notifications">Notifications</Link>,
+    label: "Notifications",
   },
   {
     key: "/audit-logs",
     icon: <FileTextOutlined />,
-    label: <Link href="/audit-logs">Audit Logs</Link>,
+    label: "Audit Logs",
   },
   {
     key: "/users",
     icon: <UsergroupAddOutlined />,
-    label: <Link href="/users">Users</Link>,
+    label: "Users",
   },
   {
     key: "/settings",
     icon: <SettingOutlined />,
-    label: <Link href="/settings">Settings</Link>,
+    label: "Settings",
   },
 ];
 
-const userMenuItems: MenuProps["items"] = [
-  {
-    key: "profile",
-    icon: <UserOutlined />,
-    label: "Profile",
-  },
-  {
-    key: "logout",
-    icon: <LogoutOutlined />,
-    label: "Logout",
-  },
-];
+export function AppLayout({ children }: { children: ReactNode }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-export function AppLayout({ children }: AppLayoutProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout } = useAuth();
-
-  const handleUserMenuClick: MenuProps["onClick"] = (e) => {
-    if (e.key === "logout") {
-      logout();
-    }
-    if (e.key === "profile") {
-      router.push("/profile");
-    }
-  };
+  // Close Drawer on route change
+  // (You may want to use useRouter/usePathname for this in production)
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Sider theme="dark" collapsible>
-        <div style={{ padding: "16px", textAlign: "center" }}>
-          <h2 style={{ color: "white", margin: 0 }}>Admin Panel</h2>
-        </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[pathname]}
-          items={menuItems}
-        />
-      </Sider>
-      <Layout>
-        <Header
-          style={{
-            background: "#fff",
-            padding: "0 24px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            boxShadow: "0 1px 4px rgba(0,21,41,.08)",
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: "18px" }}>Admin Dashboard</h1>
-          <Dropdown
-            menu={{
-              items: userMenuItems,
-              onClick: handleUserMenuClick,
-            }}
-            placement="bottomRight"
-          >
-            <Avatar
-              style={{ cursor: "pointer" }}
-              src={user?.avatarUrl}
-              icon={!user?.avatarUrl ? <UserOutlined /> : undefined}
-              onClick={() => router.push("/profile")}
-            />
-          </Dropdown>
-        </Header>
-        <Content
-          style={{
-            margin: "24px 16px",
-            padding: 24,
-            background: "#fff",
-            minHeight: 280,
-          }}
-        >
-          {children}
-        </Content>
-      </Layout>
-    </Layout>
+    <div className="min-h-screen flex flex-col flex-1 w-full">
+      {/* Header */}
+      <Header
+        onHamburgerClick={() => setDrawerOpen(true)}
+        title="Admin Dashboard"
+        actions={<UserMenu />}
+      />
+
+      {/* Sidebar (desktop) */}
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+
+      {/* Mobile Drawer Sidebar */}
+      <Sidebar
+        collapsed={false}
+        setCollapsed={() => {}}
+        mobile
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
+
+      {/* Content */}
+      <main className="flex-1 px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto w-full">
+        {/* PageHeader slot could go here */}
+        {children}
+      </main>
+    </div>
   );
 }

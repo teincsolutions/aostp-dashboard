@@ -45,7 +45,6 @@ function isUserWithRole(obj: unknown): obj is { role: Role } {
 }
 
 export default function UsersPage() {
-  const { user } = useAuth();
   const [search, setSearch] = useState<string>("");
   const [role, setRole] = useState<Role | undefined>();
   const [status, setStatus] = useState<UserStatus | undefined>();
@@ -63,17 +62,6 @@ export default function UsersPage() {
 
   const createUser = useCreateUser();
 
-  // Only SUPER_ADMIN can access
-  if (!user?.roles?.includes(Role.SUPER_ADMIN)) {
-    return (
-      <AuthGuard>
-        <AppLayout>
-          <Empty description="Unauthorized. SUPER_ADMIN only." />
-        </AppLayout>
-      </AuthGuard>
-    );
-  }
-
   const handleTableChange = (
     pagination: TablePaginationConfig,
     filters: Record<string, FilterValue | null>  ) => {
@@ -84,7 +72,7 @@ export default function UsersPage() {
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={[Role.SUPER_ADMIN]}>
       <AppLayout>
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
@@ -169,7 +157,7 @@ export default function UsersPage() {
             open={createModal}
             onCancel={() => setCreateModal(false)}
             footer={null}
-            destroyOnClose
+            destroyOnHidden
           >
             <Formik
               initialValues={{

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Button, Table, Skeleton, Empty, Tooltip, notification, Row, Col } from "antd";
+import { Card, Button, Table, Skeleton, Empty, notification } from "antd";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -13,10 +13,16 @@ import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import Link from "next/link";
 import { Pie, Line } from "@ant-design/charts";
-import { ArrowRightOutlined, ContainerOutlined, DollarOutlined, FileTextOutlined, InboxOutlined, TeamOutlined } from "@ant-design/icons";
+import {
+  ArrowRightOutlined,
+  ContainerOutlined,
+  DollarOutlined,
+  FileTextOutlined,
+  InboxOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 
-const { RangePicker } = DatePicker;
 const statusOptions = [
   { value: "RECEIVED", label: "Received" },
   { value: "IN_TRANSIT", label: "In Transit" },
@@ -38,17 +44,19 @@ const FilterSchema = Yup.object().shape({
 
 export default function DashboardPage() {
   const [filters, setFilters] = useState<DashboardFilters>({});
-  const {
-    kpis,
-    charts,
-    tables,
-    isLoading,
-    error,
-    refetch,
-  } = useDashboard(filters);
+  const { kpis, charts, tables, isLoading, error } =
+    useDashboard(filters);
 
   // Error notifications
-  if (error.kpis || error.packagesByStatus || error.packagesByMonth || error.revenueTrend || error.topCustomers || error.recentInvoices || error.agingPackages) {
+  if (
+    error.kpis ||
+    error.packagesByStatus ||
+    error.packagesByMonth ||
+    error.revenueTrend ||
+    error.topCustomers ||
+    error.recentInvoices ||
+    error.agingPackages
+  ) {
     notification.error({
       message: "Dashboard Data Error",
       description: "Some dashboard data failed to load. Please try again.",
@@ -82,14 +90,20 @@ export default function DashboardPage() {
       title: "Outstanding Invoices",
       value: kpis?.outstandingInvoicesCount ?? 0,
       icon: <DollarOutlined />,
-      caption: kpis?.outstandingInvoicesAmount ? `GHS ${kpis.outstandingInvoicesAmount.toLocaleString()}` : "",
+      caption: kpis?.outstandingInvoicesAmount
+        ? `GHS ${kpis.outstandingInvoicesAmount.toLocaleString()}`
+        : "",
       loading: isLoading.kpis,
     },
   ];
 
   // Quick Links
   const quickLinks = [
-    { href: "/package-intake", label: "Package Intake", icon: <InboxOutlined /> },
+    {
+      href: "/package-intake",
+      label: "Package Intake",
+      icon: <InboxOutlined />,
+    },
     { href: "/payments", label: "Payments", icon: <DollarOutlined /> },
     { href: "/containers", label: "Containers", icon: <ContainerOutlined /> },
     { href: "/reports", label: "Reports", icon: <FileTextOutlined /> },
@@ -98,12 +112,15 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <AppLayout>
-        <div className="px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto space-y-4">
+        <div className="px-4 md:px-6 lg:px-8 py-4 mx-auto space-y-4">
           {/* Header row: title + filters */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <Formik
-              initialValues={{ dateRange: null as [Dayjs | null, Dayjs | null] | null, status: "" }}
+              initialValues={{
+                dateRange: null as [Dayjs | null, Dayjs | null] | null,
+                status: "",
+              }}
               validationSchema={FilterSchema}
               onSubmit={(values, { setSubmitting }) => {
                 setFilters({
@@ -119,11 +136,17 @@ export default function DashboardPage() {
                 <Form className="flex flex-row gap-2 items-center">
                   <div>
                     <Field name="dateRange">
-                      {({ field }: { field: { value: Dayjs[] | null; name: string } }) => (
+                      {({
+                        field,
+                      }: {
+                        field: { value: Dayjs[] | null; name: string };
+                      }) => (
                         <DatePicker.RangePicker
                           {...field}
                           value={values.dateRange}
-                          onChange={(dates: [Dayjs | null, Dayjs | null] | null) => setFieldValue("dateRange", dates)}
+                          onChange={(
+                            dates: [Dayjs | null, Dayjs | null] | null
+                          ) => setFieldValue("dateRange", dates)}
                           allowClear
                           size="middle"
                         />
@@ -132,7 +155,11 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <Field name="status">
-                      {({ field }: { field: { value: string; name: string } }) => (
+                      {({
+                        field,
+                      }: {
+                        field: { value: string; name: string };
+                      }) => (
                         <Select
                           {...field}
                           value={values.status}
@@ -146,7 +173,11 @@ export default function DashboardPage() {
                       )}
                     </Field>
                   </div>
-                  <Button type="primary" htmlType="submit" loading={isSubmitting}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isSubmitting}
+                  >
                     Filter
                   </Button>
                   <Button htmlType="reset" disabled={isSubmitting}>
@@ -155,7 +186,9 @@ export default function DashboardPage() {
                   {/* Error display */}
                   <div>
                     {errors.dateRange && touched.dateRange && (
-                      <span className="text-red-500 text-xs">{errors.dateRange}</span>
+                      <span className="text-red-500 text-xs">
+                        {errors.dateRange}
+                      </span>
                     )}
                   </div>
                 </Form>
@@ -247,7 +280,10 @@ export default function DashboardPage() {
                 <Empty />
               )}
             </Card>
-            <Card className="rounded-2xl shadow-sm" title="Top Customers by Spend/Packages">
+            <Card
+              className="rounded-2xl shadow-sm"
+              title="Top Customers by Spend/Packages"
+            >
               {isLoading.topCustomers ? (
                 <Skeleton active />
               ) : charts.topCustomers && charts.topCustomers.length ? (
@@ -279,7 +315,10 @@ export default function DashboardPage() {
                 size="middle"
               />
             </Card>
-            <Card className="rounded-2xl shadow-sm" title="Aging Packages (Top 10)">
+            <Card
+              className="rounded-2xl shadow-sm"
+              title="Aging Packages (Top 10)"
+            >
               <Table
                 columns={agingPackageColumns}
                 dataSource={tables.agingPackages?.rows}

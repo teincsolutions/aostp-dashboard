@@ -86,41 +86,45 @@ export default function SettingsPage() {
   return (
     <AuthGuard requiredRoles={["SUPER_ADMIN"]}>
       <AppLayout>
-        <Space direction="vertical" size="large" className="w-full max-w-2xl mx-auto py-8">
-          <Title level={2}>Settings & Configuration</Title>
+        <div className="px-4 md:px-6 lg:px-8 py-4 max-w-2xl mx-auto space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <Title level={2}>Settings & Configuration</Title>
+          </div>
 
           <Form layout="vertical" onFinish={formik.handleSubmit} onReset={formik.handleReset}>
-            <Card title="Notification Defaults" className="mb-4">
-              <Form.Item label="Email Required" valuePropName="checked">
-                <Switch
-                  checked={formik.values.notificationDefaults?.emailRequired}
-                  onChange={(checked) => formik.setFieldValue("notificationDefaults.emailRequired", checked)}
-                />
-              </Form.Item>
-              <Form.Item label="SMS Default" valuePropName="checked">
-                <Switch
-                  checked={formik.values.notificationDefaults?.smsDefault}
-                  onChange={(checked) => formik.setFieldValue("notificationDefaults.smsDefault", checked)}
-                />
-              </Form.Item>
-              <Form.Item label="WhatsApp Default" valuePropName="checked">
-                <Switch
-                  checked={formik.values.notificationDefaults?.whatsappDefault}
-                  onChange={(checked) => formik.setFieldValue("notificationDefaults.whatsappDefault", checked)}
-                />
-              </Form.Item>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <Card title="Notification Defaults" className="mb-4">
+                <Form.Item label="Email Required" valuePropName="checked">
+                  <Switch
+                    checked={formik.values.notificationDefaults?.emailRequired}
+                    onChange={(checked) => formik.setFieldValue("notificationDefaults.emailRequired", checked)}
+                  />
+                </Form.Item>
+                <Form.Item label="SMS Default" valuePropName="checked">
+                  <Switch
+                    checked={formik.values.notificationDefaults?.smsDefault}
+                    onChange={(checked) => formik.setFieldValue("notificationDefaults.smsDefault", checked)}
+                  />
+                </Form.Item>
+                <Form.Item label="WhatsApp Default" valuePropName="checked">
+                  <Switch
+                    checked={formik.values.notificationDefaults?.whatsappDefault}
+                    onChange={(checked) => formik.setFieldValue("notificationDefaults.whatsappDefault", checked)}
+                  />
+                </Form.Item>
+              </Card>
 
-            <Card title="UI Preferences" className="mb-4">
-              <Form.Item label="Table Density">
-                <Select
-                  options={tableDensityOptions}
-                  value={formik.values.uiPreferences?.tableDensity}
-                  onChange={(value) => formik.setFieldValue("uiPreferences.tableDensity", value)}
-                  style={{ width: 180 }}
-                />
-              </Form.Item>
-            </Card>
+              <Card title="UI Preferences" className="mb-4">
+                <Form.Item label="Table Density">
+                  <Select
+                    options={tableDensityOptions}
+                    value={formik.values.uiPreferences?.tableDensity}
+                    onChange={(value) => formik.setFieldValue("uiPreferences.tableDensity", value)}
+                    style={{ width: 180 }}
+                  />
+                </Form.Item>
+              </Card>
+            </div>
 
             <Card title="Feature Flags" className="mb-4">
               <Form.Item label="Enable Experimental">
@@ -134,16 +138,16 @@ export default function SettingsPage() {
               </Form.Item>
             </Card>
 
-            <Space className="mt-4">
+            <div className="flex gap-3 mt-4">
               <Button type="primary" htmlType="submit" loading={isUpdating}>
                 Save
               </Button>
               <Button htmlType="reset" disabled={isUpdating}>
                 Reset
               </Button>
-            </Space>
+            </div>
           </Form>
-        </Space>
+        </div>
       </AppLayout>
     </AuthGuard>
   );

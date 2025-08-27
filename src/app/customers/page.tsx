@@ -239,8 +239,8 @@ export default function CustomersPage() {
   return (
     <AuthGuard>
       <AppLayout>
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="px-4 md:px-6 lg:px-8 py-4 mx-auto space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <h1 className="text-2xl font-bold">Customer Management</h1>
             <Space>
               <Button
@@ -270,37 +270,31 @@ export default function CustomersPage() {
           </div>
 
           {/* Statistics Cards */}
-          <Row gutter={16} className="mb-6">
-            <Col span={8}>
-              <Card>
-                <Statistic
-                  title="Total Customers"
-                  value={totalCustomers}
-                  prefix={<UserOutlined />}
-                />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card>
-                <Statistic
-                  title="Active Customers"
-                  value={activeCustomers}
-                  prefix={<CheckOutlined />}
-                  valueStyle={{ color: "#3f8600" }}
-                />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card>
-                <Statistic
-                  title="Inactive Customers"
-                  value={inactiveCustomers}
-                  prefix={<StopOutlined />}
-                  valueStyle={{ color: "#cf1322" }}
-                />
-              </Card>
-            </Col>
-          </Row>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <Card>
+              <Statistic
+                title="Total Customers"
+                value={totalCustomers}
+                prefix={<UserOutlined />}
+              />
+            </Card>
+            <Card>
+              <Statistic
+                title="Active Customers"
+                value={activeCustomers}
+                prefix={<CheckOutlined />}
+                valueStyle={{ color: "#3f8600" }}
+              />
+            </Card>
+            <Card>
+              <Statistic
+                title="Inactive Customers"
+                value={inactiveCustomers}
+                prefix={<StopOutlined />}
+                valueStyle={{ color: "#cf1322" }}
+              />
+            </Card>
+          </div>
 
           {/* Filters */}
           <Card className="mb-6">

@@ -66,116 +66,122 @@ export default function ExchangeRatePage() {
   return (
     <AuthGuard requiredRoles={ROLES_ALLOWED}>
       <AppLayout>
-        <div className="max-w-4xl mx-auto py-8 space-y-8">
-          <h1 className="text-2xl font-bold mb-4">Exchange Rate Management</h1>
+        <div className="px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <h1 className="text-2xl font-bold">Exchange Rate Management</h1>
+          </div>
 
-          <Card title="Current Active Rate" loading={activeLoading}>
-            {activeError ? (
-              <Empty description="Failed to load active rate" />
-            ) : activeRate ? (
-              <div className="flex flex-col gap-2">
-                <div>
-                  <span className="font-semibold">Rate:</span> {activeRate.rate}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <Card title="Current Active Rate" loading={activeLoading}>
+              {activeError ? (
+                <Empty description="Failed to load active rate" />
+              ) : activeRate ? (
+                <div className="flex flex-col gap-2">
+                  <div>
+                    <span className="font-semibold">Rate:</span> {activeRate.rate}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Effective From:</span>{" "}
+                    {dayjs(activeRate.effectiveFrom).format("YYYY-MM-DD HH:mm")}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Set By:</span> {activeRate.setBy?.name}
+                  </div>
                 </div>
-                <div>
-                  <span className="font-semibold">Effective From:</span>{" "}
-                  {dayjs(activeRate.effectiveFrom).format("YYYY-MM-DD HH:mm")}
-                </div>
-                <div>
-                  <span className="font-semibold">Set By:</span> {activeRate.setBy?.name}
-                </div>
-              </div>
-            ) : (
-              <Spin />
-            )}
-          </Card>
-
-          <Card title="Set New Exchange Rate">
-            <Formik
-              initialValues={{
-                rate: "",
-                effectiveFrom: "",
-              }}
-              validationSchema={validationSchema}
-              onSubmit={(values, { resetForm }) => {
-                const payload: ExchangeRateCreatePayload = {
-                  rate: Number(values.rate),
-                  effectiveFrom: dayjs(values.effectiveFrom).toISOString(),
-                  fromCurrency: "USD",
-                  toCurrency: "GHS",
-                };
-                setActiveRate(payload);
-                resetForm();
-              }}
-            >
-              {({ errors, touched, setFieldValue, isSubmitting }) => (
-                <FormikForm className="flex flex-col gap-4">
-                  <Form.Item
-                    label="Rate"
-                    validateStatus={errors.rate && touched.rate ? "error" : ""}
-                    help={errors.rate && touched.rate ? errors.rate : ""}
-                  >
-                    <Field name="rate">
-                      {({ field }: any) => (
-                        <InputNumber
-                          {...field}
-                          min={0.0001}
-                          step={0.0001}
-                          style={{ width: "100%" }}
-                          onChange={val => setFieldValue("rate", val)}
-                        />
-                      )}
-                    </Field>
-                  </Form.Item>
-                  <Form.Item
-                    label="Effective From"
-                    validateStatus={errors.effectiveFrom && touched.effectiveFrom ? "error" : ""}
-                    help={errors.effectiveFrom && touched.effectiveFrom ? errors.effectiveFrom : ""}
-                  >
-                    <Field name="effectiveFrom">
-                      {({ field }: any) => (
-                        <DatePicker
-                          {...field}
-                          showTime
-                          style={{ width: "100%" }}
-                          onChange={val => setFieldValue("effectiveFrom", val)}
-                        />
-                      )}
-                    </Field>
-                  </Form.Item>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={setPending || isSubmitting}
-                    disabled={setPending || isSubmitting}
-                  >
-                    Set Rate
-                  </Button>
-                </FormikForm>
+              ) : (
+                <Spin />
               )}
-            </Formik>
-          </Card>
+            </Card>
 
-          <Card title="Historical Exchange Rates">
-            <Table
-              columns={exchangeRateColumns}
-              dataSource={historyData?.data || []}
-              rowKey="id"
-              loading={historyLoading}
-              pagination={{
-                current: page,
-                pageSize: limit,
-                total: historyData?.total || 0,
-                onChange: (p, ps) => {
-                  setPage(p);
-                  setLimit(ps);
-                },
-              }}
-              locale={{ emptyText: <Empty description="No historical rates found" /> }}
-              scroll={{ x: true }}
-              size="middle"
-            />
-          </Card>
+            <Card title="Set New Exchange Rate">
+              <Formik
+                initialValues={{
+                  rate: "",
+                  effectiveFrom: "",
+                }}
+                validationSchema={validationSchema}
+                onSubmit={(values, { resetForm }) => {
+                  const payload: ExchangeRateCreatePayload = {
+                    rate: Number(values.rate),
+                    effectiveFrom: dayjs(values.effectiveFrom).toISOString(),
+                    fromCurrency: "USD",
+                    toCurrency: "GHS",
+                  };
+                  setActiveRate(payload);
+                  resetForm();
+                }}
+              >
+                {({ errors, touched, setFieldValue, isSubmitting }) => (
+                  <FormikForm className="flex flex-col gap-4">
+                    <Form.Item
+                      label="Rate"
+                      validateStatus={errors.rate && touched.rate ? "error" : ""}
+                      help={errors.rate && touched.rate ? errors.rate : ""}
+                    >
+                      <Field name="rate">
+                        {({ field }: any) => (
+                          <InputNumber
+                            {...field}
+                            min={0.0001}
+                            step={0.0001}
+                            style={{ width: "100%" }}
+                            onChange={val => setFieldValue("rate", val)}
+                          />
+                        )}
+                      </Field>
+                    </Form.Item>
+                    <Form.Item
+                      label="Effective From"
+                      validateStatus={errors.effectiveFrom && touched.effectiveFrom ? "error" : ""}
+                      help={errors.effectiveFrom && touched.effectiveFrom ? errors.effectiveFrom : ""}
+                    >
+                      <Field name="effectiveFrom">
+                        {({ field }: any) => (
+                          <DatePicker
+                            {...field}
+                            showTime
+                            style={{ width: "100%" }}
+                            onChange={val => setFieldValue("effectiveFrom", val)}
+                          />
+                        )}
+                      </Field>
+                    </Form.Item>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={setPending || isSubmitting}
+                      disabled={setPending || isSubmitting}
+                    >
+                      Set Rate
+                    </Button>
+                  </FormikForm>
+                )}
+              </Formik>
+            </Card>
+          </div>
+
+          <div className="shadow-sm rounded-2xl bg-white p-3 md:p-4">
+            <Card title="Historical Exchange Rates" bordered={false}>
+              <Table
+                columns={exchangeRateColumns}
+                dataSource={historyData?.data || []}
+                rowKey="id"
+                loading={historyLoading}
+                pagination={{
+                  current: page,
+                  pageSize: limit,
+                  total: historyData?.total || 0,
+                  onChange: (p, ps) => {
+                    setPage(p);
+                    setLimit(ps);
+                  },
+                }}
+                locale={{ emptyText: <Empty description="No historical rates found" /> }}
+                scroll={{ x: true }}
+                size="middle"
+              />
+            </Card>
+          </div>
         </div>
       </AppLayout>
     </AuthGuard>

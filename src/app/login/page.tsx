@@ -92,7 +92,7 @@ const LoginPage: React.FC = () => {
   if (twoFactorMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 p-5">
-        <Card className="max-w-md mx-auto">
+        <Card className="max-w-lg w-full mx-auto">
           <div className="space-y-6 w-full">
             <div className="text-center">
               <MobileOutlined className="text-5xl text-blue-500 mb-4" />
@@ -166,7 +166,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 p-5">
-      <Card className="max-w-md mx-auto">
+      <Card className="max-w-lg w-full mx-auto">
         <div className="space-y-6 w-full">
           <div className="text-center">
             <UserOutlined className="text-5xl text-blue-500 mb-4" />
