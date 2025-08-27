@@ -1,0 +1,191 @@
+// Payment Processing types for AOSTP Logistics Management System
+
+import { ApiResponse, PaginatedResponse } from './common';
+
+// Invoice status enum
+export enum InvoiceStatus {
+  PAID = 'PAID',
+  UNPAID = 'UNPAID',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
+}
+
+// Payment method enum
+export enum PaymentMethod {
+  CASH = 'CASH',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  MOBILE_MONEY = 'MOBILE_MONEY',
+  CARD = 'CARD',
+}
+
+// Currency enum
+export enum Currency {
+  USD = 'USD',
+  EUR = 'EUR',
+  GBP = 'GBP',
+  GHS = 'GHS',
+  NGN = 'NGN',
+}
+
+// Invoice interface (auto-generated from Packing Lists)
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  customerId: string;
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+  };
+  packingListId: string;
+  packingList: {
+    id: string;
+    name: string;
+    loadingDate: string;
+  };
+  packages: Array<{
+    id: string;
+    trackingCode: string;
+    description: string;
+    weight: number;
+    value: number;
+  }>;
+  totalAmount: number;
+  paidAmount: number;
+  balance: number;
+  currency: Currency;
+  exchangeRate: number;
+  status: InvoiceStatus;
+  dueDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Payment interface
+export interface Payment {
+  id: string;
+  paymentCode: string;
+  customerId: string;
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+  };
+  amount: number;
+  currency: Currency;
+  exchangeRate: number;
+  paymentMethod: PaymentMethod;
+  reference?: string;
+  invoiceIds: string[];
+  invoices: Invoice[];
+  receipt?: Receipt;
+  processedBy: string;
+  processedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Receipt interface
+export interface Receipt {
+  id: string;
+  receiptNumber: string;
+  paymentId: string;
+  customerId: string;
+  customer: {
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+  };
+  totalAmount: number;
+  paidAmount: number;
+  balance: number;
+  currency: Currency;
+  paymentMethod: PaymentMethod;
+  reference?: string;
+  invoiceDetails: Array<{
+    invoiceNumber: string;
+    amount: number;
+    balance: number;
+  }>;
+  generatedAt: string;
+}
+
+// Payment create payload
+export interface PaymentCreatePayload {
+  customerId: string;
+  invoiceIds: string[];
+  amount: number;
+  currency: Currency;
+  paymentMethod: PaymentMethod;
+  reference?: string;
+  notes?: string;
+}
+
+// Search parameters
+export interface PaymentSearchParams {
+  search?: string; // customer name, phone, or package tracking ID
+  page?: number;
+  limit?: number;
+}
+
+// Outstanding balance interface
+export interface OutstandingBalance {
+  customerId: string;
+  customer: {
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+  };
+  totalOutstanding: number;
+  currency: Currency;
+  invoiceCount: number;
+  oldestInvoiceDate: string;
+}
+
+// Payment history parameters
+export interface PaymentHistoryParams {
+  customerId?: string;
+  invoiceId?: string;
+  page?: number;
+  limit?: number;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// Service response types
+export interface InvoicesResponse extends PaginatedResponse<Invoice> {
+  correlationId: string;
+}
+
+export interface InvoiceResponse extends ApiResponse<Invoice> {
+  correlationId: string;
+}
+
+export interface PaymentsResponse extends PaginatedResponse<Payment> {
+  correlationId: string;
+}
+
+export interface PaymentResponse extends ApiResponse<Payment> {
+  correlationId: string;
+}
+
+export interface ReceiptResponse extends ApiResponse<Receipt> {
+  correlationId: string;
+}
+
+export interface OutstandingBalanceResponse extends ApiResponse<OutstandingBalance> {
+  correlationId: string;
+}
+
+// Payment statistics interface
+export interface PaymentStats {
+  totalPayments: number;
+  totalAmount: number;
+  paymentsByMethod: Record<PaymentMethod, number>;
+  paymentsByCurrency: Record<Currency, number>;
+  averagePaymentAmount: number;
+  correlationId: string;
+}
