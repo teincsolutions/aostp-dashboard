@@ -1,14 +1,32 @@
 "use client";
 
 import React, { useState } from "react";
-import { Form, Input, InputNumber, Select, Upload, Button, Table, Space, Typography, Card, message, Modal } from "antd";
-import { UploadOutlined, EyeOutlined } from "@ant-design/icons";
+import {
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Upload,
+  Button,
+  Table,
+  Typography,
+  Card,
+  message,
+  Modal,
+  Image,
+} from "antd";
+import { UploadOutlined } from "@ant-design/icons";
+import { CustomerModal } from "@/components/CustomerModal";
+import { Form as AntdForm } from "antd";
 import { packageIntakeColumns } from "@/app/package-intake/columns";
 import { usePackageIntake } from "@/hooks/usePackageIntake";
-import { PackageIntakePayload, PackagePhoto } from "@/types/package";
+import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
+import { PackageIntakePayload } from "@/types/package";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
+import { CustomerCreatePayload, CustomerUpdatePayload } from "@/types/customer";
+import { UploadProps } from "antd/lib";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -25,11 +43,6 @@ const validateMessages = {
     min: "${label} must be at least ${min}",
   },
 };
-
-const customerOptions = [
-  { value: "customer-1", label: "John Doe" },
-  { value: "customer-2", label: "Jane Smith" },
-];
 
 const initialValues: PackageIntakePayload = {
   customerId: "",
@@ -48,9 +61,81 @@ const initialValues: PackageIntakePayload = {
 
 export default function PackageIntakePage() {
   const [form] = Form.useForm();
-  const [photoList, setPhotoList] = useState<(UploadFile & { customKey?: string })[]>([]);
-  const [preview, setPreview] = useState<{ visible: boolean; url: string }>({ visible: false, url: "" });
+  const [photoList, setPhotoList] = useState<
+    (UploadFile & { customKey?: string })[]
+  >([]);
+  const [preview, setPreview] = useState<{ visible: boolean; url: string }>({
+    visible: false,
+    url: "",
+  });
   const [tablePage, setTablePage] = useState(1);
+
+  // Customer modal state
+  const [customerModalVisible, setCustomerModalVisible] = useState(false);
+  const [customerModalForm] = AntdForm.useForm();
+  const [customerModalLoading, setCustomerModalLoading] = useState(false);
+  const { data: customers, isLoading: customersLoading } = useCustomers({});
+
+  // Handler to open modal from select
+  const handleAddCustomerClick = () => {
+    setCustomerModalVisible(true);
+    customerModalForm.resetFields();
+  };
+
+  // Mutation hook for creating customer
+  const { mutateAsync: createCustomerMutation } = useCreateCustomer();
+
+  // Handler for customer creation (backend)
+  const handleCreateCustomer = async (
+    values: CustomerCreatePayload | CustomerUpdatePayload
+  ) => {
+    setCustomerModalLoading(true);
+    try {
+      // Only handle create payloads (has firstName and lastName as required)
+      if (
+        "firstName" in values &&
+        "lastName" in values &&
+        values.firstName &&
+        values.lastName
+      ) {
+        const created = await createCustomerMutation(
+          values as CustomerCreatePayload
+        );
+        if (created?.id) {
+          form.setFieldsValue({ customerId: created.id });
+          message.success("Customer added");
+        }
+      } else {
+        message.error("Invalid customer payload");
+      }
+      setCustomerModalVisible(false);
+      customerModalForm.resetFields();
+    } catch (err) {
+      // Robust server validation error handling
+      interface ErrorResponse {
+        response?: {
+          data?: {
+            errors?: string[];
+            message?: string;
+          };
+        };
+      }
+      const response =
+        typeof err === "object" && err !== null && "response" in err
+          ? (err as ErrorResponse).response
+          : undefined;
+      if (response?.data?.errors && Array.isArray(response.data.errors)) {
+        response.data.errors.forEach((e: string) => message.error(e));
+        // Keep modal open for correction
+      } else if (response?.data?.message) {
+        message.error(response.data.message);
+      } else {
+        message.error("Failed to add customer");
+      }
+    } finally {
+      setCustomerModalLoading(false);
+    }
+  };
 
   const {
     recentIntakes,
@@ -60,16 +145,9 @@ export default function PackageIntakePage() {
     createPackagePending,
     uploadPackagePhoto,
     uploadPhotoPending,
-    generateReceipt,
     generateReceiptPending,
     refetchRecentIntakes,
   } = usePackageIntake();
-
-  // Helper for tracking code generation (stub)
-  const handleAutoGenerateTracking = () => {
-    const code = "TRK-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-    form.setFieldsValue({ trackingCode: code });
-  };
 
   // Upload validation and mapping
   const beforeUpload = (file: import("antd").UploadFile) => {
@@ -94,7 +172,9 @@ export default function PackageIntakePage() {
   };
 
   const handlePhotoUpload = async (
-    options: Parameters<NonNullable<import("antd").UploadProps["customRequest"]>>[0]
+    options: Parameters<
+      NonNullable<UploadProps["customRequest"]>
+    >[0]
   ) => {
     try {
       if (typeof options.file === "string") {
@@ -134,9 +214,6 @@ export default function PackageIntakePage() {
       setPhotoList([]);
       form.resetFields();
       refetchRecentIntakes();
-      await generateReceipt(pkg.id);
-      message.success("Receipt generated");
-      // TODO: Trigger notifications (email/SMS/WhatsApp)
     } catch (err) {
       message.error("Intake failed");
     }
@@ -152,14 +229,27 @@ export default function PackageIntakePage() {
         <div className="px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
           {/* Top Heading + Actions */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-            <Title level={3} className="!mb-0">Package Intake</Title>
+            <Title level={3} className="!mb-0">
+              Package Intake
+            </Title>
             <div className="flex gap-2">
-              <Button size="small" onClick={handleAutoGenerateTracking}>Auto-generate Tracking</Button>
-              <Button size="small" onClick={() => { form.resetFields(); setPhotoList([]); }}>Reset Form</Button>
+              <Button
+                size="small"
+                onClick={() => {
+                  form.resetFields();
+                  setPhotoList([]);
+                }}
+              >
+                Reset Form
+              </Button>
               <Button
                 type="primary"
                 size="middle"
-                loading={createPackagePending || uploadPhotoPending || generateReceiptPending}
+                loading={
+                  createPackagePending ||
+                  uploadPhotoPending ||
+                  generateReceiptPending
+                }
                 disabled={photoList.length < 1}
                 onClick={() => form.submit()}
               >
@@ -189,29 +279,41 @@ export default function PackageIntakePage() {
                     <Select
                       showSearch
                       placeholder="Select customer"
-                      options={customerOptions}
+                      loading={customersLoading}
+                      options={[
+                        ...(Array.isArray(customers?.data)
+                          ? customers.data.map((customer) => ({
+                              value: customer.id,
+                              label: `${customer.customerCode} - ${customer.firstName} ${customer.lastName}`,
+                            }))
+                          : []),
+                        { value: "__add_new__", label: "+ Add New Customer" },
+                      ]}
                       filterOption={(input, option) =>
-                        (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                        (option?.label ?? "")
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
                       }
                       className="w-full"
+                      onSelect={(value) => {
+                        if (value === "__add_new__") {
+                          handleAddCustomerClick();
+                          form.setFieldsValue({ customerId: "" });
+                        }
+                      }}
                     />
                   </Form.Item>
-                  <Form.Item
-                    label="Tracking Code"
-                    name="trackingCode"
-                    rules={[{ required: true }]}
-                  >
-                    <div className="flex gap-2">
-                      <Input className="w-full" />
-                      <Button size="small" onClick={handleAutoGenerateTracking}>Auto-generate</Button>
-                    </div>
-                  </Form.Item>
+
                   <Form.Item
                     label="Description"
                     name="description"
                     rules={[{ max: 200 }]}
                   >
-                    <Input.TextArea maxLength={200} showCount className="w-full" />
+                    <Input.TextArea
+                      maxLength={200}
+                      showCount
+                      className="w-full"
+                    />
                   </Form.Item>
                   <Form.Item
                     label="Shipping Mode"
@@ -230,8 +332,13 @@ export default function PackageIntakePage() {
                     rules={[
                       ({ getFieldValue }) => ({
                         validator(_, value) {
-                          if (getFieldValue("shippingMode") === "AIR" && !value) {
-                            return Promise.reject(new Error("Air shipping type is required"));
+                          if (
+                            getFieldValue("shippingMode") === "AIR" &&
+                            !value
+                          ) {
+                            return Promise.reject(
+                              new Error("Air shipping type is required")
+                            );
                           }
                           return Promise.resolve();
                         },
@@ -240,9 +347,9 @@ export default function PackageIntakePage() {
                     hidden={form.getFieldValue("shippingMode") !== "AIR"}
                   >
                     <Select className="w-full">
-                      <Option value="NORMAL_AIR">NORMAL_AIR</Option>
-                      <Option value="EXPRESS_AIR">EXPRESS_AIR</Option>
-                      <Option value="BATTERY_GOODS">BATTERY_GOODS</Option>
+                      <Option value="NORMAL_AIR">NORMAL AIR</Option>
+                      <Option value="EXPRESS_AIR">EXPRESS AIR</Option>
+                      <Option value="BATTERY_GOODS">BATTERY GOODS</Option>
                       <Option value="PHONES">PHONES</Option>
                     </Select>
                   </Form.Item>
@@ -285,10 +392,7 @@ export default function PackageIntakePage() {
                   >
                     <InputNumber min={0} className="w-full" />
                   </Form.Item>
-                  <Form.Item
-                    label="Notes"
-                    name="notes"
-                  >
+                  <Form.Item label="Notes" name="notes">
                     <Input.TextArea className="w-full" />
                   </Form.Item>
                 </div>
@@ -301,8 +405,9 @@ export default function PackageIntakePage() {
                     name="photos"
                     rules={[
                       {
-                        validator: async (_: any, list?: UploadFile[]) => {
-                          if (!list || list.length === 0) throw new Error("At least one photo is required");
+                        validator: async (_: unknown, list?: UploadFile[]) => {
+                          if (!list || list.length === 0)
+                            throw new Error("At least one photo is required");
                         },
                       },
                     ]}
@@ -316,9 +421,14 @@ export default function PackageIntakePage() {
                       fileList={photoList}
                       beforeUpload={beforeUpload}
                       onPreview={handlePreview}
-                      showUploadList={{ showPreviewIcon: true, showRemoveIcon: true }}
+                      showUploadList={{
+                        showPreviewIcon: true,
+                        showRemoveIcon: true,
+                      }}
                       onRemove={(file) => {
-                        setPhotoList((prev) => prev.filter((f) => f.uid !== file.uid));
+                        setPhotoList((prev) =>
+                          prev.filter((f) => f.uid !== file.uid)
+                        );
                       }}
                     >
                       <Button icon={<UploadOutlined />}>Upload Photo</Button>
@@ -328,7 +438,11 @@ export default function PackageIntakePage() {
                       footer={null}
                       onCancel={() => setPreview({ visible: false, url: "" })}
                     >
-                      <img alt="Preview" style={{ width: "100%" }} src={preview.url} />
+                      <Image
+                        alt="Preview"
+                        style={{ width: "100%" }}
+                        src={preview.url}
+                      />
                     </Modal>
                   </Form.Item>
                 </Card>
@@ -336,10 +450,21 @@ export default function PackageIntakePage() {
             </div>
             {/* Sticky Footer */}
             <div className="sticky bottom-0 bg-white/80 backdrop-blur border-t p-3 flex items-center gap-3 justify-end mt-4 z-10">
-              <Button onClick={() => { form.resetFields(); setPhotoList([]); }}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  form.resetFields();
+                  setPhotoList([]);
+                }}
+              >
+                Cancel
+              </Button>
               <Button
                 type="primary"
-                loading={createPackagePending || uploadPhotoPending || generateReceiptPending}
+                loading={
+                  createPackagePending ||
+                  uploadPhotoPending ||
+                  generateReceiptPending
+                }
                 disabled={photoList.length < 1}
                 onClick={() => form.submit()}
               >
@@ -364,9 +489,25 @@ export default function PackageIntakePage() {
               }}
               scroll={{ x: true }}
               size="middle"
-              locale={{ emptyText: <div className="py-8 text-center text-gray-400">No data</div> }}
+              locale={{
+                emptyText: (
+                  <div className="py-8 text-center text-gray-400">No data</div>
+                ),
+              }}
             />
           </div>
+          {/* Customer Modal */}
+          <CustomerModal
+            visible={customerModalVisible}
+            onCancel={() => {
+              setCustomerModalVisible(false);
+              customerModalForm.resetFields();
+            }}
+            onSubmit={handleCreateCustomer}
+            form={customerModalForm}
+            loading={customerModalLoading}
+            mode="create"
+          />
         </div>
       </AppLayout>
     </AuthGuard>

@@ -13,15 +13,18 @@ export function Sidebar({
   mobile,
   onClose,
   open,
+  menuItems: customMenuItems,
 }: {
   collapsed: boolean;
   setCollapsed: (v: boolean) => void;
   mobile?: boolean;
   onClose?: () => void;
   open?: boolean;
+  menuItems?: { key: string; icon: React.ReactNode; label: string }[];
 }) {
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const items = customMenuItems || menuItems;
 
   // Focus trap for mobile Drawer
   useEffect(() => {
@@ -54,7 +57,7 @@ export function Sidebar({
             theme="dark"
             mode="inline"
             selectedKeys={[pathname]}
-            items={menuItems}
+            items={items}
             style={{ border: "none", background: "transparent" }}
             onClick={({ key }) => {
               if (mobile && onClose) onClose();
@@ -91,7 +94,7 @@ export function Sidebar({
               theme="dark"
               mode="inline"
               selectedKeys={[pathname]}
-              items={menuItems}
+              items={items}
               style={{ border: "none", background: "transparent" }}
               onClick={({ key }) => {
                 if (mobile && onClose) onClose();

@@ -7,7 +7,6 @@ import {
   Input,
   Select,
   Space,
-  Modal,
   Form,
   message,
   Card,
@@ -16,6 +15,7 @@ import {
   Statistic,
   Drawer,
 } from "antd";
+import { CustomerModal } from "@/components/CustomerModal";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -37,6 +37,8 @@ export default function CustomersPage() {
   // State for UI
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [idTypeFilter, setIdTypeFilter] = useState<string>("");
+  const [channelFilter, setChannelFilter] = useState<string>("");
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isStatsDrawerVisible, setIsStatsDrawerVisible] = useState(false);
@@ -57,6 +59,8 @@ export default function CustomersPage() {
     limit: pageSize,
     search: searchText,
     isActive: statusFilter ? statusFilter === "active" : undefined,
+    idType: idTypeFilter || undefined,
+    preferredChannel: channelFilter || undefined,
   });
 
   // Export mutation hook
@@ -86,12 +90,36 @@ export default function CustomersPage() {
     setCurrentPage(1);
   };
 
-  const handleCreateCustomer = async (values: CustomerCreatePayload) => {
+  const handleIdTypeFilter = (value: string) => {
+    setIdTypeFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleChannelFilter = (value: string) => {
+    setChannelFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleCreateCustomer = async (values: CustomerCreatePayload | CustomerUpdatePayload) => {
     try {
-      await createCustomer(values);
-      message.success("Customer created successfully");
-      setIsCreateModalVisible(false);
-      createForm.resetFields();
+      // Only call createCustomer if all required fields are present
+      if (
+        typeof values.firstName === "string" &&
+        typeof values.lastName === "string" &&
+        typeof values.email === "string" &&
+        typeof values.phoneNumber === "string" &&
+        typeof values.city === "string" &&
+        typeof values.country === "string" &&
+        typeof values.idType === "string" &&
+        typeof values.idNumber === "string"
+      ) {
+        await createCustomer(values as CustomerCreatePayload);
+        message.success("Customer created successfully");
+        setIsCreateModalVisible(false);
+        createForm.resetFields();
+      } else {
+        message.error("Missing required fields for customer creation");
+      }
     } catch (error) {
       message.error("Failed to create customer");
     }
@@ -239,7 +267,7 @@ export default function CustomersPage() {
   return (
     <AuthGuard>
       <AppLayout>
-        <div className="px-4 md:px-6 lg:px-8 py-4 mx-auto space-y-4">
+        <div className="px-4 md:px-6 lg:px-8 py-4 w-full mx-auto space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <h1 className="text-2xl font-bold">Customer Management</h1>
             <Space>
@@ -317,11 +345,33 @@ export default function CustomersPage() {
                 <Option value="active">Active</Option>
                 <Option value="inactive">Inactive</Option>
               </Select>
+              <Select
+                placeholder="Filter by ID Type"
+                value={idTypeFilter}
+                onChange={handleIdTypeFilter}
+                className="w-1/5"
+                allowClear
+              >
+                {idTypeOptions.map(opt => (
+                  <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="Filter by Channel"
+                value={channelFilter}
+                onChange={handleChannelFilter}
+                className="w-1/5"
+                allowClear
+              >
+                {preferredChannelOptions.map(opt => (
+                  <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+                ))}
+              </Select>
             </div>
           </Card>
 
           {/* Customers Table */}
-          <Card>
+          <Card className="flex-1">
             <Table
               columns={columns}
               dataSource={customers?.data || []}
@@ -345,253 +395,32 @@ export default function CustomersPage() {
           </Card>
 
           {/* Create Customer Modal */}
-          <Modal
-            title="Create New Customer"
-            open={isCreateModalVisible}
+          <CustomerModal
+            visible={isCreateModalVisible}
             onCancel={() => {
               setIsCreateModalVisible(false);
               createForm.resetFields();
             }}
-            footer={null}
-            width={700}
-          >
-            <Form
-              form={createForm}
-              layout="vertical"
-              onFinish={handleCreateCustomer}
-            >
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="firstName"
-                    label="First Name"
-                    rules={[
-                      { required: true, message: "Please enter first name" },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="lastName"
-                    label="Last Name"
-                    rules={[
-                      { required: true, message: "Please enter last name" },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="email"
-                    label="Email"
-                    rules={[
-                      { required: true, message: "Please enter email" },
-                      { type: "email", message: "Please enter a valid email" },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="phoneNumber"
-                    label="Phone Number"
-                    rules={[
-                      { required: true, message: "Please enter phone number" },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="alternatePhone" label="Alternate Phone">
-                <Input />
-              </Form.Item>
-
-              <Form.Item name="address" label="Address">
-                <Input />
-              </Form.Item>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="city" label="City">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="country" label="Country">
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="idType" label="ID Type">
-                    <Select allowClear>
-                      {idTypeOptions.map((option) => (
-                        <Option key={option.value} value={option.value}>
-                          {option.label}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="idNumber" label="ID Number">
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="preferredChannel" label="Preferred Channel">
-                <Select allowClear>
-                  {preferredChannelOptions.map((option) => (
-                    <Option key={option.value} value={option.value}>
-                      {option.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={isCreating}>
-                    Create Customer
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsCreateModalVisible(false);
-                      createForm.resetFields();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </Modal>
+            onSubmit={handleCreateCustomer}
+            form={createForm}
+            loading={isCreating}
+            mode="create"
+          />
 
           {/* Edit Customer Modal */}
-          <Modal
-            title="Edit Customer"
-            open={isEditModalVisible}
+          <CustomerModal
+            visible={isEditModalVisible}
             onCancel={() => {
               setIsEditModalVisible(false);
               setEditingCustomer(null);
               editForm.resetFields();
             }}
-            footer={null}
-            width={700}
-          >
-            <Form form={editForm} layout="vertical" onFinish={handleUpdateCustomer}>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="firstName" label="First Name">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="lastName" label="Last Name">
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="email"
-                    label="Email"
-                    rules={[
-                      { type: "email", message: "Please enter a valid email" },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="phoneNumber" label="Phone Number">
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="alternatePhone" label="Alternate Phone">
-                <Input />
-              </Form.Item>
-
-              <Form.Item name="address" label="Address">
-                <Input />
-              </Form.Item>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="city" label="City">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="country" label="Country">
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="idType" label="ID Type">
-                    <Select allowClear>
-                      {idTypeOptions.map((option) => (
-                        <Option key={option.value} value={option.value}>
-                          {option.label}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="idNumber" label="ID Number">
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="preferredChannel" label="Preferred Channel">
-                <Select allowClear>
-                  {preferredChannelOptions.map((option) => (
-                    <Option key={option.value} value={option.value}>
-                      {option.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={isUpdating}>
-                    Update Customer
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsEditModalVisible(false);
-                      setEditingCustomer(null);
-                      editForm.resetFields();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </Modal>
+            onSubmit={handleUpdateCustomer}
+            form={editForm}
+            loading={isUpdating}
+            mode="edit"
+            initialValues={editingCustomer || undefined}
+          />
 
           {/* Customer Stats Drawer */}
           <Drawer

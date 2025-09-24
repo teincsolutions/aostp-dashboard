@@ -1,125 +1,115 @@
-import React from 'react';
-import { Button, Space, Tag, Popconfirm, Tooltip, Dropdown } from 'antd';
+import React from "react";
+import { Button, Space, Tag, Popconfirm, Tooltip, Dropdown } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
   DownloadOutlined,
   MoreOutlined,
-} from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
-import type { MenuProps } from 'antd';
-import type { PackingList } from '@/types/packingList';
-import { PackingListStatus } from '@/types/packingList';
+} from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
+import type { MenuProps } from "antd";
+import type { PackingList } from "@/types/packingList";
+import { PackingListStatus, ExportFormat } from "@/types/packingList";
 
 export const getPackingListColumns = (
   onEditPackingList: (packingList: PackingList) => void,
   onDeletePackingList: (id: string) => void,
   onViewDetails: (packingList: PackingList) => void,
-  onExportPackingList: (id: string, format: 'PDF' | 'EXCEL') => void,
+  onExportPackingList: (id: string, format: ExportFormat) => Promise<void>,
   isDeleting: boolean,
   isExporting: boolean
 ): ColumnsType<PackingList> => [
   {
-    title: 'Name',
-    dataIndex: 'name',
-    key: 'name',
+    title: "Name",
+    dataIndex: "name",
+    key: "name",
     sorter: true,
-    render: (name: string) => (
-      <span style={{ fontWeight: 500 }}>{name}</span>
-    ),
+    render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
   },
   {
-    title: 'Loading City',
-    dataIndex: 'loadingCity',
-    key: 'loadingCity',
-    render: (city: string) => (
-      <span>{city || 'N/A'}</span>
-    ),
+    title: "Loading City",
+    dataIndex: "loadingCity",
+    key: "loadingCity",
+    render: (city: string) => <span>{city || "N/A"}</span>,
     filters: [
-      { text: 'Accra', value: 'Accra' },
-      { text: 'Tema', value: 'Tema' },
-      { text: 'Kumasi', value: 'Kumasi' },
+      { text: "Accra", value: "Accra" },
+      { text: "Tema", value: "Tema" },
+      { text: "Kumasi", value: "Kumasi" },
     ],
   },
   {
-    title: 'Loading Date',
-    dataIndex: 'loadingDate',
-    key: 'loadingDate',
+    title: "Loading Date",
+    dataIndex: "loadingDate",
+    key: "loadingDate",
     render: (date: string) => new Date(date).toLocaleDateString(),
     sorter: true,
   },
   {
-    title: 'ETA',
-    dataIndex: 'eta',
-    key: 'eta',
-    render: (eta: string) => eta ? new Date(eta).toLocaleDateString() : 'N/A',
+    title: "ETA",
+    dataIndex: "eta",
+    key: "eta",
+    render: (eta: string) => (eta ? new Date(eta).toLocaleDateString() : "N/A"),
     sorter: true,
   },
   {
-    title: 'Package Count',
-    dataIndex: 'packageCount',
-    key: 'packageCount',
-    render: (count: number) => (
-      <Tag color="blue">{count || 0}</Tag>
-    ),
+    title: "Package Count",
+    dataIndex: "packageCount",
+    key: "packageCount",
+    render: (count: number) => <Tag color="blue">{count || 0}</Tag>,
     sorter: true,
   },
   {
-    title: 'Status',
-    dataIndex: 'status',
-    key: 'status',
+    title: "Status",
+    dataIndex: "status",
+    key: "status",
     render: (status: PackingListStatus) => {
       const statusColors = {
-        [PackingListStatus.DRAFT]: 'default',
-        [PackingListStatus.PLANNED]: 'orange',
-        [PackingListStatus.LOADING]: 'purple',
-        [PackingListStatus.LOADED]: 'blue',
-        [PackingListStatus.IN_TRANSIT]: 'cyan',
-        [PackingListStatus.DELIVERED]: 'green',
-        [PackingListStatus.CANCELLED]: 'red',
+        [PackingListStatus.DRAFT]: "default",
+        [PackingListStatus.PLANNED]: "orange",
+        [PackingListStatus.LOADING]: "purple",
+        [PackingListStatus.LOADED]: "blue",
+        [PackingListStatus.IN_TRANSIT]: "cyan",
+        [PackingListStatus.DELIVERED]: "green",
+        [PackingListStatus.CANCELLED]: "red",
       };
 
-      return (
-        <Tag color={statusColors[status]}>
-          {status.replace('_', ' ')}
-        </Tag>
-      );
+      return <Tag color={statusColors[status]}>{status.replace("_", " ")}</Tag>;
     },
     filters: [
-      { text: 'Draft', value: PackingListStatus.DRAFT },
-      { text: 'Planned', value: PackingListStatus.PLANNED },
-      { text: 'Loading', value: PackingListStatus.LOADING },
-      { text: 'Loaded', value: PackingListStatus.LOADED },
-      { text: 'In Transit', value: PackingListStatus.IN_TRANSIT },
-      { text: 'Delivered', value: PackingListStatus.DELIVERED },
-      { text: 'Cancelled', value: PackingListStatus.CANCELLED },
+      { text: "Draft", value: PackingListStatus.DRAFT },
+      { text: "Planned", value: PackingListStatus.PLANNED },
+      { text: "Loading", value: PackingListStatus.LOADING },
+      { text: "Loaded", value: PackingListStatus.LOADED },
+      { text: "In Transit", value: PackingListStatus.IN_TRANSIT },
+      { text: "Delivered", value: PackingListStatus.DELIVERED },
+      { text: "Cancelled", value: PackingListStatus.CANCELLED },
     ],
   },
   {
-    title: 'Created At',
-    dataIndex: 'createdAt',
-    key: 'createdAt',
+    title: "Created At",
+    dataIndex: "createdAt",
+    key: "createdAt",
     render: (date: string) => new Date(date).toLocaleDateString(),
     sorter: true,
   },
   {
-    title: 'Actions',
-    key: 'actions',
+    title: "Actions",
+    key: "actions",
     render: (_, record) => {
-      const exportMenuItems: MenuProps['items'] = [
+      const exportMenuItems: MenuProps["items"] = [
         {
-          key: 'pdf',
-          label: 'Export as PDF',
+          key: "pdf",
+          label: "Export as PDF",
           icon: <DownloadOutlined />,
-          onClick: () => onExportPackingList(record.id, 'PDF'),
+          onClick: () => onExportPackingList(record.id, ExportFormat.PDF),
           disabled: isExporting,
         },
         {
-          key: 'excel',
-          label: 'Export as Excel',
+          key: "excel",
+          label: "Export as Excel",
           icon: <DownloadOutlined />,
-          onClick: () => onExportPackingList(record.id, 'EXCEL'),
+          onClick: () => onExportPackingList(record.id, ExportFormat.EXCEL),
           disabled: isExporting,
         },
       ];
@@ -145,13 +135,9 @@ export const getPackingListColumns = (
           <Dropdown
             menu={{ items: exportMenuItems }}
             placement="bottomRight"
-            trigger={['click']}
+            trigger={["click"]}
           >
-            <Button
-              type="text"
-              icon={<MoreOutlined />}
-              loading={isExporting}
-            />
+            <Button type="text" icon={<MoreOutlined />} loading={isExporting} />
           </Dropdown>
 
           <Tooltip title="Delete Packing List">

@@ -112,7 +112,7 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <AppLayout>
-        <div className="px-4 md:px-6 lg:px-8 py-4 mx-auto space-y-4">
+        <div className="px-4 md:px-6 lg:px-8 py-4 mx-auto space-y-4 flex-1">
           {/* Header row: title + filters */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <h1 className="text-2xl font-bold">Dashboard</h1>

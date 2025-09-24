@@ -32,7 +32,7 @@ export const usePackingLists = (params: PackingListQueryParams = {}) => {
 export const usePackingList = (id: string) => {
   return useQuery({
     queryKey: packingListKeys.detail(id),
-    queryFn: () => packingListService.getPackingListById(id),
+    queryFn: async () => await packingListService.getPackingListById(id).then(res => res.data),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });

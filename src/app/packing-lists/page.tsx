@@ -42,6 +42,7 @@ import {
   PackingListStatus,
   PackingList,
   PackingListSummary,
+  ExportFormat,
 } from "@/types/packingList";
 import { getPackingListColumns } from "./columns";
 import type { Dayjs } from "dayjs";
@@ -126,12 +127,12 @@ export default function PackingListsPage() {
 
   const handleCreatePackingList = async (values: PackingListCreatePayload) => {
     try {
-      await createPackingList(values);
+      await createPackingList.mutateAsync(values);
       message.success("Packing list created successfully");
       setIsCreateModalVisible(false);
       createForm.resetFields();
-    } catch (error) {
-      message.error("Failed to create packing list");
+    } catch (error: any) {
+      message.error("Failed to create packing list", error.response.data.message);
     }
   };
 
@@ -154,7 +155,7 @@ export default function PackingListsPage() {
     if (!editingPackingList) return;
 
     try {
-      await updatePackingList({
+      await updatePackingList.mutateAsync({
         id: editingPackingList.id,
         packingListData: {
           ...values,
@@ -168,17 +169,17 @@ export default function PackingListsPage() {
       setIsEditModalVisible(false);
       setEditingPackingList(null);
       editForm.resetFields();
-    } catch (error) {
-      message.error("Failed to update packing list");
+    } catch (error: any) {
+      message.error("Failed to update packing list", error.response.data.message);
     }
   };
 
   const handleDeletePackingList = async (id: string) => {
     try {
-      await deletePackingList(id);
+      await deletePackingList.mutateAsync(id);
       message.success("Packing list deleted successfully");
-    } catch (error) {
-      message.error("Failed to delete packing list");
+    } catch (error: any) {
+      message.error("Failed to delete packing list", error.response.data.message);
     }
   };
 
@@ -189,13 +190,13 @@ export default function PackingListsPage() {
 
   const handleExportPackingList = async (
     id: string,
-    format: "PDF" | "EXCEL"
+    format: ExportFormat
   ) => {
     try {
-      await exportPackingList({ id, format });
+      await exportPackingList.mutateAsync({ id, format });
       message.success(`Packing list exported as ${format} successfully`);
-    } catch (error) {
-      message.error(`Failed to export packing list as ${format}`);
+    } catch (error: any) {
+      message.error(`Failed to export packing list as ${format}`, error.response.data.message);
     }
   };
 
@@ -626,11 +627,11 @@ export default function PackingListsPage() {
                   </Descriptions.Item>
                 </Descriptions>
 
-                {packingListSummary && (
+                {packingListSummary && packingListSummary.data && (
                   <>
                     <Divider>Summary by Customer</Divider>
                     <div className="space-y-4">
-                      {packingListSummary.customerGroups.map(
+                      {packingListSummary.data.customerGroups.map(
                         (group: PackingListSummary["customerGroups"][0]) => (
                           <Card key={group.customerId} size="small">
                             <div className="flex justify-between items-center">

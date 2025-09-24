@@ -16,6 +16,7 @@ import {
   notification,
   Modal,
   Spin,
+  Image,
 } from "antd";
 import { Formik, Form as FormikForm, Field } from "formik";
 import * as Yup from "yup";
@@ -58,7 +59,6 @@ export default function ProfilePage() {
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
-  const [showResetResult, setShowResetResult] = useState(false);
 
   if (!user) {
     return (
@@ -73,7 +73,7 @@ export default function ProfilePage() {
   return (
     <AppLayout>
       <AuthGuard>
-        <Card>
+        <Card className="lg:w-[50%] mx-auto">
           <Tabs defaultActiveKey="profile" tabPosition="top">
             <Tabs.TabPane tab="Profile Info" key="profile">
               <Divider orientation="left">Profile Info</Divider>
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                     {security.enable2FA.data ? (
                       <div>
                         <Divider />
-                        <img
+                        <Image
                           src={security.enable2FA.data.qrImageDataUrl}
                           alt="QR Code"
                           style={{ width: 200, marginBottom: 16 }}

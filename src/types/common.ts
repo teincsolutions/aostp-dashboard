@@ -24,6 +24,7 @@ export type UserRole =
   | "SUPER_ADMIN"
   | "FINANCE_MANAGER"
   | "PAYMENT_CLERK"
+  | "OPERATIONS_CLERK"
   | "CUSTOMER";
 
 export interface User {
@@ -33,10 +34,11 @@ export interface User {
   username?: string;
   firstName?: string;
   lastName?: string;
-  role: UserRole
+  role: UserRole;
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
+  avatar: string;
   twoFactorEnabled?: boolean;
 }
 

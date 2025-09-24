@@ -6,7 +6,7 @@ export interface MyProfile {
   email: string;
   firstName: string;
   lastName: string;
-  roles: string[];
+  role: string;
   twoFactorEnabled: boolean;
   lastLogin: string | null;
   sessions?: SessionInfo[];

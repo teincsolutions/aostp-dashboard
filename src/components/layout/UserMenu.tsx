@@ -34,12 +34,14 @@ export function UserMenu() {
         items: userMenuItems,
         onClick: handleUserMenuClick,
       }}
+
+      rootClassName="w-48"
       placement="bottomRight"
     >
       <Avatar
         style={{ cursor: "pointer" }}
-        src={user?.avatarUrl}
-        icon={!user?.avatarUrl ? <UserOutlined /> : undefined}
+        src={user?.avatar}
+        icon={!user?.avatar ? <UserOutlined /> : undefined}
       />
     </Dropdown>
   );

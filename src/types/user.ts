@@ -1,10 +1,12 @@
 // src/types/user.ts
 
+import { UserRole } from "./common";
+
 export enum Role {
-  SUPER_ADMIN = "SUPER_ADMIN",
-  FINANCE_MANAGER = "FINANCE_MANAGER",
-  OPERATIONS_CLERK = "OPERATIONS_CLERK",
-  PAYMENT_CLERK = "PAYMENT_CLERK",
+  SUPER_ADMIN = "SUPER ADMIN",
+  FINANCE_MANAGER = "FINANCE MANAGER",
+  OPERATIONS_CLERK = "OPERATIONS CLERK",
+  PAYMENT_CLERK = "PAYMENT CLERK",
   CUSTOMER = "CUSTOMER",
 }
 
@@ -17,7 +19,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  roles: Role[];
+  role: UserRole;
   status: UserStatus;
   createdAt: string;
   twoFactorEnabled?: boolean;
@@ -28,7 +30,7 @@ export interface UserCreatePayload {
   email: string;
   name: string;
   password: string;
-  roles: Role[];
+  role: UserRole;
   status?: UserStatus;
   twoFactorEnabled?: boolean;
 }
@@ -37,7 +39,7 @@ export interface UserUpdatePayload {
   email?: string;
   name?: string;
   password?: string;
-  roles?: Role[];
+  role?: UserRole;
   status?: UserStatus;
   twoFactorEnabled?: boolean;
 }
