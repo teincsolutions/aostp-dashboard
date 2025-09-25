@@ -1,0 +1,16 @@
+
+services:
+  aostp-dashboard:
+    image: ${DOCKER_IMAGE_NAME:-teincsolutions/aostp-dashboard}:${DOCKER_TAG:-latest}
+    container_name: aostp-dashboard-prod
+    restart: always
+    env_file:
+      - .env.production
+    ports:
+      - "3000:3000"
+    networks:
+      - aostp-internal-net
+
+networks:
+  aostp-internal-net:
+    external: true

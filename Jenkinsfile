@@ -113,8 +113,8 @@ pipeline {
                     passwordVariable: 'GOOGLE_CLIENT_SECRET'),
                  ]) {
                     sh '''
-                    DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME}" DOCKER_TAG="${DOCKER_TAG}" docker compose -f docker-compose.test.yml down || true
-                    DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME}" DOCKER_TAG="${DOCKER_TAG}" docker compose -f docker-compose.test.yml up -d
+                    docker compose -f docker-compose.test.yml down || true
+                    docker compose -f docker-compose.test.yml up -d
 
                     sleep 10
                     # Add health check
@@ -137,8 +137,8 @@ pipeline {
                     passwordVariable: 'GOOGLE_CLIENT_SECRET'),
                  ]) {
                     sh '''
-                    DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME}" DOCKER_TAG="${DOCKER_TAG}" docker compose -f docker-compose.production.yml down || true
-                    DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME}" DOCKER_TAG="${DOCKER_TAG}" docker compose -f docker-compose.production.yml up -d
+                    docker compose -f docker-compose.production.yml down || true
+                    docker compose -f docker-compose.production.yml up -d
 
                     sleep 10
                     # Add health check for production
