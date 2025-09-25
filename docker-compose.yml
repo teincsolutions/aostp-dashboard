@@ -1,0 +1,10 @@
+
+services:
+  aostp-dashboard:
+    image: teincsolutions/aostp-dashboard:latest
+    container_name: aostp-dashboard-prod
+    restart: always
+    env_file:
+      - .env.production
+    ports:
+      - "8080:8080"
