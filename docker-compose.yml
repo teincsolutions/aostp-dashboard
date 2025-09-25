@@ -1,7 +1,7 @@
 
 services:
   aostp-dashboard:
-    image: teincsolutions/aostp-dashboard:latest
+    build: .
     container_name: aostp-dashboard-prod
     restart: always
     env_file:

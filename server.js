@@ -35,8 +35,8 @@ if (!dev) {
   // Serve static files from .next directory
   app.use(express.static('.next/standalone'));
 
-  // Catch all handler
-  app.get('*', (req, res) => {
+  // Catch all handler for SPA
+  app.use((req, res) => {
     res.sendFile(path.join(__dirname, '.next/standalone/public/index.html'));
   });
 
