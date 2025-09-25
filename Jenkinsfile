@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         // Customize these credentials and variables for your project
-        SLACK_WEBHOOK_URL = credentials('slack-webhook') 
+        SLACK_WEBHOOK_URL = credentials('aostp-slack-webhook') 
         DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
         DOCKER_IMAGE_NAME = "${DOCKER_HUB_CREDENTIALS_USR}/aostp-dashboard"
         DOCKER_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'unknown'}"
@@ -62,7 +62,7 @@ pipeline {
                     docker run -d --name aostp-dashboard-test -p 8080:8080 -e NODE_ENV=test "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
 
                     # Wait and health check
-                    sleep 30
+                    sleep 10
                     for i in {1..10}; do
                         if curl -f http://localhost:8080; then
                             echo "✅ Health check passed"
@@ -116,9 +116,9 @@ pipeline {
                     DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME}" DOCKER_TAG="${DOCKER_TAG}" docker compose -f docker-compose.test.yml down || true
                     DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME}" DOCKER_TAG="${DOCKER_TAG}" docker compose -f docker-compose.test.yml up -d
 
-                    sleep 30
+                    sleep 10
                     # Add health check
-                    curl -f "http://${TEST_DOMAIN}" || echo "Health check failed but deployment continued"
+                    curl -f "https://${TEST_DOMAIN}" || echo "Health check failed but deployment continued"
                     rm -f .env.test
                 '''
                  }
@@ -140,9 +140,9 @@ pipeline {
                     DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME}" DOCKER_TAG="${DOCKER_TAG}" docker compose -f docker-compose.production.yml down || true
                     DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME}" DOCKER_TAG="${DOCKER_TAG}" docker compose -f docker-compose.production.yml up -d
 
-                    sleep 30
+                    sleep 10
                     # Add health check for production
-                    curl -f "http://${PRODUCTION_DOMAIN}" || echo "Health check failed but deployment continued"
+                    curl -f "https://${PRODUCTION_DOMAIN}" || echo "Health check failed but deployment continued"
                 '''
                 }
             }
