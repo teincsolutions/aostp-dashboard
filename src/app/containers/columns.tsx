@@ -4,7 +4,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
-  BarChartOutlined,
   DownloadOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';

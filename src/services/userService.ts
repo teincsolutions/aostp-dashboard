@@ -1,5 +1,5 @@
 
-import { User, UserCreatePayload, UserUpdatePayload, Role, UserStatus } from "@/types/user";
+import { User, UserCreatePayload, UserUpdatePayload, Role } from "@/types/user";
 import { apiService } from "./api";
 
 export interface GetUsersParams {
@@ -49,31 +49,23 @@ const userService = {
   },
 
   resetUserPassword: async (id: string): Promise<{ success: boolean }> => {
-    // If endpoint exists, implement here. Placeholder:
-    // const res = await api.post(`/api/v1/users/${id}/reset-password`);
-    // return res.data;
-    throw new Error("resetUserPassword endpoint not implemented");
+    const res = await apiService.post(`/api/v1/users/${id}/reset-password`);
+    return res.data;
   },
 
   setUserRoles: async (id: string, roles: Role[]): Promise<User> => {
-    // If endpoint exists, implement here. Placeholder:
-    // const res = await api.patch(`/api/v1/users/${id}/roles`, { roles });
-    // return res.data;
-    throw new Error("setUserRoles endpoint not implemented");
+    const res = await apiService.patch(`/api/v1/users/${id}/roles`, { roles });
+    return res.data;
   },
 
   enable2FA: async (id: string): Promise<User> => {
-    // If endpoint exists, implement here. Placeholder:
-    // const res = await api.post(`/api/v1/users/${id}/2fa/enable`);
-    // return res.data;
-    throw new Error("enable2FA endpoint not implemented");
+    const res = await apiService.post(`/api/v1/users/${id}/2fa/enable`);
+    return res.data;
   },
 
   disable2FA: async (id: string): Promise<User> => {
-    // If endpoint exists, implement here. Placeholder:
-    // const res = await api.post(`/api/v1/users/${id}/2fa/disable`);
-    // return res.data;
-    throw new Error("disable2FA endpoint not implemented");
+    const res = await apiService.post(`/api/v1/users/${id}/2fa/disable`);
+    return res.data;  
   },
 };
 

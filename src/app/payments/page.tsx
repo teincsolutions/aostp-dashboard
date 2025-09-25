@@ -46,7 +46,7 @@ import {
   PaymentMethod,
   Currency,
 } from "@/types/invoice";
-import { Payment } from "@/types/payment";
+import { Payment } from "@/types/invoice";
 import { columns } from "./columns";
 import { Empty } from "antd";
 

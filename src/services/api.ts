@@ -2,16 +2,17 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
 } from "axios";
-import { APP_CONFIG } from "@/lib/constants";
+import { getAppConfig } from "@/lib/constants";
 import { useAuthStore } from "@/store/authStore";
 
 // Single Axios instance with interceptors
 class ApiService {
   private axiosInstance: AxiosInstance;
 
-  constructor(baseUrl: string = APP_CONFIG.apiBaseUrl) {
+  constructor(baseUrl?: string) {
+    const config = baseUrl || getAppConfig().apiBaseUrl;
     this.axiosInstance = axios.create({
-      baseURL: baseUrl,
+      baseURL: config,
       headers: {
         "Content-Type": "application/json",
       },
@@ -46,8 +47,26 @@ class ApiService {
   }
 }
 
-// Export a singleton instance
-export const apiService = new ApiService().getInstance();
+// Lazy singleton instance
+let apiServiceInstance: AxiosInstance | null = null;
+
+export const getApiService = (): AxiosInstance => {
+  if (!apiServiceInstance) {
+    apiServiceInstance = new ApiService().getInstance();
+  } else {
+    // Check if the config has changed (for runtime reconfiguration)
+    const currentApiBaseUrl = apiServiceInstance.defaults.baseURL || '';
+    const newApiBaseUrl = getAppConfig().apiBaseUrl;
+    if (currentApiBaseUrl !== newApiBaseUrl) {
+      // Recreate the instance with new config
+      apiServiceInstance = new ApiService().getInstance();
+    }
+  }
+  return apiServiceInstance;
+};
+
+// For backward compatibility
+export const apiService = getApiService();
 
 // Export the class for custom instances if needed
 export { ApiService };

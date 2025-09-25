@@ -26,15 +26,11 @@ export const columns: ColumnsType<User> = [
     ),
   },
   {
-    title: "Roles",
-    dataIndex: "roles",
-    key: "roles",
-    render: (roles: Role[]) => (
-      <span>
-        {roles.map((role) => (
-          <span key={role} className="mr-1 px-2 py-1 rounded bg-gray-100 text-xs">{role}</span>
-        ))}
-      </span>
+    title: "Role",
+    dataIndex: "role",
+    key: "role",
+    render: (role: Role) => (
+      <span className="px-2 py-1 rounded bg-gray-100 text-xs">{role}</span>
     ),
   },
   {

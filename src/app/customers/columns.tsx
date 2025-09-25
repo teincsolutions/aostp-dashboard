@@ -9,7 +9,7 @@ import {
   BarChartOutlined,
   ExportOutlined,
 } from '@ant-design/icons';
-import { Customer, CustomerStatus } from '@/types/customer';
+import { Customer } from '@/types/customer';
 
 interface CustomerActions {
   onEdit: (customer: Customer) => void;

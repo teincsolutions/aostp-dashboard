@@ -28,7 +28,11 @@ import {
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { useContainers, useContainerMutations, useContainerStatistics } from "@/hooks/useContainers";
+import {
+  useContainers,
+  useContainerMutations,
+  useContainerStatistics,
+} from "@/hooks/useContainers";
 import {
   ContainerCreatePayload,
   ContainerUpdatePayload,
@@ -36,7 +40,7 @@ import {
   ContainerStatus,
   ExportFormat,
 } from "@/types/container";
-import type { Dayjs } from 'dayjs';
+import type { Dayjs } from "dayjs";
 import { getContainerColumns } from "@/app/containers/columns";
 
 const { Option } = Select;
@@ -69,20 +73,33 @@ export default function ContainersPage() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [departureCityFilter, setDepartureCityFilter] = useState<string>("");
-  const [destinationCityFilter, setDestinationCityFilter] = useState<string>("");
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
+  const [destinationCityFilter, setDestinationCityFilter] =
+    useState<string>("");
+  const [dateRange, setDateRange] = useState<
+    [Dayjs | null, Dayjs | null] | null
+  >(null);
 
   // Modals and drawers
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [isStatisticsDrawerVisible, setIsStatisticsDrawerVisible] = useState(false);
-  const [isStatusUpdateModalVisible, setIsStatusUpdateModalVisible] = useState(false);
+  const [isStatisticsDrawerVisible, setIsStatisticsDrawerVisible] =
+    useState(false);
+  const [isStatusUpdateModalVisible, setIsStatusUpdateModalVisible] =
+    useState(false);
 
   // Current items
-  const [editingContainer, setEditingContainer] = useState<Container | null>(null);
-  const [viewingContainer, setViewingContainer] = useState<Container | null>(null);
-  const [updatingContainer, setUpdatingContainer] = useState<Container | null>(null);
-  const [newStatus, setNewStatus] = useState<ContainerStatus>(ContainerStatus.PLANNED);
+  const [editingContainer, setEditingContainer] = useState<Container | null>(
+    null
+  );
+  const [viewingContainer, setViewingContainer] = useState<Container | null>(
+    null
+  );
+  const [updatingContainer, setUpdatingContainer] = useState<Container | null>(
+    null
+  );
+  const [newStatus, setNewStatus] = useState<ContainerStatus>(
+    ContainerStatus.PLANNED
+  );
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,11 +118,13 @@ export default function ContainersPage() {
     status: statusFilter as ContainerStatus,
     departureCity: departureCityFilter,
     destinationCity: destinationCityFilter,
-    dateFrom: dateRange?.[0]?.format('YYYY-MM-DD'),
-    dateTo: dateRange?.[1]?.format('YYYY-MM-DD'),
+    dateFrom: dateRange?.[0]?.format("YYYY-MM-DD"),
+    dateTo: dateRange?.[1]?.format("YYYY-MM-DD"),
   });
 
-  const { data: statistics } = useContainerStatistics(viewingContainer?.id || "");
+  const { data: statistics } = useContainerStatistics(
+    viewingContainer?.id || ""
+  );
 
   const {
     createContainer,
@@ -126,20 +145,21 @@ export default function ContainersPage() {
     setCurrentPage(1);
   };
 
-  const handleFilterChange = (setter: (value: string) => void) => (value: string) => {
-    setter(value);
-    setCurrentPage(1);
-  };
+  const handleFilterChange =
+    (setter: (value: string) => void) => (value: string) => {
+      setter(value);
+      setCurrentPage(1);
+    };
 
   const handleCreateContainer = async (values: CreateFormValues) => {
     try {
       // Transform form values to payload
       const payload: ContainerCreatePayload = {
         containerNumber: values.containerNumber,
-        loadingDate: values.loadingDate.format('YYYY-MM-DDTHH:mm:ssZ'),
+        loadingDate: values.loadingDate.format("YYYY-MM-DDTHH:mm:ssZ"),
         departureCity: values.departureCity,
         destinationCity: values.destinationCity,
-        eta: values.eta.format('YYYY-MM-DDTHH:mm:ssZ'),
+        eta: values.eta.format("YYYY-MM-DDTHH:mm:ssZ"),
         status: values.status,
         notes: values.notes,
       };
@@ -148,7 +168,8 @@ export default function ContainersPage() {
       message.success("Container created successfully");
       setIsCreateModalVisible(false);
       createForm.resetFields();
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error.response.data);
       message.error("Failed to create container");
     }
   };
@@ -157,7 +178,9 @@ export default function ContainersPage() {
     setEditingContainer(container);
     editForm.setFieldsValue({
       containerNumber: container.containerNumber,
-      loadingDate: container.loadingDate ? new Date(container.loadingDate) : null,
+      loadingDate: container.loadingDate
+        ? new Date(container.loadingDate)
+        : null,
       departureCity: container.departureCity,
       destinationCity: container.destinationCity,
       eta: container.eta ? new Date(container.eta) : null,
@@ -173,20 +196,24 @@ export default function ContainersPage() {
     try {
       const payload: ContainerUpdatePayload = {
         containerNumber: values.containerNumber,
-        loadingDate: values.loadingDate?.format('YYYY-MM-DDTHH:mm:ssZ'),
+        loadingDate: values.loadingDate?.format("YYYY-MM-DDTHH:mm:ssZ"),
         departureCity: values.departureCity,
         destinationCity: values.destinationCity,
-        eta: values.eta?.format('YYYY-MM-DDTHH:mm:ssZ'),
+        eta: values.eta?.format("YYYY-MM-DDTHH:mm:ssZ"),
         status: values.status,
         notes: values.notes,
       };
 
-      await updateContainer({ id: editingContainer.id, containerData: payload });
+      await updateContainer({
+        id: editingContainer.id,
+        containerData: payload,
+      });
       message.success("Container updated successfully");
       setIsEditModalVisible(false);
       setEditingContainer(null);
       editForm.resetFields();
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error.response.data);
       message.error("Failed to update container");
     }
   };
@@ -195,18 +222,23 @@ export default function ContainersPage() {
     try {
       await deleteContainer(id);
       message.success("Container deleted successfully");
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error.response.data);
       message.error("Failed to delete container");
     }
   };
 
-  const handleUpdateContainerStatus = async (id: string, status: ContainerStatus) => {
+  const handleUpdateContainerStatus = async (
+    id: string,
+    status: ContainerStatus
+  ) => {
     try {
       await updateContainerStatus({ id, status });
       message.success("Container status updated successfully");
       setIsStatusUpdateModalVisible(false);
       setUpdatingContainer(null);
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error.response.data);
       message.error("Failed to update container status");
     }
   };
@@ -222,9 +254,10 @@ export default function ContainersPage() {
       message.success("Manifest exported successfully");
       // Open the download URL in a new tab
       if (result.downloadUrl) {
-        window.open(result.downloadUrl, '_blank');
+        window.open(result.downloadUrl, "_blank");
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error.response.data);
       message.error("Failed to export manifest");
     }
   };
@@ -234,7 +267,9 @@ export default function ContainersPage() {
     handleEditContainer,
     handleDeleteContainer,
     (id: string, status: ContainerStatus) => {
-      setUpdatingContainer(containers?.data?.find((c: Container) => c.id === id) || null);
+      setUpdatingContainer(
+        containers?.data?.find((c: Container) => c.id === id) || null
+      );
       setNewStatus(status);
       setIsStatusUpdateModalVisible(true);
     },
@@ -247,10 +282,18 @@ export default function ContainersPage() {
 
   // Statistics
   const totalContainers = containers?.meta?.totalItems || 0;
-  const activeContainers = containers?.data?.filter(c => c.status !== ContainerStatus.CLOSED).length || 0;
-  const plannedContainers = containers?.data?.filter(c => c.status === ContainerStatus.PLANNED).length || 0;
-  const shippedContainers = containers?.data?.filter(c => c.status === ContainerStatus.SHIPPED).length || 0;
-  const completedContainers = containers?.data?.filter(c => c.status === ContainerStatus.ARRIVED).length || 0;
+  const activeContainers =
+    containers?.data?.filter((c) => c.status !== ContainerStatus.CLOSED)
+      .length || 0;
+  const plannedContainers =
+    containers?.data?.filter((c) => c.status === ContainerStatus.PLANNED)
+      .length || 0;
+  const shippedContainers =
+    containers?.data?.filter((c) => c.status === ContainerStatus.SHIPPED)
+      .length || 0;
+  const completedContainers =
+    containers?.data?.filter((c) => c.status === ContainerStatus.ARRIVED)
+      .length || 0;
 
   // Filter options
   const statusOptions = [
@@ -331,7 +374,13 @@ export default function ContainersPage() {
               <Card>
                 <Statistic
                   title="Success Rate"
-                  value={totalContainers > 0 ? Math.round((completedContainers / totalContainers) * 100) : 0}
+                  value={
+                    totalContainers > 0
+                      ? Math.round(
+                          (completedContainers / totalContainers) * 100
+                        )
+                      : 0
+                  }
                   prefix={<CheckOutlined />}
                   suffix="%"
                   valueStyle={{ color: "#52c41a" }}
@@ -367,14 +416,18 @@ export default function ContainersPage() {
               <Input
                 placeholder="Departure city"
                 value={departureCityFilter}
-                onChange={(e) => handleFilterChange(setDepartureCityFilter)(e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange(setDepartureCityFilter)(e.target.value)
+                }
                 className="w-40"
                 allowClear
               />
               <Input
                 placeholder="Destination city"
                 value={destinationCityFilter}
-                onChange={(e) => handleFilterChange(setDestinationCityFilter)(e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange(setDestinationCityFilter)(e.target.value)
+                }
                 className="w-40"
                 allowClear
               />
@@ -434,7 +487,12 @@ export default function ContainersPage() {
                   <Form.Item
                     name="containerNumber"
                     label="Container Number"
-                    rules={[{ required: true, message: "Please enter container number" }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter container number",
+                      },
+                    ]}
                   >
                     <Input />
                   </Form.Item>
@@ -443,7 +501,9 @@ export default function ContainersPage() {
                   <Form.Item
                     name="status"
                     label="Status"
-                    rules={[{ required: true, message: "Please select status" }]}
+                    rules={[
+                      { required: true, message: "Please select status" },
+                    ]}
                   >
                     <Select>
                       {statusOptions.map((option) => (
@@ -461,7 +521,12 @@ export default function ContainersPage() {
                   <Form.Item
                     name="departureCity"
                     label="Departure City"
-                    rules={[{ required: true, message: "Please enter departure city" }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter departure city",
+                      },
+                    ]}
                   >
                     <Input />
                   </Form.Item>
@@ -470,7 +535,12 @@ export default function ContainersPage() {
                   <Form.Item
                     name="destinationCity"
                     label="Destination City"
-                    rules={[{ required: true, message: "Please enter destination city" }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter destination city",
+                      },
+                    ]}
                   >
                     <Input />
                   </Form.Item>
@@ -482,7 +552,9 @@ export default function ContainersPage() {
                   <Form.Item
                     name="loadingDate"
                     label="Loading Date"
-                    rules={[{ required: true, message: "Please select loading date" }]}
+                    rules={[
+                      { required: true, message: "Please select loading date" },
+                    ]}
                   >
                     <DatePicker showTime className="w-full" />
                   </Form.Item>
@@ -617,12 +689,17 @@ export default function ContainersPage() {
             width={400}
           >
             <div className="mb-4">
-              <p>Update status for container: <strong>{updatingContainer?.containerNumber}</strong></p>
+              <p>
+                Update status for container:{" "}
+                <strong>{updatingContainer?.containerNumber}</strong>
+              </p>
             </div>
             <Form
               form={statusForm}
               layout="vertical"
-              onFinish={() => handleUpdateContainerStatus(updatingContainer!.id, newStatus)}
+              onFinish={() =>
+                handleUpdateContainerStatus(updatingContainer!.id, newStatus)
+              }
             >
               <Form.Item
                 name="status"
@@ -640,7 +717,11 @@ export default function ContainersPage() {
 
               <Form.Item>
                 <Space>
-                  <Button type="primary" htmlType="submit" loading={isUpdatingStatus}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isUpdatingStatus}
+                  >
                     Update Status
                   </Button>
                   <Button
@@ -713,34 +794,48 @@ export default function ContainersPage() {
 
                 <Card title="Status Breakdown">
                   <div className="space-y-3">
-                    {Object.entries(statistics.statusBreakdown).map(([status, count]) => (
-                      <div key={status}>
-                        <div className="flex justify-between">
-                          <span>{status.replace('_', ' ')}</span>
-                          <span>{count}</span>
+                    {Object.entries(statistics.statusBreakdown).map(
+                      ([status, count]) => (
+                        <div key={status}>
+                          <div className="flex justify-between">
+                            <span>{status.replace("_", " ")}</span>
+                            <span>{count}</span>
+                          </div>
+                          <Progress
+                            percent={
+                              statistics.totalPackingLists > 0
+                                ? (count / statistics.totalPackingLists) * 100
+                                : 0
+                            }
+                            size="small"
+                          />
                         </div>
-                        <Progress
-                          percent={statistics.totalPackingLists > 0 ? (count / statistics.totalPackingLists) * 100 : 0}
-                          size="small"
-                        />
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
                 </Card>
 
                 <Card title="Container Details">
                   <div className="space-y-2">
                     <div>
-                      <strong>Route:</strong> {viewingContainer?.departureCity} → {viewingContainer?.destinationCity}
+                      <strong>Route:</strong> {viewingContainer?.departureCity}{" "}
+                      → {viewingContainer?.destinationCity}
                     </div>
                     <div>
-                      <strong>Loading Date:</strong> {new Date(viewingContainer?.loadingDate || '').toLocaleDateString()}
+                      <strong>Loading Date:</strong>{" "}
+                      {new Date(
+                        viewingContainer?.loadingDate || ""
+                      ).toLocaleDateString()}
                     </div>
                     <div>
-                      <strong>ETA:</strong> {new Date(viewingContainer?.eta || '').toLocaleDateString()}
+                      <strong>ETA:</strong>{" "}
+                      {new Date(
+                        viewingContainer?.eta || ""
+                      ).toLocaleDateString()}
                     </div>
                     <div>
-                      <strong>Current Status:</strong> {viewingContainer?.status.replace('_', ' ')}
+                      <strong>Current Status:</strong>{" "}
+                      {viewingContainer?.status.replace("_", " ")}
                     </div>
                     {viewingContainer?.notes && (
                       <div>

@@ -1,41 +1,44 @@
 // src/app/payments/columns.tsx
 import { ColumnsType } from 'antd/es/table';
-import { Payment } from '@/types/payment';
+import { Payment } from '@/types/invoice';
 import { Tooltip } from 'antd';
 
 export const columns: ColumnsType<Payment> = [
   {
     title: 'ID',
-    dataIndex: 'id',
-    key: 'id',
+    dataIndex: 'paymentCode',
+    key: 'paymentCode',
     width: 80,
   },
   {
     title: 'Customer',
-    dataIndex: 'customerName',
-    key: 'customerName',
+    key: 'customer',
     ellipsis: true,
-    render: (text: string) => (
-      <Tooltip title={text}>{text}</Tooltip>
+    render: (_, record) => (
+      <Tooltip title={`${record.customer.firstName} ${record.customer.lastName}`}>
+        {record.customer.firstName} {record.customer.lastName}
+      </Tooltip>
     ),
   },
   {
     title: 'Amount',
-    dataIndex: 'amount',
     key: 'amount',
     width: 120,
+    render: (_, record) => `${record.currency} ${record.amount.toLocaleString()}`,
   },
   {
     title: 'Date',
-    dataIndex: 'date',
-    key: 'date',
+    dataIndex: 'processedAt',
+    key: 'processedAt',
     width: 140,
+    render: (date: string) => new Date(date).toLocaleDateString(),
   },
   {
-    title: 'Status',
-    dataIndex: 'status',
-    key: 'status',
+    title: 'Method',
+    dataIndex: 'paymentMethod',
+    key: 'paymentMethod',
     width: 100,
+    render: (method: string) => method.replace('_', ' '),
   },
   // Add actions column if needed
 ];

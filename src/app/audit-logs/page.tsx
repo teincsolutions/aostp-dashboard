@@ -80,13 +80,14 @@ export default function AuditLogsPage() {
   const handleTableChange = (
     pagination: TablePaginationConfig,
     filtersTable: Record<string, FilterValue | null>,
-    sorter: SorterResult<AuditLog> | SorterResult<AuditLog>[],
-    extra: unknown
+    _sorter: SorterResult<AuditLog> | SorterResult<AuditLog>[],
+    _extra: unknown
   ) => {
     setPagination({
       page: pagination.current ?? 1,
       limit: pagination.pageSize ?? 20,
     });
+    
     setFilters((prev) => ({
       ...prev,
       entityType: Array.isArray(filtersTable.entityType) ? (filtersTable.entityType[0] as AuditEntityType) : undefined,
@@ -111,7 +112,7 @@ export default function AuditLogsPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       message.success("Export successful");
-    } catch (err) {
+    } catch (_) {
       message.error("Export failed");
     } finally {
       setExporting(false);
