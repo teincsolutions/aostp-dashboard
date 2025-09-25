@@ -53,7 +53,6 @@ pipeline {
                     docker stop aostp-dashboard-test || true
                     docker rm aostp-dashboard-test || true
 
-                    # Assume .env.production and scripts exist; customize as needed
                     if [ -f .env.example ]; then
                         envsubst < .env.example > .env.test
                     fi
@@ -113,6 +112,10 @@ pipeline {
                     passwordVariable: 'GOOGLE_CLIENT_SECRET'),
                  ]) {
                     sh '''
+                    # extract and set up .env.test
+                    if [ -f .env.example ]; then
+                        envsubst < .env.example > .env.test
+                    fi
                     docker compose -f docker-compose.test.yml down || true
                     docker compose -f docker-compose.test.yml up -d
 
@@ -137,6 +140,10 @@ pipeline {
                     passwordVariable: 'GOOGLE_CLIENT_SECRET'),
                  ]) {
                     sh '''
+                     # extract and set up .env.production
+                    if [ -f .env.example ]; then
+                        envsubst < .env.example > .env.production
+                    fi
                     docker compose -f docker-compose.production.yml down || true
                     docker compose -f docker-compose.production.yml up -d
 
