@@ -7,7 +7,7 @@ services:
     env_file:
       - .env.production
     ports:
-      - "3000:3000"
+      - "8080:8080"
     networks:
       - aostp-internal-net
 

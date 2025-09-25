@@ -7,7 +7,7 @@ services:
     env_file:
       - .env.test
     ports:
-      - "3000:3000"
+      - "8081:8080"
     networks:
       - aostp-internal-net
 

@@ -55,16 +55,16 @@ pipeline {
 
                     # Assume .env.production and scripts exist; customize as needed
                     if [ -f .env.example ]; then
-                        cp .env.example .env.test
+                        envsubst < .env.example > .env.test
                     fi
 
                     # Start the container for testing
-                    docker run -d --name aostp-dashboard-test -p 8080:8080 -e NODE_ENV=test "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                    docker run -d --name aostp-dashboard-test --network aostp-internal-net --env-file .env.test "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
 
                     # Wait and health check
                     sleep 10
                     for i in {1..10}; do
-                        if curl -f http://localhost:8080; then
+                        if curl -f http://aostp-dashboard-test:8080; then
                             echo "✅ Health check passed"
                             break
                         fi
