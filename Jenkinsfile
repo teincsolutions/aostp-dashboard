@@ -76,6 +76,7 @@ pipeline {
                                 docker rm aostp-dashboard-test || true
                                 rm -f .env.test
                                 exit 1
+                            fi
                         fi
                         echo "Retry $i/10..."
                         sleep 5
