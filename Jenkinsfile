@@ -37,10 +37,14 @@ pipeline {
             steps {
                 echo '🐳 Building Docker image...'
                 sh """
+                    if [ -f .env.template ]; then
+                        envsubst < .env.template > .env.production
+                    fi
+
                     docker build --network=host --target production \\
                         --tag "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}" \\
                         --tag "${DOCKER_IMAGE_NAME}:latest" \\
-                        --build-arg NODE_ENV=production \\
+                        --env-file .env.production \\
                         .
                     docker images "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
                 """
