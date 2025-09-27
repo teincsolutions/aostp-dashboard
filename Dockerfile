@@ -1,52 +1,32 @@
-# Build stage
-FROM node:18-alpine AS build
-RUN apk add --no-cache libc6-compat
+FROM node:20-alpine AS build
 WORKDIR /app
+
+# Copy package.json and package-lock.json to leverage Docker's caching
 COPY package*.json ./
-RUN npm ci --only=production
-COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install
+
+# Copy the rest of the application files
 COPY . .
+# Build the application
 RUN npm run build
 
-# Install production dependencies
-RUN npm ci --only=production
+#Create a lightweight runtime image
+FROM node:20-alpine AS production
 
-# Production stage
-FROM node:18-alpine AS production
 WORKDIR /app
-
-ENV NODE_ENV=production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Install express for the custom server
-RUN npm install express
-
-# Copy package files for proper Node.js module resolution
-COPY package*.json ./
-
-COPY --from=build /app/public ./public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy the custom server
-COPY --chown=nextjs:nodejs server.js ./
-
-USER nextjs
-
-EXPOSE 8080
+# Set the port for the Next.js server
 
 ENV PORT=8080
-# set hostname to localhost
-ENV HOSTNAME="0.0.0.0"
+# Explicitly set the host to 0.0.0.0 for Docker networking
+ENV HOSTNAME=0.0.0.0
 
+# Next.js standalone mode copies required files into .next/standalone
+COPY --from=build /app/.next/standalone ./
+# Copy public and static assets if needed, as standalone mode doesn't include them
+COPY --from=build /app/public ./public
+COPY --from=build /app/.next/static ./.next/static
+
+# Expose the port the server listens on
+EXPOSE 8080
+# Run the application
 CMD ["node", "server.js"]
