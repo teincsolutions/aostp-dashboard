@@ -37,14 +37,9 @@ pipeline {
             steps {
                 echo '🐳 Building Docker image...'
                 sh """
-                    if [ -f .env.template ]; then
-                        envsubst < .env.template > .env.production
-                    fi
-
                     docker build --network=host --target production \\
                         --tag "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}" \\
                         --tag "${DOCKER_IMAGE_NAME}:latest" \\
-                        --env-file .env.production \\
                         .
                     docker images "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
                 """
@@ -55,41 +50,41 @@ pipeline {
             steps {
                 echo '🧪 Testing Docker image...'
                     sh '''
-                    # Cleanup any existing test containers first
-                    docker stop aostp-dashboard-test || true
-                    docker rm aostp-dashboard-test || true
+                        # Cleanup any existing test containers first
+                        docker stop aostp-dashboard-test || true
+                        docker rm aostp-dashboard-test || true
 
-                    if [ -f .env.template ]; then
-                        envsubst < .env.template > .env.test
-                    fi
-
-                    # Start the container for testing
-                    docker run -d --name aostp-dashboard-test --network aostp-internal-net --env-file .env.test "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
-
-                    # Wait and health check
-                    sleep 10
-                    for i in {1..5}; do
-                        if curl -I http://aostp-dashboard-test:8080; then
-                            echo "✅ Health check passed"
-                        else
-                            echo "❌ Health check failed"
-                            if [ $i -eq 5 ]; then
-                                echo "❌ Health check failed after 10 attempts, exiting..."
-                                docker logs aostp-dashboard-test || true
-                                docker stop aostp-dashboard-test || true
-                                docker rm aostp-dashboard-test || true
-                                rm -f .env.test
-                                exit 1
-                            fi
+                        if [ -f .env.template ]; then
+                            envsubst < .env.template > .env.test
                         fi
-                        echo "Retry $i/10..."
-                        sleep 5
-                    done
-                    # Cleanup
-                    docker stop aostp-dashboard-test || true
-                    docker rm aostp-dashboard-test || true
-                    rm -f .env.test
-                '''
+
+                        # Start the container for testing
+                        docker run -d --name aostp-dashboard-test --network aostp-internal-net --env-file .env.test "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+
+                        # Wait and health check
+                        sleep 10
+                        for i in {1..5}; do
+                            if curl -I http://aostp-dashboard-test:8080; then
+                                echo "✅ Health check passed"
+                            else
+                                echo "❌ Health check failed"
+                                if [ $i -eq 5 ]; then
+                                    echo "❌ Health check failed after 10 attempts, exiting..."
+                                    docker logs aostp-dashboard-test || true
+                                    docker stop aostp-dashboard-test || true
+                                    docker rm aostp-dashboard-test || true
+                                    rm -f .env.test
+                                    exit 1
+                                fi
+                            fi
+                            echo "Retry $i/10..."
+                            sleep 5
+                        done
+                        # Cleanup
+                        docker stop aostp-dashboard-test || true
+                        docker rm aostp-dashboard-test || true
+                        rm -f .env.test
+                    '''
             }
         }
 
@@ -161,6 +156,7 @@ pipeline {
                     sleep 10
                     # Add health check for production
                     curl -I "https://${PRODUCTION_DOMAIN}" || echo "Health check failed but deployment continued"
+                    rm -f .env.production
                 '''
                  }
             }
