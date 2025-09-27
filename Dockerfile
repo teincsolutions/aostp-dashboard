@@ -7,7 +7,7 @@ RUN npm install
 
 # Copy the rest of the application files
 COPY . .
-# Build the application
+# Set the placeholder variable directly during the build command
 RUN npm run build
 
 #Create a lightweight runtime image
@@ -25,8 +25,14 @@ COPY --from=build /app/.next/standalone ./
 # Copy public and static assets if needed, as standalone mode doesn't include them
 COPY --from=build /app/public ./public
 COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/scripts/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Expose the port the server listens on
 EXPOSE 8080
-# Run the application
+
+# Set the entrypoint to your custom script
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Set the command to run the Next.js standalone server
 CMD ["node", "server.js"]

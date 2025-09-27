@@ -28,12 +28,12 @@ export const auditLogService = {
     page: number;
     limit: number;
   }> {
-    const response = await apiService.get("/api/v1/audit-logs", { params });
+    const response = await apiService.get("/audit-logs", { params });
     return response.data;
   },
 
   async exportAuditLogs(params: ExportAuditLogsParams): Promise<Blob> {
-    const response = await apiService.get("/api/v1/audit-logs/export", {
+    const response = await apiService.get("/audit-logs/export", {
       params,
       responseType: "blob",
     });

@@ -7,7 +7,7 @@ import { AppSettings, UpdateSettingsPayload } from "@/types/settings";
  * Fetch app-level settings.
  */
 export const getSettings = async (): Promise<AppSettings> => {
-  const res = await apiService.get<AppSettings>("/api/v1/settings");
+  const res = await apiService.get<AppSettings>("/settings");
   return res.data;
 };
 
@@ -17,6 +17,6 @@ export const getSettings = async (): Promise<AppSettings> => {
 export const updateSettings = async (
   payload: UpdateSettingsPayload
 ): Promise<AppSettings> => {
-  const res = await apiService.patch<AppSettings>("/api/v1/settings", payload);
+  const res = await apiService.patch<AppSettings>("/settings", payload);
   return res.data;
 };

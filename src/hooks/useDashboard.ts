@@ -27,7 +27,7 @@ export function useDashboard(filters: DashboardFilters) {
       ...(dateTo ? { dateTo } : {}),
       ...(status ? { status } : {}),
     };
-  }, [filters.dateFrom, filters.dateTo, filters.status]);
+  }, [filters]);
 
   // KPIs
   const kpisQuery = useQuery<Kpis>({

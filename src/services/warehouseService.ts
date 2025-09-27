@@ -17,7 +17,7 @@ export interface GetWarehousePackagesParams {
 
 export const getWarehousePackages = async (params: GetWarehousePackagesParams) => {
   const response = await apiService.get<{ data: WarehousePackage[]; total: number }>(
-    "/api/v1/packages/warehouse",
+    "/packages/warehouse",
     { params }
   );
   return response.data;
@@ -25,7 +25,7 @@ export const getWarehousePackages = async (params: GetWarehousePackagesParams) =
 
 export const getWarehouseAgingSummary = async (params?: { location?: string }) => {
   const response = await apiService.get<{ data: WarehouseAgingSummary[] }>(
-    "/api/v1/packages/warehouse/aging-summary",
+    "/packages/warehouse/aging-summary",
     { params }
   );
   return response.data;
@@ -36,7 +36,7 @@ export const updatePackageWarehouseLocation = async (
   warehouseLocation: string
 ) => {
   const response = await apiService.patch<WarehousePackage>(
-    `/api/v1/packages/${id}`,
+    `/packages/${id}`,
     { warehouseLocation }
   );
   return response.data;
@@ -47,7 +47,7 @@ export const updatePackageStatus = async (
   status: string
 ) => {
   const response = await apiService.patch<WarehousePackage>(
-    `/api/v1/packages/${id}/status`,
+    `/packages/${id}/status`,
     null,
     { params: { status } }
   );

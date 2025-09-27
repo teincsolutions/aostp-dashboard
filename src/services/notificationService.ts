@@ -14,7 +14,7 @@ export interface NotificationQueryParams {
 }
 
 export const getNotifications = async (params: NotificationQueryParams) => {
-  const res = await apiService.get<{ data: NotificationLog[]; total: number }>("/api/v1/notifications", { params });
+  const res = await apiService.get<{ data: NotificationLog[]; total: number }>("/notifications", { params });
   return res.data;
 };
 
@@ -23,18 +23,18 @@ export const getCustomerNotifications = async (
   params: Omit<NotificationQueryParams, "customerId">
 ) => {
   const res = await apiService.get<{ data: NotificationLog[]; total: number }>(
-    `/api/v1/notifications/customer/${customerId}`,
+    `/notifications/customer/${customerId}`,
     { params }
   );
   return res.data;
 };
 
 export const retryNotification = async (id: string) => {
-  const res = await apiService.post(`/api/v1/notifications/${id}/retry`);
+  const res = await apiService.post(`/notifications/${id}/retry`);
   return res.data;
 };
 
 export const retryFailedNotifications = async () => {
-  const res = await apiService.post("/api/v1/notifications/retry-failed");
+  const res = await apiService.post("/notifications/retry-failed");
   return res.data;
 };

@@ -21,50 +21,50 @@ export interface GetUsersResponse {
 
 const userService = {
   getUsers: async (params: GetUsersParams): Promise<GetUsersResponse> => {
-    const res = await apiService.get("/api/v1/users", { params });
+    const res = await apiService.get("/users", { params });
     return res.data;
   },
 
   getUserById: async (id: string): Promise<User> => {
-    const res = await apiService.get(`/api/v1/users/${id}`);
+    const res = await apiService.get(`/users/${id}`);
     return res.data;
   },
 
   createUser: async (payload: UserCreatePayload): Promise<User> => {
-    const res = await apiService.post("/api/v1/users", payload);
+    const res = await apiService.post("/users", payload);
     return res.data;
   },
 
   updateUser: async (id: string, payload: UserUpdatePayload): Promise<User> => {
-    const res = await apiService.patch(`/api/v1/users/${id}`, payload);
+    const res = await apiService.patch(`/users/${id}`, payload);
     return res.data;
   },
 
   toggleUserStatus: async (id: string, isActive: boolean): Promise<User> => {
     const endpoint = isActive
-      ? `/api/v1/users/${id}/activate`
-      : `/api/v1/users/${id}/deactivate`;
+      ? `/users/${id}/activate`
+      : `/users/${id}/deactivate`;
     const res = await apiService.patch(endpoint);
     return res.data;
   },
 
   resetUserPassword: async (id: string): Promise<{ success: boolean }> => {
-    const res = await apiService.post(`/api/v1/users/${id}/reset-password`);
+    const res = await apiService.post(`/users/${id}/reset-password`);
     return res.data;
   },
 
   setUserRoles: async (id: string, roles: Role[]): Promise<User> => {
-    const res = await apiService.patch(`/api/v1/users/${id}/roles`, { roles });
+    const res = await apiService.patch(`/users/${id}/roles`, { roles });
     return res.data;
   },
 
   enable2FA: async (id: string): Promise<User> => {
-    const res = await apiService.post(`/api/v1/users/${id}/2fa/enable`);
+    const res = await apiService.post(`/users/${id}/2fa/enable`);
     return res.data;
   },
 
   disable2FA: async (id: string): Promise<User> => {
-    const res = await apiService.post(`/api/v1/users/${id}/2fa/disable`);
+    const res = await apiService.post(`/users/${id}/2fa/disable`);
     return res.data;  
   },
 };

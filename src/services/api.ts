@@ -2,15 +2,16 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
 } from "axios";
-import { getAppConfig } from "@/lib/constants";
 import { useAuthStore } from "@/store/authStore";
+// Store the environment variable in a constant at the top level
+const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // Single Axios instance with interceptors
 class ApiService {
   private axiosInstance: AxiosInstance;
 
   constructor(baseUrl?: string) {
-    const config = baseUrl || getAppConfig().apiBaseUrl;
+    const config = baseUrl || NEXT_PUBLIC_API_BASE_URL;
     this.axiosInstance = axios.create({
       baseURL: config,
       headers: {
@@ -28,7 +29,6 @@ class ApiService {
         // Get access token from Zustand store
         const authStore = useAuthStore.getState();
         const accessToken = authStore.tokens?.accessToken;
-        console.log("accessToken", accessToken);
 
         if (accessToken) {
           config.headers.set('Authorization', `Bearer ${accessToken}`);
@@ -47,26 +47,8 @@ class ApiService {
   }
 }
 
-// Lazy singleton instance
-let apiServiceInstance: AxiosInstance | null = null;
-
-export const getApiService = (): AxiosInstance => {
-  if (!apiServiceInstance) {
-    apiServiceInstance = new ApiService().getInstance();
-  } else {
-    // Check if the config has changed (for runtime reconfiguration)
-    const currentApiBaseUrl = apiServiceInstance.defaults.baseURL || '';
-    const newApiBaseUrl = getAppConfig().apiBaseUrl;
-    if (currentApiBaseUrl !== newApiBaseUrl) {
-      // Recreate the instance with new config
-      apiServiceInstance = new ApiService().getInstance();
-    }
-  }
-  return apiServiceInstance;
-};
-
-// For backward compatibility
-export const apiService = getApiService();
+// Singleton instance
+export const apiService = new ApiService().getInstance();
 
 // Export the class for custom instances if needed
 export { ApiService };
