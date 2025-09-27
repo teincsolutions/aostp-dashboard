@@ -10,6 +10,9 @@ sed -i 's/\r//' "$0"
 echo "Replacing __NEXT_PUBLIC_API_BASE_URL__ with $NEXT_PUBLIC_API_BASE_URL..."
 find /app/.next -type f -name '*.js' -exec sed -i "s|__NEXT_PUBLIC_API_BASE_URL__|$NEXT_PUBLIC_API_BASE_URL|g" {} +
 
+echo "Replacing __NEXT_PUBLIC_API_BASE_URL__ with $NEXT_PUBLIC_API_BASE_URL..."
+find /app/.next -type f -name '*.js' -exec sed -i "s|http://localhost:3000/api/v1|$NEXT_PUBLIC_API_BASE_URL|g" {} +
+
 echo "Replacing __NEXT_PUBLIC_GOOGLE_CLIENT_ID__ with $NEXT_PUBLIC_GOOGLE_CLIENT_ID..."
 find /app/.next -type f -name '*.js' -exec sed -i "s|__NEXT_PUBLIC_GOOGLE_CLIENT_ID__|$NEXT_PUBLIC_GOOGLE_CLIENT_ID|g" {} +
 
