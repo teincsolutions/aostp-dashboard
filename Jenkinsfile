@@ -55,8 +55,8 @@ pipeline {
                     docker stop aostp-dashboard-test || true
                     docker rm aostp-dashboard-test || true
 
-                    if [ -f .env.example ]; then
-                        envsubst < .env.example > .env.test
+                    if [ -f ..env.template ]; then
+                        envsubst < ..env.template > .env.test
                     fi
 
                     # Start the container for testing
@@ -120,8 +120,8 @@ pipeline {
                  ]) {
                     sh '''
                     # extract and set up .env.test
-                    if [ -f .env.example ]; then
-                        envsubst < .env.example > .env.test
+                    if [ -f ..env.template ]; then
+                        envsubst < ..env.template > .env.test
                     fi
                     docker compose -f docker-compose.test.yml down || true
                     docker compose -f docker-compose.test.yml up -d
@@ -148,8 +148,8 @@ pipeline {
                  ]) {
                     sh '''
                      # extract and set up .env.production
-                    if [ -f .env.example ]; then
-                        envsubst < .env.example > .env.production
+                    if [ -f ..env.template ]; then
+                        envsubst < ..env.template > .env.production
                     fi
                     docker compose -f docker-compose.production.yml down || true
                     docker compose -f docker-compose.production.yml up -d
