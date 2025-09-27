@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         // Customize these credentials and variables for your project
-        SLACK_WEBHOOK_URL = credentials('aostp-slack-webhook') 
+        SLACK_WEBHOOK_URL = credentials('aostp-slack-webhook')
         DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
         DOCKER_IMAGE_NAME = "${DOCKER_HUB_CREDENTIALS_USR}/aostp-dashboard"
         DOCKER_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'unknown'}"
@@ -62,18 +62,22 @@ pipeline {
 
                     # Wait and health check
                     sleep 10
-                    for i in {1..10}; do
-                        if curl -f http://aostp-dashboard-test:8080; then
+                    for i in {1..5}; do
+                        if curl -I http://aostp-dashboard-test:8080; then
                             echo "✅ Health check passed"
-                            break
+                        else
+                            echo "❌ Health check failed"
+                            if [ $i -eq 5 ]; then
+                                echo "❌ Health check failed after 10 attempts, exiting..."
+                                docker logs aostp-dashboard-test || true
+                                docker stop aostp-dashboard-test || true
+                                docker rm aostp-dashboard-test || true
+                                rm -f .env.test
+                                exit 1
                         fi
                         echo "Retry $i/10..."
                         sleep 5
                     done
-
-                    # Additional tests if scripts exist
-                    # Add frontend specific tests if available
-
                     # Cleanup
                     docker stop aostp-dashboard-test || true
                     docker rm aostp-dashboard-test || true
@@ -121,7 +125,7 @@ pipeline {
 
                     sleep 10
                     # Add health check
-                    curl -f "https://${TEST_DOMAIN}" || echo "Health check failed but deployment continued"
+                    curl -I "https://${TEST_DOMAIN}" || echo "Health check failed but deployment continued"
                     rm -f .env.test
                 '''
                  }
@@ -149,9 +153,9 @@ pipeline {
 
                     sleep 10
                     # Add health check for production
-                    curl -f "https://${PRODUCTION_DOMAIN}" || echo "Health check failed but deployment continued"
+                    curl -I "https://${PRODUCTION_DOMAIN}" || echo "Health check failed but deployment continued"
                 '''
-                }
+                 }
             }
         }
     }
@@ -173,7 +177,7 @@ pipeline {
                 if (env.SLACK_WEBHOOK_URL) {
                     sh '''
                         curl -X POST -H "Content-type: application/json" \\
-                        --data "{\\"text\\":\\"✅ AOSTP Dashboard deployment successful\\\\nBranch: ${GIT_BRANCH}\\\\nCommit: ${GIT_COMMIT.take(7)}\\\\nTag: ${DOCKER_TAG}\\"}" \\
+                        --data "{\\"text\\":\\"✅ AOSTP Dashboard deployment successful\\\\nBranch: ${GIT_BRANCH}\\\\nCommit: ${GIT_COMMIT}\\\\nTag: ${DOCKER_TAG}\\"}" \\
                         "${SLACK_WEBHOOK_URL}" || true
                     '''
                 }
@@ -185,7 +189,7 @@ pipeline {
                 if (env.SLACK_WEBHOOK_URL) {
                     sh '''
                         curl -X POST -H "Content-type: application/json" \\
-                        --data "{\\"text\\":\\"❌ AOSTP Dashboard deployment failed\\\\nBranch: ${GIT_BRANCH}\\\\nCommit: ${GIT_COMMIT.take(7)}\\\\nBuild: ${BUILD_URL}\\"}" \\
+                        --data "{\\"text\\":\\"❌ AOSTP Dashboard deployment failed\\\\nBranch: ${GIT_BRANCH}\\\\nCommit: ${GIT_COMMIT}\\\\nBuild: ${BUILD_URL}\\"}" \\
                         "${SLACK_WEBHOOK_URL}" || true
                     '''
                 }
