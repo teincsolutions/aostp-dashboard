@@ -4,15 +4,23 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createPackage,
   uploadPackagePhoto,
+  uploadPackageFiles,
   getRecentIntakes,
+  getPackage,
+  updatePackage,
   generateReceipt,
 } from "@/services/packageService";
 import {
   PackageIntakePayload,
-  PackageIntake,
-  PackagePhoto,
-  Receipt,
 } from "@/types/package";
+
+export function useGetPackage(id: string) {
+  return useQuery({
+    queryKey: ["package", id],
+    queryFn: () => getPackage(id),
+    enabled: !!id,
+  });
+}
 
 export function usePackageIntake() {
   const queryClient = useQueryClient();
@@ -51,6 +59,37 @@ export function usePackageIntake() {
       uploadPackagePhoto(packageId, file),
   });
 
+  // Upload files mutation
+  const {
+    mutateAsync: uploadFileMutation,
+    status: uploadFileStatus,
+    error: uploadFileError,
+  } = useMutation({
+    mutationFn: ({
+      folder,
+      files,
+      bucketType,
+    }: {
+      folder?: "pictures" | "videos";
+      files: File[];
+      bucketType?: "packages" | "users" | "logs";
+    }) => uploadPackageFiles(files, folder, bucketType),
+  });
+
+  // Update package mutation
+  const {
+    mutateAsync: updatePackageMutation,
+    status: updatePackageStatus,
+    error: updatePackageError,
+  } = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: PackageIntakePayload }) =>
+      updatePackage(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recentIntakes"] });
+      queryClient.invalidateQueries({ queryKey: ["package"] });
+    },
+  });
+
   // Generate receipt mutation
   const {
     mutateAsync: generateReceiptMutation,
@@ -71,9 +110,17 @@ export function usePackageIntake() {
     createPackagePending: createPackageStatus === "pending",
     createPackageError,
 
+    updatePackage: updatePackageMutation,
+    updatePackagePending: updatePackageStatus === "pending",
+    updatePackageError,
+
     uploadPackagePhoto: uploadPhotoMutation,
     uploadPhotoPending: uploadPhotoStatus === "pending",
     uploadPhotoError,
+
+    uploadPackageFile: uploadFileMutation,
+    uploadFilePending: uploadFileStatus === "pending",
+    uploadFileError,
 
     generateReceipt: generateReceiptMutation,
     generateReceiptPending: generateReceiptStatus === "pending",

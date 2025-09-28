@@ -33,10 +33,11 @@ export function getCustomerColumns(actions: CustomerActions): ColumnsType<Custom
     },
     {
       title: 'Name',
-      dataIndex: 'name',
+      dataIndex: 'firstName',
       key: 'name',
       sorter: true,
       width: 180,
+      render: (_: unknown, record: Customer) => `${record.firstName} ${record.lastName}`,
     },
     {
       title: 'Email',

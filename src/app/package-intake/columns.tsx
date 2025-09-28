@@ -15,10 +15,11 @@ export const packageIntakeColumns: ColumnsType<PackageIntake> = [
   },
   {
     title: "Customer",
-    dataIndex: "customerName",
-    key: "customerName",
+    key: "customer",
     width: 180,
     ellipsis: true,
+    render: (_, record) =>
+      record.customer ? `${record.customer.firstName} ${record.customer.lastName}` : "N/A",
   },
   {
     title: "Weight",

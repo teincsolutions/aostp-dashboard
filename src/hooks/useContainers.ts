@@ -85,7 +85,8 @@ export const useContainerStatistics = (id: string) => {
     queryKey: containerKeys.statistics(id),
     queryFn: async () => {
       const response = await containerService.getContainerStatistics(id);
-      return response.data;
+      // API returns { container, statistics, correlationId }, we only need statistics
+      return response.statistics;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes

@@ -25,6 +25,25 @@ export const uploadPackagePhoto = async (
   return res.data;
 };
 
+export const uploadPackageFiles = async (
+  files: File[],
+  folder?: "pictures" | "videos",
+  bucketType?: "packages" | "users" | "logs"
+): Promise<{ key: string; url: string; bucket: string; size: number }[]> => {
+  const formData = new FormData();
+  files.forEach((file, index) => {
+    formData.append("files", file);
+  });
+
+  if (folder) formData.append("folder", folder);
+  if (bucketType) formData.append("bucketType", bucketType);
+
+  const res = await apiService.post("/uploads/packages", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};
+
 export const getRecentIntakes = async (
   params: { page?: number; limit?: number; sortBy?: string; sortOrder?: string }
 ): Promise<{ data: PackageIntake[]; total: number }> => {
@@ -34,7 +53,20 @@ export const getRecentIntakes = async (
       status: "RECEIVED",
     },
   });
-  return { data: res.data.items, total: res.data.total };
+  return { data: res.data.data, total: res.data.meta.total };
+};
+
+export const getPackage = async (id: string): Promise<PackageIntake> => {
+  const res = await apiService.get(`/packages/${id}`);
+  return res.data;
+};
+
+export const updatePackage = async (
+  id: string,
+  payload: PackageIntakePayload
+): Promise<PackageIntake> => {
+  const res = await apiService.patch(`/packages/${id}`, payload);
+  return res.data;
 };
 
 export const generateReceipt = async (

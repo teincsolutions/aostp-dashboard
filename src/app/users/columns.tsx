@@ -1,18 +1,30 @@
 import { ColumnsType } from "antd/es/table";
-import { Tooltip, Button, Popconfirm } from "antd";
+import { Tooltip, Button, Dropdown } from "antd";
+import { MoreOutlined } from "@ant-design/icons";
+import { Modal } from "antd";
+import type { MenuProps } from "antd";
 import { User, Role, UserStatus } from "@/types/user";
 
-export const columns: ColumnsType<User> = [
+interface UserActions {
+  onEdit: (user: User) => void;
+  onToggleStatus: (id: string, isActive: boolean) => void;
+  onResetPassword: (user: User) => void;
+}
+
+export function getUserColumns(actions: UserActions): ColumnsType<User> {
+  return [
   {
     title: "Name",
-    dataIndex: "name",
     key: "name",
     ellipsis: true,
-    render: (text: string) => (
-      <Tooltip title={text} placement="topLeft">
-        {text}
-      </Tooltip>
-    ),
+    render: (_: any, record: User) => {
+      const fullName = `${record.firstName} ${record.lastName}`;
+      return (
+        <Tooltip title={fullName} placement="topLeft">
+          {fullName}
+        </Tooltip>
+      );
+    },
   },
   {
     title: "Email",
@@ -35,17 +47,23 @@ export const columns: ColumnsType<User> = [
   },
   {
     title: "Status",
-    dataIndex: "status",
     key: "status",
-    render: (status: UserStatus) => (
-      <span className={status === UserStatus.ACTIVE ? "text-green-600" : "text-red-600"}>
-        {status}
-      </span>
-    ),
+    render: (_: any, record: User) => {
+      const userStatus = record.isActive ? UserStatus.ACTIVE : UserStatus.INACTIVE;
+      return (
+        <span className={userStatus === UserStatus.ACTIVE ? "text-green-600" : "text-red-600"}>
+          {userStatus}
+        </span>
+      );
+    },
     filters: [
       { text: "Active", value: UserStatus.ACTIVE },
       { text: "Inactive", value: UserStatus.INACTIVE },
     ],
+    onFilter: (value, record) => {
+      const userStatus = record.isActive ? UserStatus.ACTIVE : UserStatus.INACTIVE;
+      return userStatus === value;
+    },
   },
   {
     title: "Created At",
@@ -60,25 +78,37 @@ export const columns: ColumnsType<User> = [
     title: "Actions",
     key: "actions",
     fixed: "right",
-    width: 180,
-    render: (_: any, record: User) => (
-      <div className="flex gap-2">
-        <Button type="link" size="small">
-          Edit
-        </Button>
-        <Popconfirm
-          title={record.status === UserStatus.ACTIVE ? "Deactivate user?" : "Activate user?"}
-          okText="Yes"
-          cancelText="No"
-        >
-          <Button type="link" size="small">
-            {record.status === UserStatus.ACTIVE ? "Deactivate" : "Activate"}
-          </Button>
-        </Popconfirm>
-        <Button type="link" size="small" disabled>
-          Reset Password
-        </Button>
-      </div>
-    ),
+    width: 80,
+    render: (_: any, record: User) => {
+      const menuItems: MenuProps['items'] = [
+        {
+          key: 'edit',
+          label: 'Edit',
+          onClick: () => actions.onEdit(record),
+        },
+        {
+          key: 'toggle',
+          label: record.isActive ? 'Deactivate' : 'Activate',
+          onClick: () => {
+            Modal.confirm({
+              title: record.isActive ? "Deactivate user?" : "Activate user?",
+              onOk: () => actions.onToggleStatus(record.id, !record.isActive),
+            });
+          },
+        },
+        {
+          key: 'reset',
+          label: 'Reset Password',
+          onClick: () => actions.onResetPassword(record),
+        },
+      ];
+
+      return (
+        <Dropdown menu={{ items: menuItems }} trigger={['click']}>
+          <Button type="text" icon={<MoreOutlined />} />
+        </Dropdown>
+      );
+    },
   },
 ];
+}

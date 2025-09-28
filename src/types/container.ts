@@ -65,13 +65,19 @@ export interface ContainerUpdatePayload {
 export interface ContainerStatistics {
   totalPackingLists: number;
   totalPackages: number;
+  totalCBM: number; // Match API casing
   totalWeight: number;
-  totalCbm: number;
-  totalRevenue: number;
-  uniqueCustomers: number;
-  statusBreakdown: {
+  totalRevenue?: number;
+  uniqueCustomers?: number;
+  statusBreakdown?: {
     [key in ContainerStatus]: number;
   };
+}
+
+// API response for container with statistics
+export interface ContainerWithStatistics {
+  container: Container;
+  statistics: ContainerStatistics;
 }
 
 // Container manifest for export
@@ -124,7 +130,9 @@ export interface ContainerResponse extends ApiResponse<Container> {
   correlationId: string;
 }
 
-export interface ContainerStatisticsResponse extends ApiResponse<ContainerStatistics> {
+export interface ContainerStatisticsResponse {
+  container: Container;
+  statistics: ContainerStatistics;
   correlationId: string;
 }
 

@@ -118,7 +118,7 @@ export default function ContainersPage() {
     dateTo: dateRange?.[1]?.format("YYYY-MM-DD"),
   });
 
-  const { data: statistics } = useContainerStatistics(
+  const { data: statistics, isLoading: isLoadingStatistics, error: statisticsError } = useContainerStatistics(
     viewingContainer?.id || ""
   );
 
@@ -743,7 +743,21 @@ export default function ContainersPage() {
             }}
             width={600}
           >
-            {statistics ? (
+            {isLoadingStatistics ? (
+              <div className="text-center text-gray-500">
+                Loading statistics...
+              </div>
+            ) : statisticsError ? (
+              <div className="text-center text-red-500">
+                <p>Error loading statistics</p>
+                <p className="text-sm mt-2">
+                  {statisticsError.message || "Failed to fetch container statistics"}
+                </p>
+                {viewingContainer?.id && (
+                  <p className="text-xs mt-1">Container ID: {viewingContainer.id}</p>
+                )}
+              </div>
+            ) : statistics ? (
               <div className="space-y-6">
                 <Row gutter={16}>
                   <Col span={12}>
@@ -781,7 +795,7 @@ export default function ContainersPage() {
                     <Card>
                       <Statistic
                         title="Total CBM"
-                        value={statistics.totalCbm}
+                        value={statistics.totalCBM}
                         prefix={<BarChartOutlined />}
                       />
                     </Card>
@@ -790,7 +804,7 @@ export default function ContainersPage() {
 
                 <Card title="Status Breakdown">
                   <div className="space-y-3">
-                    {Object.entries(statistics.statusBreakdown).map(
+                    {statistics.statusBreakdown ? Object.entries(statistics.statusBreakdown).map(
                       ([status, count]) => (
                         <div key={status}>
                           <div className="flex justify-between">
@@ -807,6 +821,8 @@ export default function ContainersPage() {
                           />
                         </div>
                       )
+                    ) : (
+                      <div className="text-gray-500 text-center">No status breakdown available</div>
                     )}
                   </div>
                 </Card>
@@ -843,7 +859,7 @@ export default function ContainersPage() {
               </div>
             ) : (
               <div className="text-center text-gray-500">
-                Loading statistics...
+                No statistics available
               </div>
             )}
           </Drawer>

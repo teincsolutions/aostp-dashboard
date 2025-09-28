@@ -55,8 +55,12 @@ export function useToggleUserStatus() {
 
 // Optional hooks for endpoints not implemented
 export function useResetUserPassword() {
+  const queryClient = useQueryClient();
   return useMutation<{ success: boolean }, Error, { id: string }>({
     mutationFn: ({ id }) => userService.resetUserPassword(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
   });
 }
 

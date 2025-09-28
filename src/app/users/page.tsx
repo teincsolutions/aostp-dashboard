@@ -18,9 +18,9 @@ import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { useUsers, useCreateUser } from "@/hooks/useUsers";
-import { columns } from "./columns";
-import { Role, UserStatus, UserCreatePayload } from "@/types/user";
+import { useUsers, useCreateUser, useResetUserPassword } from "@/hooks/useUsers";
+import { getUserColumns } from "./columns";
+import { Role, UserStatus, UserCreatePayload, User } from "@/types/user";
 import type { TablePaginationConfig } from "antd/es/table";
 import type { FilterValue } from "antd/es/table/interface";
 
@@ -46,6 +46,13 @@ const UserSchema = Yup.object().shape({
   role: Yup.string().required("Role is required"),
 });
 
+const UserEditSchema = Yup.object().shape({
+  firstName: Yup.string().required("First name is required"),
+  lastName: Yup.string().required("Last name is required"),
+  email: Yup.string().email("Invalid email").required("Email is required"),
+  role: Yup.string().required("Role is required"),
+});
+
 export default function UsersPage() {
   const [search, setSearch] = useState<string>("");
   const [role, setRole] = useState<Role | undefined>();
@@ -53,6 +60,8 @@ export default function UsersPage() {
   const [page, setPage] = useState<number>(1);
   const [limit, setLimit] = useState<number>(10);
   const [createModal, setCreateModal] = useState<boolean>(false);
+  const [editModal, setEditModal] = useState<boolean>(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const { data, isLoading, refetch } = useUsers({
     page,
@@ -68,6 +77,34 @@ export default function UsersPage() {
   });
 
   const createUser = useCreateUser();
+  const resetPasswordMutation = useResetUserPassword();
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setEditModal(true);
+  };
+
+  const handleToggleUserStatus = async (id: string, isActive: boolean) => {
+    // TODO: implement toggle API
+    console.log('Toggle user status', id, isActive);
+    notification.success({ message: "User status updated" });
+    refetch();
+  };
+
+  const handleResetUserPassword = (user: User) => {
+    Modal.confirm({
+      title: "Reset Password",
+      content: `Are you sure you want to reset the password for ${user.firstName} ${user.lastName}? This will send a password reset email to the user.`,
+      onOk: async () => {
+        try {
+          await resetPasswordMutation.mutateAsync({ id: user.id });
+          notification.success({ message: "Password reset email sent successfully" });
+        } catch (error) {
+          notification.error({ message: "Failed to send password reset email" });
+        }
+      },
+    });
+  };
 
   const handleTableChange = (
     pagination: TablePaginationConfig,
@@ -83,6 +120,12 @@ export default function UsersPage() {
       filters.status.length
     )
       setStatus(filters.status[0] as UserStatus);
+  };
+
+  const actions = {
+    onEdit: handleEditUser,
+    onToggleStatus: handleToggleUserStatus,
+    onResetPassword: handleResetUserPassword,
   };
 
   return (
@@ -145,7 +188,7 @@ export default function UsersPage() {
           </Card>
           <Card>
             <Table
-              columns={columns}
+              columns={getUserColumns(actions)}
               dataSource={data?.data ?? []}
               loading={isLoading}
               rowKey="id"
@@ -249,6 +292,98 @@ export default function UsersPage() {
                     block
                   >
                     Create
+                  </Button>
+                </Form>
+              )}
+            </Formik>
+          </Modal>
+          <Modal
+            title="Edit User"
+            open={editModal}
+            onCancel={() => {
+              setEditModal(false);
+              setEditingUser(null);
+            }}
+            footer={null}
+            destroyOnHidden
+          >
+            <Formik
+              initialValues={{
+                firstName: editingUser?.firstName || "",
+                lastName: editingUser?.lastName || "",
+                email: editingUser?.email || "",
+                role: editingUser?.role || Role.CUSTOMER,
+              }}
+              validationSchema={UserEditSchema}
+              onSubmit={async (
+                values,
+                { setSubmitting }
+              ) => {
+                try {
+                  // TODO: implement update API
+                  console.log('Update user', editingUser?.id, values);
+                  notification.success({ message: "User updated" });
+                  setEditModal(false);
+                  setEditingUser(null);
+                  refetch();
+                } catch (err: unknown) {
+                  notification.error({
+                    message: (err as Error)?.message || "Update failed",
+                  });
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              {({ errors, touched, isSubmitting, handleChange, values }) => (
+                <Form>
+                  <div className="mb-4">
+                    <label>First Name</label>
+                    <Field name="firstName" as={Input} />
+                    {errors.firstName && touched.firstName && (
+                      <div className="text-red-500 text-xs">{errors.firstName}</div>
+                    )}
+                  </div>
+                  <div className="mb-4">
+                    <label>Last Name</label>
+                    <Field name="lastName" as={Input} />
+                    {errors.lastName && touched.lastName && (
+                      <div className="text-red-500 text-xs">{errors.lastName}</div>
+                    )}
+                  </div>
+                  <div className="mb-4">
+                    <label>Email</label>
+                    <Field name="email" as={Input} />
+                    {errors.email && touched.email && (
+                      <div className="text-red-500 text-xs">{errors.email}</div>
+                    )}
+                  </div>
+                  <div className="mb-4">
+                    <label>Role</label>
+                    <Select
+                      value={values.role}
+                      onChange={(v) =>
+                        handleChange({ target: { name: "role", value: v } })
+                      }
+                      style={{ width: "100%" }}
+                    >
+                      {roleOptions.map((opt) => (
+                        <Select.Option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                    {errors.role && touched.role && (
+                      <div className="text-red-500 text-xs">{errors.role}</div>
+                    )}
+                  </div>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isSubmitting}
+                    block
+                  >
+                    Update
                   </Button>
                 </Form>
               )}

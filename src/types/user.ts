@@ -17,12 +17,17 @@ export enum UserStatus {
 
 export interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  name?: string; // computed
   email: string;
+  username: string;
   role: UserRole;
-  status: UserStatus;
+  isActive: boolean;
+  twoFactorEnabled: boolean;
   createdAt: string;
-  twoFactorEnabled?: boolean;
+  updatedAt: string;
+  lastLogin: string | null;
   avatarUrl?: string; // Profile picture URL
 }
 
