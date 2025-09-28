@@ -44,7 +44,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Package Intake",
     roles: ["SUPER_ADMIN", "PAYMENT_CLERK"],
   },
-  /*
+  
   // Group: Packages, Packing Lists, Warehouse, Containers
   {
     key: "/packages",
@@ -52,7 +52,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Packages",
     roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
   },
-  {
+  /*{
     key: "/packing-lists",
     icon: <FileTextOutlined />,
     label: "Packing Lists",
