@@ -41,7 +41,9 @@ export default function PackagesPage() {
 
   // Modal states
   const [viewModalVisible, setViewModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [packageToDelete, setPackageToDelete] = useState<Package | null>(null);
 
   const params = {
     page,
@@ -92,23 +94,22 @@ export default function PackagesPage() {
   };
 
   const handleDelete = (record: Package) => {
-    Modal.confirm({
-      title: "Confirm Delete",
-      icon: <ExclamationCircleOutlined />,
-      content: `Are you sure you want to delete package "${record.trackingNumber}"? This action cannot be undone.`,
-      okText: "Delete",
-      okType: "danger",
-      cancelText: "Cancel",
-      onOk: async () => {
-        try {
-          await deletePackageMutation(record.id);
-          message.success("Package deleted successfully");
-        } catch (error) {
-          console.error("Delete failed:", error);
-          message.error("Failed to delete package");
-        }
-      },
-    });
+    setPackageToDelete(record);
+    setDeleteModalVisible(true);
+  };
+
+  const onConfirmDelete = async () => {
+    if (!packageToDelete) return;
+
+    try {
+      await deletePackageMutation(packageToDelete.id);
+      message.success("Package deleted successfully");
+      setDeleteModalVisible(false);
+      setPackageToDelete(null);
+    } catch (error) {
+      console.error("Delete failed:", error);
+      message.error("Failed to delete package");
+    }
   };
 
   const handleExportExcel = (record: Package) => {
@@ -302,6 +303,30 @@ export default function PackagesPage() {
                 </Descriptions.Item>
               </Descriptions>
             )}
+          </Modal>
+
+          {/* Delete Confirmation Modal */}
+          <Modal
+            title={
+              <span>
+                <ExclamationCircleOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
+                Confirm Delete
+              </span>
+            }
+            open={deleteModalVisible}
+            onOk={onConfirmDelete}
+            onCancel={() => {
+              setDeleteModalVisible(false);
+              setPackageToDelete(null);
+            }}
+            okText="Delete"
+            okType="danger"
+            confirmLoading={false}
+          >
+            <p>
+              Are you sure you want to delete package &ldquo;{packageToDelete?.trackingNumber}&rdquo;?
+              This action cannot be undone.
+            </p>
           </Modal>
         </div>
       </AppLayout>
