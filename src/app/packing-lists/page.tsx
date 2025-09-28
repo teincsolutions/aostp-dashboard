@@ -36,6 +36,7 @@ import {
   usePackingListSummary,
   usePackingList,
 } from "@/hooks/usePackingLists";
+import { useActiveContainers } from "@/hooks/useContainers";
 import {
   PackingListCreatePayload,
   PackingListUpdatePayload,
@@ -85,6 +86,8 @@ export default function PackingListsPage() {
     dateTo:
       dateRange && dateRange[1] ? dateRange[1].format("YYYY-MM-DD") : undefined,
   });
+
+  const { data: activeContainers = [] } = useActiveContainers();
 
   const {
     createPackingList,
@@ -430,8 +433,30 @@ export default function PackingListsPage() {
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="containerId" label="Container ID">
-                    <Input />
+                  <Form.Item
+                    name="containerId"
+                    label="Container"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select a container",
+                      },
+                    ]}
+                  >
+                    <Select
+                      showSearch
+                      placeholder="Search and select container"
+                      filterOption={(input, option) =>
+                        (option?.children?.toString() ?? "").toLowerCase().includes(input.toLowerCase())
+                      }
+                      loading={!activeContainers}
+                    >
+                      {activeContainers?.map((container) => (
+                        <Option key={container.id} value={container.id}>
+                          {container.containerNumber} - {container.destinationCity} ({container.status})
+                        </Option>
+                      ))}
+                    </Select>
                   </Form.Item>
                 </Col>
               </Row>
@@ -449,13 +474,7 @@ export default function PackingListsPage() {
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item
-                    name="loadingCity"
-                    label="Loading City"
-                    rules={[
-                      { required: true, message: "Please enter loading city" },
-                    ]}
-                  >
+                  <Form.Item name="loadingCity" label="Loading City">
                     <Input />
                   </Form.Item>
                 </Col>
@@ -516,8 +535,21 @@ export default function PackingListsPage() {
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="containerId" label="Container ID">
-                    <Input />
+                  <Form.Item name="containerId" label="Container">
+                    <Select
+                      showSearch
+                      placeholder="Search and select container"
+                      filterOption={(input, option) =>
+                        (option?.children?.toString() ?? "").toLowerCase().includes(input.toLowerCase())
+                      }
+                      loading={!activeContainers}
+                    >
+                      {activeContainers?.map((container) => (
+                        <Option key={container.id} value={container.id}>
+                          {container.containerNumber} - {container.destinationCity} ({container.status})
+                        </Option>
+                      ))}
+                    </Select>
                   </Form.Item>
                 </Col>
               </Row>
