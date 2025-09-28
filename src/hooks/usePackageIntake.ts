@@ -8,6 +8,7 @@ import {
   getRecentIntakes,
   getPackage,
   updatePackage,
+  deletePackage,
   generateReceipt,
 } from "@/services/packageService";
 import {
@@ -90,6 +91,18 @@ export function usePackageIntake() {
     },
   });
 
+  // Delete package mutation
+  const {
+    mutateAsync: deletePackageMutation,
+    status: deletePackageStatus,
+    error: deletePackageError,
+  } = useMutation({
+    mutationFn: (id: string) => deletePackage(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recentIntakes"] });
+    },
+  });
+
   // Generate receipt mutation
   const {
     mutateAsync: generateReceiptMutation,
@@ -113,6 +126,10 @@ export function usePackageIntake() {
     updatePackage: updatePackageMutation,
     updatePackagePending: updatePackageStatus === "pending",
     updatePackageError,
+
+    deletePackage: deletePackageMutation,
+    deletePackagePending: deletePackageStatus === "pending",
+    deletePackageError,
 
     uploadPackagePhoto: uploadPhotoMutation,
     uploadPhotoPending: uploadPhotoStatus === "pending",

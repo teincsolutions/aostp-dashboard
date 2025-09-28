@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Input, Select, Spin, Empty, Modal, Descriptions, Tooltip, Button } from "antd";
+import { Table, Input, Select, Spin, Empty, Modal, Descriptions, Tooltip, Button, message } from "antd";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 import {
   EyeOutlined,
   EditOutlined,
@@ -54,6 +55,7 @@ export default function PackagesPage() {
     recentIntakes,
     recentIntakesTotal,
     recentIntakesLoading,
+    deletePackage: deletePackageMutation,
   } = usePackageIntake();
 
   // Map PackageIntake[] to Package[]
@@ -90,8 +92,23 @@ export default function PackagesPage() {
   };
 
   const handleDelete = (record: Package) => {
-    // Placeholder for delete functionality
-    console.log("Delete package:", record.id);
+    Modal.confirm({
+      title: "Confirm Delete",
+      icon: <ExclamationCircleOutlined />,
+      content: `Are you sure you want to delete package "${record.trackingNumber}"? This action cannot be undone.`,
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await deletePackageMutation(record.id);
+          message.success("Package deleted successfully");
+        } catch (error) {
+          console.error("Delete failed:", error);
+          message.error("Failed to delete package");
+        }
+      },
+    });
   };
 
   const handleExportExcel = (record: Package) => {

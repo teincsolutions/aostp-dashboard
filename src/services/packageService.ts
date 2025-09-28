@@ -69,6 +69,10 @@ export const updatePackage = async (
   return res.data;
 };
 
+export const deletePackage = async (id: string): Promise<void> => {
+  await apiService.delete(`/packages/${id}`);
+};
+
 export const generateReceipt = async (
   packageId: string
 ): Promise<Receipt> => {
