@@ -2,9 +2,9 @@
 services:
   aostp-dashboard:
     build: .
-    container_name: aostp-dashboard-prod
+    container_name: aostp-dashboard
     restart: always
     env_file:
-      - .env.production
+      - .env
     ports:
       - "8080:8080"

@@ -7,6 +7,8 @@ import {
   BoxPlotOutlined,
   SettingOutlined,
   UsergroupAddOutlined,
+  FileTextOutlined,
+  ContainerOutlined,
 } from "@ant-design/icons";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
@@ -52,7 +54,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Packages",
     roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
   },
-  /*{
+  {
     key: "/packing-lists",
     icon: <FileTextOutlined />,
     label: "Packing Lists",
@@ -70,7 +72,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Containers",
     roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
   },
-  **/
+  
   // Group: Customers, Users
   {
     key: "/customers",
@@ -84,7 +86,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Users",
     roles: ["SUPER_ADMIN"],
   },
-  /** 
+  
   // Group: Payments, Exchange Rate
   {
     key: "/payments",
@@ -111,7 +113,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Audit Logs",
     roles: ["SUPER_ADMIN"],
   },
-  */
+  
   {
     key: "/settings",
     icon: <SettingOutlined />,

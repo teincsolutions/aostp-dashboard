@@ -114,10 +114,6 @@ export default function ContainersPage() {
   const { data: containers, isLoading } = useContainers({
     page: currentPage,
     limit: pageSize,
-    search: searchText,
-    status: statusFilter as ContainerStatus,
-    departureCity: departureCityFilter,
-    destinationCity: destinationCityFilter,
     dateFrom: dateRange?.[0]?.format("YYYY-MM-DD"),
     dateTo: dateRange?.[1]?.format("YYYY-MM-DD"),
   });
