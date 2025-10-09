@@ -45,7 +45,7 @@ const validateMessages = {
   },
 };
 
-const initialValues: Omit<PackageIntakePayload, 'trackingCode'> = {
+const initialValues = {
   customerId: "",
   description: "",
   weight: 0,
@@ -223,6 +223,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
       );
 
       const formValues = {
+        trackingCode: packageData.trackingCode,
         customerId: packageData.customerId,
         description: packageData.description,
         weight: packageData.weight,
@@ -248,7 +249,8 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
       }));
 
       // Create payload
-      const payload: Omit<PackageIntakePayload, 'trackingCode'> = {
+      const payload: PackageIntakePayload = {
+        trackingCode: values.trackingCode,
         customerId: values.customerId,
         description: values.description,
         weight: values.weight,
@@ -361,6 +363,18 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
               {/* Package Details Card */}
               <Card className="shadow-sm rounded-2xl">
                 <div className="space-y-4">
+                  <Form.Item
+                    label="Tracking Code"
+                    name="trackingCode"
+                    rules={[
+                      { required: true, message: "Tracking code is required" },
+                      { min: 3, message: "Tracking code must be at least 3 characters" },
+                      { pattern: /^[A-Za-z0-9-]+$/, message: "Only letters, numbers, and hyphens allowed" }
+                    ]}
+                  >
+                    <Input className="w-full" placeholder="Enter tracking code" />
+                  </Form.Item>
+
                   <Form.Item
                     label="Customer"
                     name="customerId"

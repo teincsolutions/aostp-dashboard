@@ -75,7 +75,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       }}
       validationSchema={schema}
       enableReinitialize={false}
-      onSubmit={async (values, { setErrors }) => {
+      onSubmit={async (values, { setErrors, resetForm }) => {
         try {
           // remove empty strings for optional fields
           Object.keys(values).forEach((key) => {
@@ -84,6 +84,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             }
           });
           await onSubmit(values);
+          resetForm();
         } catch (error: any) {
           const fieldErrors = getServerValidationErrors(error);
           if (fieldErrors) {

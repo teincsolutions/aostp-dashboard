@@ -10,8 +10,10 @@ import {
   PackageItem,
 } from "@/types/package";
 
-export const createPackage = async (payload: PackageIntakePayload): Promise<PackageIntake> => {
-  const res = await apiService.post("/packages", payload);
+export const createPackage = async (
+  payload: PackageIntakePayload
+): Promise<Package> => {
+  const res = await apiService.post<Package>("/packages", payload);
   return res.data;
 };
 
@@ -46,9 +48,12 @@ export const uploadPackageFiles = async (
   return res.data;
 };
 
-export const getRecentIntakes = async (
-  params: { page?: number; limit?: number; sortBy?: string; sortOrder?: string }
-): Promise<{ data: PackageIntake[]; total: number }> => {
+export const getRecentIntakes = async (params: {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+}): Promise<{ data: PackageIntake[]; total: number }> => {
   const res = await apiService.get("/packages", {
     params: {
       ...params,
@@ -75,9 +80,7 @@ export const deletePackage = async (id: string): Promise<void> => {
   await apiService.delete(`/packages/${id}`);
 };
 
-export const generateReceipt = async (
-  packageId: string
-): Promise<Receipt> => {
+export const generateReceipt = async (packageId: string): Promise<Receipt> => {
   const res = await apiService.post(`/packages/${packageId}/receipt`);
   return res.data;
 };
@@ -98,7 +101,9 @@ export const getPackages = async (params?: {
   return res.data;
 };
 
-export const getPackageDetails = async (packageId: string): Promise<Package> => {
+export const getPackageDetails = async (
+  packageId: string
+): Promise<Package> => {
   const res = await apiService.get(`/packages/${packageId}`);
   return res.data;
 };
@@ -126,7 +131,9 @@ export const consolidatePackages = async (payload: {
   return res.data;
 };
 
-export const generateTrackingCode = async (): Promise<{ tracking_code: string }> => {
+export const generateTrackingCode = async (): Promise<{
+  tracking_code: string;
+}> => {
   const res = await apiService.post("/packages/generate-tracking");
   return res.data;
 };
@@ -164,7 +171,7 @@ export const updatePackageStatus = async (
   status: string
 ): Promise<PackageIntake> => {
   const res = await apiService.patch(`/packages/${id}/status`, null, {
-    params: { status }
+    params: { status },
   });
   return res.data;
 };

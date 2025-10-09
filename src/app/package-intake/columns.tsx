@@ -2,23 +2,22 @@
 
 import { ColumnsType } from "antd/es/table";
 import { PackageIntake, Receipt } from "@/types/package";
-import { Button } from "antd";
+import { Button, Tag } from "antd";
 import dayjs from "dayjs";
 
 export const packageIntakeColumns: ColumnsType<PackageIntake> = [
   {
-    title: "Warehouse",
-    dataIndex: "warehouseLocation",
-    key: "warehouseLocation",
-    width: 120,
-    render: (value: string) => value || "Not Assigned",
+    title: "Tracking Code",
+    dataIndex: "trackingCode",
+    key: "trackingCode",
+    width: 160,
   },
   {
-    title: "Photos",
-    key: "photos",
-    width: 90,
-    render: (_: any, record: PackageIntake) =>
-      record.photos?.length ? `${record.photos.length} photo${record.photos.length > 1 ? 's' : ''}` : "No photos",
+    title: "Warehouse",
+    key: "warehouse",
+    width: 120,
+    render: (_, record) =>
+      record.warehouse?.name ? `${record.warehouse.warehouseId} - ${record.warehouse.name}` : "Not Assigned",
   },
   {
     title: "Customer",
@@ -26,45 +25,61 @@ export const packageIntakeColumns: ColumnsType<PackageIntake> = [
     width: 180,
     ellipsis: true,
     render: (_, record) =>
-      record.customer ? `${record.customer.firstName} ${record.customer.lastName}` : "N/A",
+      record.customer ? `${record.customer.customerCode} - ${record.customer.firstName} ${record.customer.lastName}` : "N/A",
   },
   {
-    title: "Weight",
-    dataIndex: "weight",
-    key: "weight",
-    width: 90,
-    render: (value: number) => `${value} kg`,
+    title: "Description",
+    dataIndex: "description",
+    key: "description",
+    ellipsis: true,
+    width: 200,
   },
   {
-    title: "CBM",
-    dataIndex: "cbm",
-    key: "cbm",
-    width: 90,
-    render: (value: number) => value?.toFixed(2),
+    title: "Quantity",
+    dataIndex: "quantity",
+    key: "quantity",
+    width: 100,
   },
   {
     title: "Shipping Mode",
-    dataIndex: "shippingMode",
     key: "shippingMode",
-    width: 120,
-    render: (_: any, record) =>
-      record.shippingMode === "AIR"
-        ? `AIR (${record.airShippingType})`
-        : "SEA",
+    width: 140,
+    render: (_, record) => {
+      if (record.shippingMode === "AIR") {
+        const typeColor = record.airShippingType === "EXPRESS_AIR" ? "red" : "blue";
+        const typeText = record.airShippingType?.replace('_', ' ') || "AIR";
+        return <Tag color={typeColor}>{typeText}</Tag>;
+      }
+      return <Tag color="green">SEA</Tag>;
+    },
   },
   {
     title: "Status",
     dataIndex: "status",
     key: "status",
     width: 110,
-    render: (value: string) => value,
+    render: (value: string) => <Tag>{value}</Tag>,
   },
   {
-    title: "Created At",
-    dataIndex: "createdAt",
-    key: "createdAt",
+    title: "Payment Status",
+    dataIndex: "paymentStatus",
+    key: "paymentStatus",
+    width: 130,
+    render: (value: string) => {
+      const colorMap: { [key: string]: string } = {
+        PENDING: "orange",
+        PAID: "green",
+        OVERDUE: "red",
+      };
+      return <Tag color={colorMap[value] || "default"}>{value}</Tag>;
+    },
+  },
+  {
+    title: "Received Date",
+    dataIndex: ["receivedDate"],
+    key: "receivedDate",
     width: 160,
-    render: (value: string) => dayjs(value).format("YYYY-MM-DD HH:mm"),
+    render: (value: string) => value ? dayjs(value).format("YYYY-MM-DD HH:mm") : "N/A",
   },
   {
     title: "Actions",

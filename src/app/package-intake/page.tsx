@@ -11,11 +11,16 @@ import {
   Table,
   Typography,
   Card,
-  message,
   Modal,
   Image,
+  Input as AntInput,
+  Space,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import {
+  UploadOutlined,
+  UserAddOutlined,
+  QrcodeOutlined,
+} from "@ant-design/icons";
 import { CustomerModal } from "@/components/CustomerModal";
 import { Form as AntdForm } from "antd";
 import { packageIntakeColumns } from "@/app/package-intake/columns";
@@ -32,6 +37,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
 import { CustomerCreatePayload, CustomerUpdatePayload } from "@/types/customer";
 import { UploadProps } from "antd/lib";
+import { toast } from "sonner";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -50,6 +56,7 @@ const validateMessages = {
 };
 
 const initialValues = {
+  trackingCode: "",
   customerId: "",
   description: "",
   quantity: 1,
@@ -83,11 +90,14 @@ export default function PackageIntakePage() {
   const { data: customers, isLoading: customersLoading } = useCustomers({});
 
   // Determine if user is admin and get current warehouse details
-  const isAdmin = user?.role === 'SUPER_ADMIN';
-  const currentWarehouse = warehouses?.data?.find(w => w.id === selectedWarehouseId);
+  const isAdmin = user?.role === "SUPER_ADMIN";
+  const currentWarehouse = warehouses?.data?.find(
+    (w) => w.id === selectedWarehouseId
+  );
 
   // Customer invoices - fetch when customer is selected
-  const { data: customerInvoices, isLoading: invoicesLoading } = useCustomerInvoices(selectedCustomerId, 5);
+  const { data: customerInvoices, isLoading: invoicesLoading } =
+    useCustomerInvoices(selectedCustomerId, 5);
 
   // Update form field when warehouse selection changes from header
   useEffect(() => {
@@ -101,13 +111,17 @@ export default function PackageIntakePage() {
     setCustomerModalVisible(true);
   };
 
+  // Handler for QR/Barcode scan simulation
+  const handleScanTrackingCode = () => {
+    // TODO: 
+    toast.info("Tracking code scanned successfully");
+  };
+
   // Mutation hook for creating customer
   const { mutateAsync: createCustomerMutation } = useCreateCustomer();
 
   // Handler for customer creation (backend)
-  const handleCreateCustomer = async (
-    values: any
-  ) => {
+  const handleCreateCustomer = async (values: any) => {
     setCustomerModalLoading(true);
     try {
       // Only handle create payloads (has firstName and lastName as required)
@@ -122,10 +136,10 @@ export default function PackageIntakePage() {
         );
         if (created?.id) {
           form.setFieldsValue({ customerId: created.id });
-          message.success("Customer added");
+          toast.success("Customer added");
         }
       } else {
-        message.error("Invalid customer payload");
+        toast.error("Invalid customer payload");
       }
       setCustomerModalVisible(false);
     } catch (err) {
@@ -143,12 +157,12 @@ export default function PackageIntakePage() {
           ? (err as ErrorResponse).response
           : undefined;
       if (response?.data?.errors && Array.isArray(response.data.errors)) {
-        response.data.errors.forEach((e: string) => message.error(e));
+        response.data.errors.forEach((e: string) => toast.error(e));
         // Keep modal open for correction
       } else if (response?.data?.message) {
-        message.error(response.data.message);
+        toast.error(response.data.message);
       } else {
-        message.error("Failed to add customer");
+        toast.error("Failed to add customer");
       }
     } finally {
       setCustomerModalLoading(false);
@@ -169,11 +183,11 @@ export default function PackageIntakePage() {
   // Upload validation and mapping
   const beforeUpload = (file: import("antd").UploadFile) => {
     if (!["image/jpeg", "image/png"].includes(file.type || "")) {
-      message.error("Only JPG/PNG files allowed");
+      toast.error("Only JPG/PNG files allowed");
       return Upload.LIST_IGNORE;
     }
     if ((file.size || 0) > 5 * 1024 * 1024) {
-      message.error("Max file size is 5MB");
+      toast.error("Max file size is 5MB");
       return Upload.LIST_IGNORE;
     }
     return true;
@@ -189,9 +203,7 @@ export default function PackageIntakePage() {
   };
 
   const handlePhotoUpload = async (
-    options: Parameters<
-      NonNullable<UploadProps["customRequest"]>
-    >[0]
+    options: Parameters<NonNullable<UploadProps["customRequest"]>>[0]
   ) => {
     try {
       if (typeof options.file === "string") {
@@ -217,7 +229,7 @@ export default function PackageIntakePage() {
       ]);
       if (options.onSuccess) options.onSuccess("ok");
     } catch (err) {
-      message.error("Photo upload failed on selection");
+      toast.error("Photo upload failed on selection");
       if (options.onError) options.onError(new Error("Photo upload failed"));
     }
   };
@@ -230,8 +242,9 @@ export default function PackageIntakePage() {
         key: photo.customKey!,
       }));
 
-      // Create payload (trackingCode is generated by backend, weight/cbm done later in package management)
-      const payload: Omit<PackageIntakePayload, 'trackingCode'> = {
+      // Create payload with all required fields
+      const payload: PackageIntakePayload = {
+        trackingCode: values.trackingCode.trim() || "",
         customerId: values.customerId,
         description: values.description,
         quantity: values.quantity,
@@ -246,9 +259,9 @@ export default function PackageIntakePage() {
         payload.airShippingType = values.airShippingType;
       }
 
-      await createPackage(payload);
-
-      message.success("Package created with photos");
+      const pkg = await createPackage(payload);
+      toast.success("Package created successfully.");
+      
       setPhotoList([]);
       form.resetFields();
       refetchRecentIntakes();
@@ -267,17 +280,17 @@ export default function PackageIntakePage() {
           ? (err as ErrorResponse).response
           : undefined;
       if (response?.data?.errors && Array.isArray(response.data.errors)) {
-        response.data.errors.forEach((e: string) => message.error(e));
+        response.data.errors.forEach((e: string) => toast.error(e));
       } else if (response?.data?.message) {
-        message.error(response.data.message);
+        toast.error(response.data.message);
       } else {
-        message.error("Intake failed");
+        toast.error("Intake failed");
       }
     }
   };
 
   const onFinishFailed = () => {
-    message.error("Please fix validation errors");
+    toast.error("Please fix validation errors");
   };
 
   return (
@@ -285,10 +298,17 @@ export default function PackageIntakePage() {
       <AppLayout>
         <div className="px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
           {/* Top Heading */}
-          <div className="mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <Title level={3} className="!mb-0">
               Package Intake
             </Title>
+            <Button
+              type="primary"
+              icon={<UserAddOutlined />}
+              onClick={handleAddCustomerClick}
+            >
+              Add Customer
+            </Button>
           </div>
           {/* Main Form Grid */}
           <Form
@@ -346,34 +366,55 @@ export default function PackageIntakePage() {
                   {/* Recent Invoices Display */}
                   {selectedCustomerId && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-                      <Title level={5} className="!mb-3">Recent Invoices</Title>
+                      <Title level={5} className="!mb-3">
+                        Recent Invoices
+                      </Title>
                       {invoicesLoading ? (
-                        <div className="text-center py-4">Loading invoices...</div>
+                        <div className="text-center py-4">
+                          Loading invoices...
+                        </div>
                       ) : customerInvoices && customerInvoices.length > 0 ? (
                         <div className="space-y-2">
-                          {customerInvoices.slice(0, 5).map((invoice, index) => (
-                            <div key={invoice.id} className="flex justify-between items-center p-2 bg-white rounded border">
-                              <div>
-                                <div className="font-medium">{invoice.invoiceNumber}</div>
-                                <div className="text-sm text-gray-600">
-                                  {new Date(invoice.createdAt).toLocaleDateString()}
+                          {customerInvoices
+                            .slice(0, 5)
+                            .map((invoice, index) => (
+                              <div
+                                key={invoice.id}
+                                className="flex justify-between items-center p-2 bg-white rounded border"
+                              >
+                                <div>
+                                  <div className="font-medium">
+                                    {invoice.invoiceNumber}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {new Date(
+                                      invoice.createdAt
+                                    ).toLocaleDateString()}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-medium">
+                                    ${invoice.totalAmount.toFixed(2)}
+                                  </div>
+                                  <div
+                                    className={`text-sm px-2 py-1 rounded ${
+                                      invoice.status === "PAID"
+                                        ? "bg-green-100 text-green-800"
+                                        : invoice.status === "OVERDUE"
+                                        ? "bg-red-100 text-red-800"
+                                        : "bg-yellow-100 text-yellow-800"
+                                    }`}
+                                  >
+                                    {invoice.status}
+                                  </div>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <div className="font-medium">${invoice.totalAmount.toFixed(2)}</div>
-                                <div className={`text-sm px-2 py-1 rounded ${
-                                  invoice.status === 'PAID' ? 'bg-green-100 text-green-800' :
-                                  invoice.status === 'OVERDUE' ? 'bg-red-100 text-red-800' :
-                                  'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                  {invoice.status}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                            ))}
                         </div>
                       ) : (
-                        <div className="text-center py-4 text-gray-500">No recent invoices found</div>
+                        <div className="text-center py-4 text-gray-500">
+                          No recent invoices found
+                        </div>
                       )}
                     </div>
                   )}
@@ -381,7 +422,10 @@ export default function PackageIntakePage() {
                   <Form.Item
                     label="Description"
                     name="description"
-                    rules={[{ required: true, message: "Description is required" }, { max: 200 }]}
+                    rules={[
+                      { required: true, message: "Description is required" },
+                      { max: 200 },
+                    ]}
                   >
                     <Input.TextArea
                       maxLength={200}
@@ -392,11 +436,46 @@ export default function PackageIntakePage() {
                   </Form.Item>
 
                   <Form.Item
+                    label="Tracking Code"
+                    name="trackingCode"
+                    rules={[
+                      { required: true, message: "Tracking code is required" },
+                      {
+                        min: 3,
+                        message: "Tracking code must be at least 3 characters",
+                      },
+                      {
+                        pattern: /^[A-Za-z0-9-]+$/,
+                        message: "Only letters, numbers, and hyphens allowed",
+                      },
+                    ]}
+                  >
+                    <Space.Compact className="w-full">
+                      <Input
+                        placeholder="Scan or enter tracking code"
+                        style={{ width: "calc(100% - 100px)" }}
+                      />
+                      <Button
+                        type="primary"
+                        icon={<QrcodeOutlined />}
+                        onClick={handleScanTrackingCode}
+                        style={{ width: "100px" }}
+                      >
+                        Scan
+                      </Button>
+                    </Space.Compact>
+                  </Form.Item>
+
+                  <Form.Item
                     label="Quantity"
                     name="quantity"
                     rules={[{ required: true, type: "number", min: 1 }]}
                   >
-                    <InputNumber min={1} className="w-full" placeholder="Number of items" />
+                    <InputNumber
+                      min={1}
+                      className="w-full"
+                      placeholder="Number of items"
+                    />
                   </Form.Item>
 
                   <Form.Item
@@ -419,7 +498,9 @@ export default function PackageIntakePage() {
                   </Form.Item>
 
                   <Form.Item
-                    shouldUpdate={(prevValues, currentValues) => prevValues.shippingMode !== currentValues.shippingMode}
+                    shouldUpdate={(prevValues, currentValues) =>
+                      prevValues.shippingMode !== currentValues.shippingMode
+                    }
                   >
                     {({ getFieldValue }) => {
                       const shippingMode = getFieldValue("shippingMode");
@@ -430,11 +511,15 @@ export default function PackageIntakePage() {
                           rules={[
                             {
                               required: true,
-                              message: "Air shipping type is required for AIR shipping"
-                            }
+                              message:
+                                "Air shipping type is required for AIR shipping",
+                            },
                           ]}
                         >
-                          <Select className="w-full" placeholder="Select air shipping type">
+                          <Select
+                            className="w-full"
+                            placeholder="Select air shipping type"
+                          >
                             <Option value="NORMAL_AIR">NORMAL AIR</Option>
                             <Option value="EXPRESS_AIR">EXPRESS AIR</Option>
                             <Option value="BATTERY_GOODS">BATTERY GOODS</Option>
@@ -452,7 +537,9 @@ export default function PackageIntakePage() {
                   <Form.Item
                     label="Warehouse"
                     name="warehouseId"
-                    rules={[{ required: true, message: "Please select a warehouse" }]}
+                    rules={[
+                      { required: true, message: "Please select a warehouse" },
+                    ]}
                   >
                     <Select
                       className="w-full"
@@ -462,7 +549,8 @@ export default function PackageIntakePage() {
                     >
                       {warehouses?.data?.map((warehouse) => (
                         <Select.Option key={warehouse.id} value={warehouse.id}>
-                          {warehouse.warehouseId} - {warehouse.name} ({warehouse.location})
+                          {warehouse.warehouseId} - {warehouse.name} (
+                          {warehouse.location})
                         </Select.Option>
                       ))}
                     </Select>
@@ -470,7 +558,8 @@ export default function PackageIntakePage() {
 
                   {isAdmin && (
                     <div className="text-xs text-gray-500">
-                      Admins can change warehouses above. Regular clerks use their assigned warehouse.
+                      Admins can change warehouses above. Regular clerks use
+                      their assigned warehouse.
                     </div>
                   )}
 

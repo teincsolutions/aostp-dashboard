@@ -1,8 +1,27 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Input, Select, Spin, Empty, Modal, Descriptions, Tooltip, Button, message, Row, Col, Tag, Collapse, Space, Badge } from "antd";
-import { ExclamationCircleOutlined, FolderOpenOutlined } from "@ant-design/icons";
+import {
+  Table,
+  Input,
+  Select,
+  Spin,
+  Empty,
+  Modal,
+  Descriptions,
+  Tooltip,
+  Button,
+  Row,
+  Col,
+  Tag,
+  Collapse,
+  Space,
+  Badge,
+} from "antd";
+import {
+  ExclamationCircleOutlined,
+  FolderOpenOutlined,
+} from "@ant-design/icons";
 import {
   EyeOutlined,
   EditOutlined,
@@ -15,19 +34,18 @@ import {
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { PackageStatusPackages, ShipmentType, Package as NewPackageType } from "@/types/package";
+import {
+  PackageStatusPackages,
+  ShipmentType,
+  Package,
+  Customer,
+} from "@/types/package";
 
-// Display type for table that combines both old and new interface fields
-type DisplayPackage = NewPackageType & {
-  id: string;
-  trackingNumber: string;
-  customer: { firstName: string; lastName: string; id: string };
-  description: string;
-  weight: number | null;
-  cbm: number | null;
-  shipmentType: ShipmentType;
-  status: PackageStatusPackages;
-  createdAt: string;
+// Display type for table that uses the new Package structure
+type DisplayPackage = Package & {
+  customerName: string;
+  shipmentType: 'SEA' | 'AIR'; // Add for compatibility
+  createdByName?: string;
 };
 import { useRouter } from "next/navigation";
 
@@ -35,12 +53,13 @@ import { usePackages } from "@/hooks/usePackageManagement";
 import { usePackageItems } from "@/hooks/usePackageManagement";
 import { usePackageManagement } from "@/hooks/usePackageManagement";
 import { Form } from "antd";
+import { toast } from "sonner";
 
 const { Search } = Input;
 const { useForm } = Form;
 
 const statusOptions = Object.values(PackageStatusPackages).map((status) => ({
-  label: status.replace('_', ' '),
+  label: status.replace("_", " "),
   value: status,
 }));
 
@@ -60,14 +79,21 @@ export default function PackagesPage() {
   // Modal states
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [isConsolidateModalVisible, setIsConsolidateModalVisible] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState<DisplayPackage | null>(null);
-  const [packageToDelete, setPackageToDelete] = useState<DisplayPackage | null>(null);
+  const [isConsolidateModalVisible, setIsConsolidateModalVisible] =
+    useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<DisplayPackage | null>(
+    null
+  );
+  const [packageToDelete, setPackageToDelete] = useState<DisplayPackage | null>(
+    null
+  );
 
   // Consolidation states
   const [consCustomer, setConsCustomer] = useState<string>("");
   const [consMode, setConsMode] = useState<string>("");
-  const [selectedForConsolidate, setSelectedForConsolidate] = useState<React.Key[]>([]);
+  const [selectedForConsolidate, setSelectedForConsolidate] = useState<
+    React.Key[]
+  >([]);
   const [consForm] = useForm();
 
   const params = {
@@ -79,25 +105,29 @@ export default function PackagesPage() {
   };
 
   // Use new package management hooks
-  const { data: packagesData, isLoading: packagesLoading } = usePackages(params);
-  const { updatePackageMutation, deletePackageMutation, consolidatePackagesMutation, generateTrackingCodeMutation } = usePackageManagement();
+  const { data: packagesData, isLoading: packagesLoading } =
+    usePackages(params);
+  const {
+    updatePackageMutation,
+    deletePackageMutation,
+    consolidatePackagesMutation,
+    generateTrackingCodeMutation,
+  } = usePackageManagement();
 
   const packages = packagesData?.data || [];
   const total = packagesData?.total || 0;
 
   // Transform data for display
-  const displayPackages = packages.map((pkg) => ({
+  const displayPackages: DisplayPackage[] = packages.map((pkg) => ({
     ...pkg,
-    // Add legacy fields for compatibility with existing components
-    id: pkg.package_id,
-    trackingNumber: pkg.tracking_code,
-    customer: { firstName: pkg.customer_code, lastName: '', id: pkg.customer_code },
-    description: '',
-    weight: pkg.weight,
-    cbm: pkg.cbm,
-    shipmentType: pkg.mode,
-    status: pkg.status,
-    createdAt: pkg.created_at,
+    // Add display fields for compatibility
+    customerName: pkg.customer
+      ? `${pkg.customer.firstName} ${pkg.customer.lastName}`
+      : pkg.customerId,
+    shipmentType: pkg.shippingMode,
+    createdByName: pkg.createdBy
+      ? `${pkg.createdBy.firstName} ${pkg.createdBy.lastName}`
+      : undefined,
   }));
 
   // Action handlers
@@ -130,12 +160,12 @@ export default function PackagesPage() {
 
     try {
       await deletePackageMutation.mutateAsync(packageToDelete.id);
-      message.success("Package deleted successfully");
+      toast.success("Package deleted successfully");
       setDeleteModalVisible(false);
       setPackageToDelete(null);
     } catch (error) {
       console.error("Delete failed:", error);
-      message.error("Failed to delete package");
+      toast.error("Failed to delete package");
     }
   };
 
@@ -153,18 +183,15 @@ export default function PackagesPage() {
   const columnsWithActions = [
     {
       title: "Tracking Number",
-      dataIndex: "trackingNumber",
-      key: "trackingNumber",
+      dataIndex: "trackingCode",
+      key: "trackingCode",
       sorter: true,
       width: 160,
     },
     {
       title: "Customer",
       key: "customer",
-      render: (record: DisplayPackage) =>
-        record.customer
-          ? `${record.customer.firstName} ${record.customer.lastName}`
-          : "N/A",
+      render: (record: DisplayPackage) => record.customerName,
       width: 180,
     },
     {
@@ -180,7 +207,7 @@ export default function PackagesPage() {
       key: "weight",
       sorter: true,
       width: 100,
-      render: (value: number | null) => value ? `${value} kg` : "N/A",
+      render: (value: number | null) => (value ? `${value} kg` : "N/A"),
     },
     {
       title: "CBM",
@@ -188,7 +215,52 @@ export default function PackagesPage() {
       key: "cbm",
       sorter: true,
       width: 100,
-      render: (value:any) => value || "N/A",
+      render: (value: any) => value || "N/A",
+    },
+    {
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
+      sorter: true,
+      width: 100,
+    },
+    {
+      title: "Consolidated",
+      dataIndex: "isConsolidated",
+      key: "isConsolidated",
+      width: 120,
+      render: (value: boolean) =>
+        value ? <Tag color="green">Yes</Tag> : <Tag>No</Tag>,
+    },
+    {
+      title: "Payment Status",
+      dataIndex: "paymentStatus",
+      key: "paymentStatus",
+      width: 140,
+      render: (status: string) => {
+        const colorMap: { [key: string]: string } = {
+          PENDING: "orange",
+          PAID: "green",
+          OVERDUE: "red",
+        };
+        return <Tag color={colorMap[status] || "default"}>{status}</Tag>;
+      },
+    },
+    {
+      title: "Days in Warehouse",
+      dataIndex: "daysInWarehouse",
+      key: "daysInWarehouse",
+      sorter: true,
+      width: 150,
+      render: (value: number) => `${value} days`,
+    },
+    {
+      title: "Received Date",
+      dataIndex: "receivedDate",
+      key: "receivedDate",
+      sorter: true,
+      width: 180,
+      render: (date: string) => new Date(date).toLocaleString(),
     },
     {
       title: "Shipment Type",
@@ -208,7 +280,7 @@ export default function PackagesPage() {
       dataIndex: "status",
       key: "status",
       filters: Object.values(PackageStatusPackages).map((status) => ({
-        text: status.replace('_', ' '),
+        text: status.replace("_", " "),
         value: status,
       })),
       width: 140,
@@ -222,7 +294,7 @@ export default function PackagesPage() {
         };
         return (
           <Tag color={colorMap[status] || "default"}>
-            {status.replace('_', ' ')}
+            {status.replace("_", " ")}
           </Tag>
         );
       },
@@ -233,7 +305,7 @@ export default function PackagesPage() {
       key: "createdAt",
       sorter: true,
       width: 180,
-      render: (date:any) => new Date(date).toLocaleString(),
+      render: (date: any) => new Date(date).toLocaleString(),
     },
     {
       title: "Actions",
@@ -390,35 +462,119 @@ export default function PackagesPage() {
             width={800}
           >
             {selectedPackage && (
-              <Descriptions bordered column={1} size="small">
-                <Descriptions.Item label="Tracking Number">
-                  {selectedPackage.trackingNumber}
-                </Descriptions.Item>
-                <Descriptions.Item label="Customer">
-                  {selectedPackage.customer
-                    ? `${selectedPackage.customer.firstName} ${selectedPackage.customer.lastName}`
-                    : "N/A"
-                  }
-                </Descriptions.Item>
-                <Descriptions.Item label="Description">
-                  {selectedPackage.description || "N/A"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Weight">
-                  {selectedPackage.weight} kg
-                </Descriptions.Item>
-                <Descriptions.Item label="CBM">
-                  {selectedPackage.cbm}
-                </Descriptions.Item>
-                <Descriptions.Item label="Shipment Type">
-                  {selectedPackage.shipmentType}
-                </Descriptions.Item>
-                <Descriptions.Item label="Status">
-                  {selectedPackage.status}
-                </Descriptions.Item>
-                <Descriptions.Item label="Created At">
-                  {new Date(selectedPackage.createdAt).toLocaleString()}
-                </Descriptions.Item>
-              </Descriptions>
+              <div>
+                <Descriptions bordered column={2} size="small">
+                  <Descriptions.Item label="Tracking Number">
+                    {selectedPackage.trackingCode}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Customer">
+                    {selectedPackage.customerName}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Description">
+                    {selectedPackage.description || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Weight">
+                    {selectedPackage.weight} kg
+                  </Descriptions.Item>
+                  <Descriptions.Item label="CBM">
+                    {selectedPackage.cbm}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Quantity">
+                    {selectedPackage.quantity}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Shipment Type">
+                    <Tag
+                      color={
+                        selectedPackage.shipmentType === "AIR"
+                          ? "blue"
+                          : "green"
+                      }
+                    >
+                      {selectedPackage.shipmentType}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Consolidated">
+                    <Tag
+                      color={
+                        selectedPackage.isConsolidated ? "green" : "orange"
+                      }
+                    >
+                      {selectedPackage.isConsolidated ? "Yes" : "No"}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Status">
+                    {selectedPackage.status}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Payment Status">
+                    <Tag
+                      color={
+                        selectedPackage.paymentStatus === "PAID"
+                          ? "green"
+                          : selectedPackage.paymentStatus === "PENDING"
+                          ? "orange"
+                          : "red"
+                      }
+                    >
+                      {selectedPackage.paymentStatus}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Days in Warehouse">
+                    {selectedPackage.daysInWarehouse} days
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Received Date">
+                    {new Date(selectedPackage.receivedDate).toLocaleString()}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Created By">
+                    {selectedPackage.createdByName || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Created At">
+                    {new Date(selectedPackage.createdAt).toLocaleString()}
+                  </Descriptions.Item>
+                </Descriptions>
+                {selectedPackage.notes && (
+                  <Descriptions
+                    bordered
+                    column={1}
+                    size="small"
+                    style={{ marginTop: 16 }}
+                  >
+                    <Descriptions.Item label="Notes">
+                      {selectedPackage.notes}
+                    </Descriptions.Item>
+                  </Descriptions>
+                )}
+                {selectedPackage.items && selectedPackage.items.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <h3>Items ({selectedPackage.items.length})</h3>
+                    <Table
+                      columns={[
+                        {
+                          title: "Tracking Code",
+                          dataIndex: "intakeTrackingCode",
+                          key: "intakeTrackingCode",
+                        },
+                        {
+                          title: "Description",
+                          dataIndex: "description",
+                          key: "description",
+                        },
+                        {
+                          title: "Quantity",
+                          dataIndex: "quantity",
+                          key: "quantity",
+                        },
+                        { title: "Weight", dataIndex: "weight", key: "weight" },
+                        { title: "CBM", dataIndex: "cbm", key: "cbm" },
+                        { title: "Status", dataIndex: "status", key: "status" },
+                      ]}
+                      dataSource={selectedPackage.items}
+                      rowKey="id"
+                      size="small"
+                      pagination={false}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </Modal>
 
@@ -426,7 +582,9 @@ export default function PackagesPage() {
           <Modal
             title={
               <span>
-                <ExclamationCircleOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
+                <ExclamationCircleOutlined
+                  style={{ color: "#ff4d4f", marginRight: 8 }}
+                />
                 Confirm Delete
               </span>
             }
@@ -441,8 +599,9 @@ export default function PackagesPage() {
             confirmLoading={false}
           >
             <p>
-              Are you sure you want to delete package &ldquo;{packageToDelete?.trackingNumber}&rdquo;?
-              This action cannot be undone.
+              Are you sure you want to delete package &ldquo;
+              {packageToDelete?.trackingCode}&rdquo;? This action cannot be
+              undone.
             </p>
           </Modal>
 
@@ -465,7 +624,7 @@ export default function PackagesPage() {
                 <Col span={12}>
                   <Select
                     placeholder="Select Customer"
-                    style={{ width: '100%' }}
+                    style={{ width: "100%" }}
                     value={consCustomer}
                     onChange={setConsCustomer}
                     allowClear
@@ -478,7 +637,7 @@ export default function PackagesPage() {
                 <Col span={12}>
                   <Select
                     placeholder="Shipment Mode"
-                    style={{ width: '100%' }}
+                    style={{ width: "100%" }}
                     value={consMode}
                     onChange={setConsMode}
                     allowClear
@@ -492,17 +651,26 @@ export default function PackagesPage() {
 
             {consCustomer && consMode && (
               <Table
-                dataSource={displayPackages.filter(pkg =>
-                  pkg.customer?.id === consCustomer &&
-                  pkg.shipmentType === consMode &&
-                  pkg.status === PackageStatusPackages.IN_WAREHOUSE
+                dataSource={displayPackages.filter(
+                  (pkg) =>
+                    pkg.customer?.id === consCustomer &&
+                    pkg.shipmentType === consMode &&
+                    pkg.status === PackageStatusPackages.IN_WAREHOUSE
                 )}
                 rowKey="id"
                 columns={[
-                  { title: 'Tracking Code', dataIndex: 'trackingNumber', key: 'trackingNumber' },
-                  { title: 'Description', dataIndex: 'description', key: 'description' },
-                  { title: 'Weight', dataIndex: 'weight', key: 'weight' },
-                  { title: 'CBM', dataIndex: 'cbm', key: 'cbm' },
+                  {
+                    title: "Tracking Code",
+                    dataIndex: "trackingCode",
+                    key: "trackingCode",
+                  },
+                  {
+                    title: "Description",
+                    dataIndex: "description",
+                    key: "description",
+                  },
+                  { title: "Weight", dataIndex: "weight", key: "weight" },
+                  { title: "CBM", dataIndex: "cbm", key: "cbm" },
                 ]}
                 rowSelection={{
                   selectedRowKeys: selectedForConsolidate,
@@ -518,7 +686,7 @@ export default function PackagesPage() {
               layout="inline"
               onFinish={async (values) => {
                 if (selectedForConsolidate.length < 2) {
-                  message.error("Select at least 2 packages");
+                  toast.error("Select at least 2 packages");
                   return;
                 }
                 try {
@@ -529,13 +697,13 @@ export default function PackagesPage() {
                     customer_code: consCustomer,
                     warehouse_id: "1", // TODO: Get from package
                   });
-                  message.success("Packages consolidated successfully");
+                  toast.success("Packages consolidated successfully");
                   setIsConsolidateModalVisible(false);
                   setSelectedForConsolidate([]);
                   consForm.resetFields();
                 } catch (error) {
                   console.error("Consolidation failed:", error);
-                  message.error("Failed to consolidate packages");
+                  toast.error("Failed to consolidate packages");
                 }
               }}
               style={{ marginTop: 16 }}

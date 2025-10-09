@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AntdConfigProvider } from "@/components/AntdConfigProvider";
 import { QueryProvider } from "@/components/QueryProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +31,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <QueryProvider>
-          <AntdConfigProvider>{children}</AntdConfigProvider>
+          <AntdConfigProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </AntdConfigProvider>
         </QueryProvider>
       </body>
     </html>
