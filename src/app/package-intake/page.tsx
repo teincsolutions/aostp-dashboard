@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Form,
   Input,
@@ -21,7 +21,12 @@ import { Form as AntdForm } from "antd";
 import { packageIntakeColumns } from "@/app/package-intake/columns";
 import { usePackageIntake } from "@/hooks/usePackageIntake";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
+import { useCustomerInvoices } from "@/hooks/useInvoices";
+import { useWarehouses } from "@/hooks/useWarehouse";
+import { useAuthStore } from "@/store/authStore";
+import { useWarehouseStore } from "@/store/warehouseStore";
 import { PackageIntakePayload } from "@/types/package";
+import { Warehouse } from "@/types/warehouse";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
@@ -70,7 +75,27 @@ export default function PackageIntakePage() {
   // Customer modal state
   const [customerModalVisible, setCustomerModalVisible] = useState(false);
   const [customerModalLoading, setCustomerModalLoading] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+
+  // Get current user, global warehouse selection, and data
+  const user = useAuthStore((state) => state.user);
+  const { selectedWarehouseId } = useWarehouseStore();
+  const { data: warehouses } = useWarehouses();
   const { data: customers, isLoading: customersLoading } = useCustomers({});
+
+  // Determine if user is admin and get current warehouse details
+  const isAdmin = user?.role === 'SUPER_ADMIN';
+  const currentWarehouse = warehouses?.data?.find(w => w.id === selectedWarehouseId);
+
+  // Customer invoices - fetch when customer is selected
+  const { data: customerInvoices, isLoading: invoicesLoading } = useCustomerInvoices(selectedCustomerId, 5);
+
+  // Update form field when warehouse selection changes from header
+  useEffect(() => {
+    if (selectedWarehouseId) {
+      form.setFieldsValue({ warehouseLocation: selectedWarehouseId });
+    }
+  }, [selectedWarehouseId, form]);
 
   // Handler to open modal from select
   const handleAddCustomerClick = () => {
@@ -261,41 +286,20 @@ export default function PackageIntakePage() {
     <AuthGuard requiredRoles={rolesAllowed}>
       <AppLayout>
         <div className="px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
-          {/* Top Heading + Actions */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+          {/* Top Heading */}
+          <div className="mb-4">
             <Title level={3} className="!mb-0">
               Package Intake
             </Title>
-            <div className="flex gap-2">
-              <Button
-                size="small"
-                onClick={() => {
-                  form.resetFields();
-                  form.setFieldsValue({
-                    trackingCode: Date.now().toString(),
-                    warehouseLocation: "W1",
-                  });
-                  setPhotoList([]);
-                }}
-              >
-                Reset Form
-              </Button>
-              <Button
-                type="primary"
-                size="middle"
-                loading={createPackagePending || uploadFilePending}
-                disabled={photoList.length < 1}
-                onClick={() => form.submit()}
-              >
-                Save Intake
-              </Button>
-            </div>
           </div>
           {/* Main Form Grid */}
           <Form
             form={form}
             layout="vertical"
-            initialValues={initialValues}
+            initialValues={{
+              ...initialValues,
+              warehouseLocation: selectedWarehouseId,
+            }}
             validateMessages={validateMessages}
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
@@ -333,10 +337,48 @@ export default function PackageIntakePage() {
                         if (value === "__add_new__") {
                           handleAddCustomerClick();
                           form.setFieldsValue({ customerId: "" });
+                          setSelectedCustomerId(""); // Clear invoices for new customer
+                        } else {
+                          setSelectedCustomerId(value); // Set customer for invoice fetching
                         }
                       }}
                     />
                   </Form.Item>
+
+                  {/* Recent Invoices Display */}
+                  {selectedCustomerId && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                      <Title level={5} className="!mb-3">Recent Invoices</Title>
+                      {invoicesLoading ? (
+                        <div className="text-center py-4">Loading invoices...</div>
+                      ) : customerInvoices && customerInvoices.length > 0 ? (
+                        <div className="space-y-2">
+                          {customerInvoices.slice(0, 5).map((invoice, index) => (
+                            <div key={invoice.id} className="flex justify-between items-center p-2 bg-white rounded border">
+                              <div>
+                                <div className="font-medium">{invoice.invoiceNumber}</div>
+                                <div className="text-sm text-gray-600">
+                                  {new Date(invoice.createdAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium">${invoice.totalAmount.toFixed(2)}</div>
+                                <div className={`text-sm px-2 py-1 rounded ${
+                                  invoice.status === 'PAID' ? 'bg-green-100 text-green-800' :
+                                  invoice.status === 'OVERDUE' ? 'bg-red-100 text-red-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {invoice.status}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-gray-500">No recent invoices found</div>
+                      )}
+                    </div>
+                  )}
 
                   <Form.Item
                     label="Description"
@@ -420,9 +462,28 @@ export default function PackageIntakePage() {
                   <Form.Item
                     label="Warehouse Location"
                     name="warehouseLocation"
+                    rules={[{ required: true, message: "Please select a warehouse" }]}
+                    initialValue={selectedWarehouseId}
                   >
-                    <Input className="w-full" placeholder="e.g., WH001" />
+                    <Select
+                      className="w-full"
+                      placeholder="Select warehouse"
+                      disabled={!isAdmin}
+                      value={selectedWarehouseId}
+                    >
+                      {warehouses?.data?.map((warehouse) => (
+                        <Select.Option key={warehouse.id} value={warehouse.id}>
+                          {warehouse.warehouseId} - {warehouse.name} ({warehouse.location})
+                        </Select.Option>
+                      ))}
+                    </Select>
                   </Form.Item>
+
+                  {isAdmin && (
+                    <div className="text-xs text-gray-500">
+                      Admins can change warehouses above. Regular clerks use their assigned warehouse.
+                    </div>
+                  )}
 
                   <Form.Item label="Notes" name="notes">
                     <Input.TextArea

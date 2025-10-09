@@ -5,10 +5,6 @@ export interface Warehouse {
   name: string;
   warehouseId: string; // Auto-generated ID like WH001, WH002
   location: string;
-  contactPerson?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  capacity?: number;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
@@ -17,19 +13,11 @@ export interface Warehouse {
 export interface WarehouseCreatePayload {
   name: string;
   location: string;
-  contactPerson?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  capacity?: number;
 }
 
 export interface WarehouseUpdatePayload {
   name?: string;
   location?: string;
-  contactPerson?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  capacity?: number;
 }
 
 export interface WarehousePackage {

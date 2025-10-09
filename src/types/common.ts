@@ -40,6 +40,7 @@ export interface User {
   isActive: boolean;
   avatar: string;
   twoFactorEnabled?: boolean;
+  warehouseId?: string;
 }
 
 export interface AuthTokens {

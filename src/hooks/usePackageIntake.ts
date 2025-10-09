@@ -7,7 +7,7 @@ import {
   uploadPackageFiles,
   getRecentIntakes,
   getPackage,
-  updatePackage,
+  updatePackageIntake,
   deletePackage,
   generateReceipt,
 } from "@/services/packageService";
@@ -84,7 +84,7 @@ export function usePackageIntake() {
     error: updatePackageError,
   } = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: PackageIntakePayload }) =>
-      updatePackage(id, payload),
+      updatePackageIntake(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recentIntakes"] });
       queryClient.invalidateQueries({ queryKey: ["package"] });

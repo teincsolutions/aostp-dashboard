@@ -113,10 +113,6 @@ export default function WarehousePage() {
     editForm.setFieldsValue({
       name: warehouse.name,
       location: warehouse.location,
-      contactPerson: warehouse.contactPerson,
-      contactEmail: warehouse.contactEmail,
-      contactPhone: warehouse.contactPhone,
-      capacity: warehouse.capacity,
     });
     setIsEditModalVisible(true);
   };
@@ -212,23 +208,6 @@ export default function WarehousePage() {
       title: 'Location',
       dataIndex: 'location',
       key: 'location',
-    },
-    {
-      title: 'Contact',
-      key: 'contact',
-      render: (_: any, record: Warehouse) => (
-        <div>
-          {record.contactPerson && <div>{record.contactPerson}</div>}
-          {record.contactEmail && <div style={{ fontSize: '12px', color: '#666' }}>{record.contactEmail}</div>}
-          {record.contactPhone && <div style={{ fontSize: '12px', color: '#666' }}>{record.contactPhone}</div>}
-        </div>
-      ),
-    },
-    {
-      title: 'Capacity',
-      dataIndex: 'capacity',
-      key: 'capacity',
-      render: (capacity: number) => capacity ? `${capacity} units` : 'N/A',
     },
     {
       title: 'Status',
@@ -458,26 +437,7 @@ export default function WarehousePage() {
                 </Col>
               </Row>
 
-              <Form.Item name="contactPerson" label="Contact Person">
-                <Input placeholder="e.g., John Doe" />
-              </Form.Item>
 
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="contactEmail" label="Contact Email">
-                    <Input type="email" placeholder="john.doe@example.com" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="contactPhone" label="Contact Phone">
-                    <Input placeholder="+233 XXX XXX XXX" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="capacity" label="Capacity (optional)">
-                <Input type="number" placeholder="1000" />
-              </Form.Item>
 
               <Form.Item>
                 <Space>
@@ -524,28 +484,7 @@ export default function WarehousePage() {
                   </Form.Item>
                 </Col>
               </Row>
-
-              <Form.Item name="contactPerson" label="Contact Person">
-                <Input placeholder="e.g., John Doe" />
-              </Form.Item>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="contactEmail" label="Contact Email">
-                    <Input type="email" placeholder="john.doe@example.com" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="contactPhone" label="Contact Phone">
-                    <Input placeholder="+233 XXX XXX XXX" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="capacity" label="Capacity (optional)">
-                <Input type="number" placeholder="1000" />
-              </Form.Item>
-
+        
               <Form.Item>
                 <Space>
                   <Button type="primary" htmlType="submit" loading={isUpdating}>
