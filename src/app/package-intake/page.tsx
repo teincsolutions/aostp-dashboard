@@ -55,7 +55,7 @@ const initialValues = {
   quantity: 1,
   shippingMode: "SEA",
   airShippingType: "",
-  warehouseLocation: "W1",
+  warehouseId: "W1",
   notes: "",
   photos: [],
 };
@@ -92,7 +92,7 @@ export default function PackageIntakePage() {
   // Update form field when warehouse selection changes from header
   useEffect(() => {
     if (selectedWarehouseId) {
-      form.setFieldsValue({ warehouseLocation: selectedWarehouseId });
+      form.setFieldsValue({ warehouseId: selectedWarehouseId });
     }
   }, [selectedWarehouseId, form]);
 
@@ -236,7 +236,7 @@ export default function PackageIntakePage() {
         description: values.description,
         quantity: values.quantity,
         shippingMode: values.shippingMode,
-        warehouseLocation: values.warehouseLocation || "W1",
+        warehouseId: values.warehouseId || "W1",
         notes: values.notes,
         photos: uploadedPhotos,
       };
@@ -296,7 +296,7 @@ export default function PackageIntakePage() {
             layout="vertical"
             initialValues={{
               ...initialValues,
-              warehouseLocation: selectedWarehouseId,
+              warehouseId: selectedWarehouseId,
             }}
             validateMessages={validateMessages}
             onFinish={onFinish}
@@ -450,10 +450,9 @@ export default function PackageIntakePage() {
               <Card className="shadow-sm rounded-2xl">
                 <div className="space-y-4">
                   <Form.Item
-                    label="Warehouse Location"
-                    name="warehouseLocation"
+                    label="Warehouse"
+                    name="warehouseId"
                     rules={[{ required: true, message: "Please select a warehouse" }]}
-                    initialValue={selectedWarehouseId}
                   >
                     <Select
                       className="w-full"

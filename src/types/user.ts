@@ -7,6 +7,7 @@ export enum Role {
   FINANCE_MANAGER = "FINANCE_MANAGER",
   OPERATIONS_CLERK = "OPERATIONS_CLERK",
   PAYMENT_CLERK = "PAYMENT_CLERK",
+  CUSTOMER = "CUSTOMER",
 }
 
 export enum UserStatus {

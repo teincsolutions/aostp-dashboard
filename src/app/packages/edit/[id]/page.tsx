@@ -54,7 +54,7 @@ const initialValues: Omit<PackageIntakePayload, 'trackingCode'> = {
   value: 0,
   shippingMode: "SEA",
   airShippingType: "",
-  warehouseLocation: "W1",
+  warehouseId: "W1",
   notes: "",
   photos: [],
 };
@@ -231,7 +231,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
         value: packageData.value,
         shippingMode: packageData.shippingMode,
         airShippingType: packageData.airShippingType || "",
-        warehouseLocation: packageData.warehouseLocation,
+        warehouseId: packageData.warehouseId,
         notes: packageData.notes,
       };
 
@@ -256,7 +256,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
         quantity: values.quantity,
         value: values.value,
         shippingMode: values.shippingMode,
-        warehouseLocation: values.warehouseLocation || "W1",
+        warehouseId: values.warehouseId || "W1",
         notes: values.notes,
         photos: uploadedPhotos,
       };
@@ -476,8 +476,8 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                     <InputNumber min={1} className="w-full" />
                   </Form.Item>
                   <Form.Item
-                    label="Warehouse Location"
-                    name="warehouseLocation"
+                    label="Warehouse"
+                    name="warehouseId"
                   >
                     <Input className="w-full" />
                   </Form.Item>

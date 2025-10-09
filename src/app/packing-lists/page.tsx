@@ -184,7 +184,7 @@ export default function PackingListsPage() {
   ) || [];
   const totalSelectedWeight = selectedPackages.reduce((sum, pkg) => sum + pkg.weight, 0);
   const totalSelectedCbm = selectedPackages.reduce((sum, pkg) => sum + pkg.cbm, 0);
-  const totalSelectedValue = selectedPackages.reduce((sum, pkg) => sum + pkg.value, 0);
+  const totalSelectedValue = selectedPackages.reduce((sum, pkg) => sum + (pkg.value || 0), 0);
 
   // Use all active containers
   const filteredContainers = activeContainers;

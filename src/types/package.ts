@@ -1,4 +1,5 @@
 // src/types/package.ts
+import { Warehouse } from './warehouse';
 
 export interface PackagePhotoInput {
   url: string;
@@ -40,7 +41,8 @@ export interface PackageIntakePayload {
   quantity: number;
   shippingMode: "SEA" | "AIR";
   airShippingType?: string;
-  warehouseLocation: string;
+  warehouseId: string;
+  value?: number;
   notes?: string;
   photos?: PackagePhotoInput[];
 }
@@ -58,7 +60,9 @@ export interface PackageIntake {
   airShippingType?: string | null;
   status: string;
   receivedDate: string;
-  warehouseLocation: string;
+  warehouseId: string;
+  warehouse?: Warehouse;
+  value?: number;
   daysInWarehouse: number;
   notes?: string;
   packingListId?: string | null;
@@ -119,7 +123,7 @@ export interface PackageItem {
   photos: PackagePhoto[];
   status: PackageStatus;
   package_id?: string; // FK to packages when consolidated
-  warehouse_id: string;
+  warehouseId: string;
   created_at: string;
   updated_at: string;
 }
@@ -132,7 +136,8 @@ export interface Package {
   mode: ShipmentType;
   air_type?: AirType;
   destination_city_id: string;
-  warehouse_id: string;
+  warehouseId: string;
+  warehouse?: Warehouse;
   is_consolidated: boolean;
   quantity: number; // Always 1 for consolidated packages
   weight?: number; // Auto-computed from items
