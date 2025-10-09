@@ -97,7 +97,7 @@ export const menuItems: Array<MenuItem> = [
   {
     key: "/exchange-rate",
     icon: <SettingOutlined />,
-    label: "Exchange Rate",
+    label: "Rate Management",
     roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
   },
   // Group: Notifications, Audit Logs, Settings
