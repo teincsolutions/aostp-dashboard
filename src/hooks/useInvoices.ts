@@ -16,7 +16,7 @@ export const useCustomerInvoices = (customerId: string, limit: number = 5) => {
     queryKey: ['customer-invoices', customerId, limit],
     queryFn: async (): Promise<Invoice[]> => {
       if (!customerId) return [];
-      const response = await apiService.get(`/customers/${customerId}/invoices`, {
+      const response = await apiService.get(`/invoices/customer/${customerId}`, {
         params: { limit }
       });
       return response.data?.data || [];
