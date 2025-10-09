@@ -31,6 +31,7 @@ import { useWarehouses } from "@/hooks/useWarehouse";
 import { useAuthStore } from "@/store/authStore";
 import { useWarehouseStore } from "@/store/warehouseStore";
 import { PackageIntakePayload } from "@/types/package";
+import { ReceiptModal } from "@/components/ReceiptModal";
 import { Warehouse } from "@/types/warehouse";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -82,6 +83,9 @@ export default function PackageIntakePage() {
   const [customerModalVisible, setCustomerModalVisible] = useState(false);
   const [customerModalLoading, setCustomerModalLoading] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+
+  // Receipt modal
+  const [receiptModalPackageId, setReceiptModalPackageId] = useState<string | null>(null);
 
   // Get current user, global warehouse selection, and data
   const user = useAuthStore((state) => state.user);
@@ -261,7 +265,8 @@ export default function PackageIntakePage() {
 
       const pkg = await createPackage(payload);
       toast.success("Package created successfully.");
-      
+
+      setReceiptModalPackageId(pkg.id);
       setPhotoList([]);
       form.resetFields();
       refetchRecentIntakes();
@@ -640,7 +645,7 @@ export default function PackageIntakePage() {
             <Title level={4}>Recent Intakes</Title>
             <Table
               columns={packageIntakeColumns}
-              dataSource={recentIntakes}
+              dataSource={recentIntakes.map(item => ({ ...item, onViewReceipt: (id: string) => setReceiptModalPackageId(id) }))}
               rowKey="id"
               loading={recentIntakesLoading}
               pagination={{
@@ -668,6 +673,11 @@ export default function PackageIntakePage() {
             onSubmit={handleCreateCustomer}
             loading={customerModalLoading}
             mode="create"
+          />
+          <ReceiptModal
+            visible={!!receiptModalPackageId}
+            onClose={() => setReceiptModalPackageId(null)}
+            packageId={receiptModalPackageId}
           />
         </div>
       </AppLayout>

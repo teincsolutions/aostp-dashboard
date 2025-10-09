@@ -54,6 +54,8 @@ import { usePackageItems } from "@/hooks/usePackageManagement";
 import { usePackageManagement } from "@/hooks/usePackageManagement";
 import { Form } from "antd";
 import { toast } from "sonner";
+import { usePackageReceipt } from "@/hooks/usePackages";
+import { ReceiptModal } from "@/components/ReceiptModal";
 
 const { Search } = Input;
 const { useForm } = Form;
@@ -95,6 +97,9 @@ export default function PackagesPage() {
     React.Key[]
   >([]);
   const [consForm] = useForm();
+
+  // Receipt modal state
+  const [receiptModalPackageId, setReceiptModalPackageId] = useState<string | null>(null);
 
   const params = {
     page,
@@ -359,6 +364,15 @@ export default function PackagesPage() {
               danger
               onClick={() => handleDelete(record)}
               disabled={record.status !== PackageStatusPackages.IN_WAREHOUSE}
+            />
+          </Tooltip>
+
+          {/* View Receipt Button */}
+          <Tooltip title="View Receipt">
+            <Button
+              icon={<FilePdfOutlined />}
+              size="small"
+              onClick={() => setReceiptModalPackageId(record.id)}
             />
           </Tooltip>
 
@@ -722,6 +736,11 @@ export default function PackagesPage() {
               </Form.Item>
             </Form>
           </Modal>
+          <ReceiptModal
+            visible={!!receiptModalPackageId}
+            onClose={() => setReceiptModalPackageId(null)}
+            packageId={receiptModalPackageId}
+          />
         </div>
       </AppLayout>
     </AuthGuard>

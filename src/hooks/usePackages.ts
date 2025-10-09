@@ -1,7 +1,7 @@
 // src/hooks/usePackages.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createPackage, uploadPackagePhoto } from '../services/packageService';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createPackage, uploadPackagePhoto, getPackageReceipt } from '../services/packageService';
 import { PackageIntakePayload } from '../types/package';
 
 export const usePackages = () => {
@@ -28,4 +28,12 @@ export const usePackages = () => {
     createMutation,
     uploadPhotoMutation,
   };
+};
+
+export const usePackageReceipt = (packageId?: string) => {
+  return useQuery({
+    queryKey: ['package-receipt', packageId],
+    queryFn: () => getPackageReceipt(packageId!),
+    enabled: !!packageId,
+  });
 };

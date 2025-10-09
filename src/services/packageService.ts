@@ -85,6 +85,11 @@ export const generateReceipt = async (packageId: string): Promise<Receipt> => {
   return res.data;
 };
 
+export const getPackageReceipt = async (packageId: string): Promise<{ url: string }> => {
+  const res = await apiService.get(`/packages/${packageId}/receipt`);
+  return res.data;
+};
+
 // ===== NEW PACKAGE MANAGEMENT SYSTEM =====
 
 // Packages API (Trackable units)
