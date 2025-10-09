@@ -147,15 +147,17 @@ export default function ContainersPage() {
       setCurrentPage(1);
     };
 
-  const handleCreateContainer = async (values: CreateFormValues) => {
+  const handleCreateContainer = async (values: any) => {
     try {
       // Transform form values to payload
       const payload: ContainerCreatePayload = {
         containerNumber: values.containerNumber,
+        vesselFlight: values.vesselFlight,
         loadingDate: values.loadingDate.format("YYYY-MM-DDTHH:mm:ssZ"),
         departureCity: values.departureCity,
         destinationCity: values.destinationCity,
         eta: values.eta.format("YYYY-MM-DDTHH:mm:ssZ"),
+        containerType: values.containerType,
         status: values.status,
         notes: values.notes,
       };
@@ -495,6 +497,23 @@ export default function ContainersPage() {
                 </Col>
                 <Col span={12}>
                   <Form.Item
+                    name="containerType"
+                    label="Container Type"
+                    rules={[
+                      { required: true, message: "Please select container type" },
+                    ]}
+                  >
+                    <Select>
+                      <Option value="CONTAINER">Container (Sea Freight)</Option>
+                      <Option value="BAG">Bag (Air Freight)</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
                     name="status"
                     label="Status"
                     rules={[
@@ -508,6 +527,11 @@ export default function ContainersPage() {
                         </Option>
                       ))}
                     </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="vesselFlight" label="Vessel/Flight Number">
+                    <Input placeholder="e.g., MSC ALTA or EK 787" />
                   </Form.Item>
                 </Col>
               </Row>

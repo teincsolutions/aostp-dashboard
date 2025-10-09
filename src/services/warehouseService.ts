@@ -1,5 +1,6 @@
 import { apiService } from "@/services/api";
-import { WarehousePackage, WarehouseAgingSummary } from "@/types/warehouse";
+import { WarehousePackage, WarehouseAgingSummary, WarehouseCreatePayload, WarehouseUpdatePayload, Warehouse } from "@/types/warehouse";
+import { ApiResponse, PaginatedResponse } from "@/types/common";
 
 export interface GetWarehousePackagesParams {
   page?: number;
@@ -51,5 +52,44 @@ export const updatePackageStatus = async (
     null,
     { params: { status } }
   );
+  return response.data;
+};
+
+// Warehouse CRUD operations
+export const getWarehouses = async (params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+}) => {
+  const response = await apiService.get<PaginatedResponse<Warehouse>>("/warehouses", { params });
+  return response.data;
+};
+
+export const createWarehouse = async (payload: WarehouseCreatePayload) => {
+  const response = await apiService.post<ApiResponse<Warehouse>>("/warehouses", payload);
+  return response.data;
+};
+
+export const updateWarehouse = async (id: string, payload: WarehouseUpdatePayload) => {
+  const response = await apiService.patch<ApiResponse<Warehouse>>(`/warehouses/${id}`, payload);
+  return response.data;
+};
+
+export const updateWarehouseStatus = async (id: string, status: string) => {
+  const response = await apiService.patch<ApiResponse<Warehouse>>(`/warehouses/${id}/status`, null, {
+    params: { status },
+  });
+  return response.data;
+};
+
+export const deleteWarehouse = async (id: string) => {
+  const response = await apiService.delete<ApiResponse<null>>(`/warehouses/${id}`);
+  return response.data;
+};
+
+// Package warehouse days update
+export const updateWarehouseDays = async () => {
+  const response = await apiService.post<ApiResponse<null>>("/packages/update-warehouse-days");
   return response.data;
 };

@@ -15,12 +15,13 @@ import {
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { Formik, Form, Field } from "formik";
-import * as Yup from "yup";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useUsers, useCreateUser, useResetUserPassword } from "@/hooks/useUsers";
 import { getUserColumns } from "./columns";
 import { Role, UserStatus, UserCreatePayload, User } from "@/types/user";
+import { userCreateSchema, userUpdateSchema } from "@/utils/forms/userSchemas";
+import { getServerValidationErrors } from "@/utils/forms/errorUtils";
 import type { TablePaginationConfig } from "antd/es/table";
 import type { FilterValue } from "antd/es/table/interface";
 
@@ -37,21 +38,7 @@ const statusOptions = [
   { label: "Inactive", value: UserStatus.INACTIVE },
 ];
 
-const UserSchema = Yup.object().shape({
-  email: Yup.string().email("Invalid email").required("Email is required"),
-  name: Yup.string().required("Name is required"),
-  password: Yup.string()
-    .min(6, "Min 6 characters")
-    .required("Password is required"),
-  role: Yup.string().required("Role is required"),
-});
 
-const UserEditSchema = Yup.object().shape({
-  firstName: Yup.string().required("First name is required"),
-  lastName: Yup.string().required("Last name is required"),
-  email: Yup.string().email("Invalid email").required("Email is required"),
-  role: Yup.string().required("Role is required"),
-});
 
 export default function UsersPage() {
   const [search, setSearch] = useState<string>("");
@@ -221,10 +208,10 @@ export default function UsersPage() {
                 password: "",
                 role: Role.CUSTOMER,
               }}
-              validationSchema={UserSchema}
+              validationSchema={userCreateSchema}
               onSubmit={async (
                 values: UserCreatePayload,
-                { setSubmitting, resetForm }
+                { setSubmitting, resetForm, setErrors }
               ) => {
                 try {
                   await createUser.mutateAsync(values);
@@ -233,9 +220,14 @@ export default function UsersPage() {
                   resetForm();
                   refetch();
                 } catch (err: unknown) {
-                  notification.error({
-                    message: (err as Error)?.message || "Create failed",
-                  });
+                  const serverErrors = getServerValidationErrors(err);
+                  if (serverErrors) {
+                    setErrors(serverErrors);
+                  } else {
+                    notification.error({
+                      message: (err as Error)?.message || "Create failed",
+                    });
+                  }
                 } finally {
                   setSubmitting(false);
                 }
@@ -314,10 +306,10 @@ export default function UsersPage() {
                 email: editingUser?.email || "",
                 role: editingUser?.role || Role.CUSTOMER,
               }}
-              validationSchema={UserEditSchema}
+              validationSchema={userUpdateSchema}
               onSubmit={async (
                 values,
-                { setSubmitting }
+                { setSubmitting, setErrors }
               ) => {
                 try {
                   // TODO: implement update API
@@ -327,9 +319,14 @@ export default function UsersPage() {
                   setEditingUser(null);
                   refetch();
                 } catch (err: unknown) {
-                  notification.error({
-                    message: (err as Error)?.message || "Update failed",
-                  });
+                  const serverErrors = getServerValidationErrors(err);
+                  if (serverErrors) {
+                    setErrors(serverErrors);
+                  } else {
+                    notification.error({
+                      message: (err as Error)?.message || "Update failed",
+                    });
+                  }
                 } finally {
                   setSubmitting(false);
                 }

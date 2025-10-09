@@ -7,11 +7,18 @@ import dayjs from "dayjs";
 
 export const packageIntakeColumns: ColumnsType<PackageIntake> = [
   {
-    title: "Tracking Number",
-    dataIndex: "trackingCode",
-    key: "trackingCode",
-    width: 140,
-    ellipsis: true,
+    title: "Warehouse",
+    dataIndex: "warehouseLocation",
+    key: "warehouseLocation",
+    width: 120,
+    render: (value: string) => value || "Not Assigned",
+  },
+  {
+    title: "Photos",
+    key: "photos",
+    width: 90,
+    render: (_: any, record: PackageIntake) =>
+      record.photos?.length ? `${record.photos.length} photo${record.photos.length > 1 ? 's' : ''}` : "No photos",
   },
   {
     title: "Customer",

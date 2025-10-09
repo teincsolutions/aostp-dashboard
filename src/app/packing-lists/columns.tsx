@@ -6,6 +6,7 @@ import {
   EyeOutlined,
   DownloadOutlined,
   MoreOutlined,
+  BoxPlotOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { MenuProps } from "antd";
@@ -18,7 +19,8 @@ export const getPackingListColumns = (
   onViewDetails: (packingList: PackingList) => void,
   onExportPackingList: (id: string, format: ExportFormat) => Promise<void>,
   isDeleting: boolean,
-  isExporting: boolean
+  isExporting: boolean,
+  onManagePackages?: (packingList: PackingList) => void
 ): ColumnsType<PackingList> => [
   {
     title: "Name",
@@ -139,6 +141,16 @@ export const getPackingListColumns = (
           >
             <Button type="text" icon={<MoreOutlined />} loading={isExporting} />
           </Dropdown>
+
+          {onManagePackages && (
+            <Tooltip title="Manage Packages">
+              <Button
+                type="text"
+                icon={<BoxPlotOutlined />}
+                onClick={() => onManagePackages(record)}
+              />
+            </Tooltip>
+          )}
 
           <Tooltip title="Delete Packing List">
             <Popconfirm

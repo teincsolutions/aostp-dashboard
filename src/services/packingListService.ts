@@ -9,6 +9,7 @@ import {
   PackingListQueryParams,
   ExportFormat,
 } from "@/types/packingList";
+import { PackageIntake } from "@/types/package";
 
 // Packing List service functions
 export const packingListService = {
@@ -80,7 +81,7 @@ export const packingListService = {
   },
 
   // Get unassigned packages (for package selection)
-  async getUnassignedPackages(params: { search?: string; page?: number; limit?: number } = {}): Promise<PackingListsResponse> {
+  async getUnassignedPackages(params: { search?: string; page?: number; limit?: number } = {}): Promise<{data: PackageIntake[], meta: any}> {
     const response = await apiService.get("/packages", {
       params: {
         ...params,
@@ -91,9 +92,17 @@ export const packingListService = {
     return response.data;
   },
 
-  // Get active containers (for container selection)
-  async getActiveContainers(): Promise<PackingListsResponse> {
-    const response = await apiService.get("/containers/active");
+  // Get active containers (for container selection) - optionally filter by container type
+  async getActiveContainers(containerType?: string): Promise<PackingListsResponse> {
+    const response = await apiService.get("/containers/active", {
+      params: containerType ? { containerType } : undefined,
+    });
+    return response.data;
+  },
+
+  // Finalize packing list (generate invoices without currency conversion)
+  async finalizePackingList(id: string): Promise<PackingListResponse> {
+    const response = await apiService.patch<PackingListResponse>(`/packing-lists/${id}/finalize`);
     return response.data;
   },
 };

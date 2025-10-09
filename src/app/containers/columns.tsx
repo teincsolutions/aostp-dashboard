@@ -42,6 +42,20 @@ export const getContainerColumns = (
     ),
   },
   {
+    title: 'Container Type',
+    dataIndex: 'containerType',
+    key: 'containerType',
+    render: (containerType: string) => (
+      <Tag color={containerType === 'CONTAINER' ? 'blue' : 'orange'}>
+        {containerType === 'CONTAINER' ? 'Container (Sea)' : 'Bag (Air)'}
+      </Tag>
+    ),
+    filters: [
+      { text: 'Containers (Sea Freight)', value: 'CONTAINER' },
+      { text: 'Bags (Air Freight)', value: 'BAG' },
+    ],
+  },
+  {
     title: 'Loading Date',
     dataIndex: 'loadingDate',
     key: 'loadingDate',
@@ -91,6 +105,27 @@ export const getContainerColumns = (
       { text: 'Arrived', value: ContainerStatus.ARRIVED },
       { text: 'Closed', value: ContainerStatus.CLOSED },
     ],
+  },
+  {
+    title: 'Total Packages',
+    dataIndex: 'totalPackages',
+    key: 'totalPackages',
+    render: (count: number) => count || 0,
+    sorter: true,
+  },
+  {
+    title: 'Total Weight',
+    dataIndex: 'totalWeight',
+    key: 'totalWeight',
+    render: (weight: number) => weight ? `${weight.toFixed(2)} kg` : 'N/A',
+    sorter: true,
+  },
+  {
+    title: 'Total Revenue',
+    dataIndex: 'totalRevenue',
+    key: 'totalRevenue',
+    render: (revenue: number) => revenue ? `$${revenue.toFixed(2)}` : 'N/A',
+    sorter: true,
   },
   {
     title: 'Packing Lists',

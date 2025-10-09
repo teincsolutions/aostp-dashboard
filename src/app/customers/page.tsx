@@ -49,9 +49,7 @@ export default function CustomersPage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
 
-  // Forms
-  const [createForm] = Form.useForm();
-  const [editForm] = Form.useForm();
+  // Formik handles forms internally
 
   // React Query hooks
   const { data: customers, isLoading } = useCustomers({
@@ -100,61 +98,25 @@ export default function CustomersPage() {
     setCurrentPage(1);
   };
 
-  const handleCreateCustomer = async (values: CustomerCreatePayload | CustomerUpdatePayload) => {
-    try {
-      // Only call createCustomer if all required fields are present
-      if (
-        typeof values.firstName === "string" &&
-        typeof values.lastName === "string" &&
-        typeof values.email === "string" &&
-        typeof values.phoneNumber === "string" &&
-        typeof values.city === "string" &&
-        typeof values.country === "string" &&
-        typeof values.idType === "string" &&
-        typeof values.idNumber === "string"
-      ) {
-        await createCustomer(values as CustomerCreatePayload);
-        message.success("Customer created successfully");
-        setIsCreateModalVisible(false);
-        createForm.resetFields();
-      } else {
-        message.error("Missing required fields for customer creation");
-      }
-    } catch (error) {
-      message.error("Failed to create customer");
-    }
+  const handleCreateCustomer = async (values: any) => {
+    const payload = values as CustomerCreatePayload;
+    await createCustomer(payload);
+    message.success("Customer created successfully");
+    setIsCreateModalVisible(false);
   };
 
   const handleEditCustomer = (customer: Customer) => {
     setEditingCustomer(customer);
-    editForm.setFieldsValue({
-      firstName: customer.firstName,
-      lastName: customer.lastName,
-      email: customer.email,
-      phoneNumber: customer.phoneNumber,
-      alternatePhone: customer.alternatePhone,
-      address: customer.address,
-      city: customer.city,
-      country: customer.country,
-      idType: customer.idType,
-      idNumber: customer.idNumber,
-      preferredChannel: customer.preferredChannel,
-    });
     setIsEditModalVisible(true);
   };
 
-  const handleUpdateCustomer = async (values: CustomerUpdatePayload) => {
+  const handleUpdateCustomer = async (values: any) => {
     if (!editingCustomer) return;
-
-    try {
-      await updateCustomer({ id: editingCustomer.id, payload: values });
-      message.success("Customer updated successfully");
-      setIsEditModalVisible(false);
-      setEditingCustomer(null);
-      editForm.resetFields();
-    } catch (error) {
-      message.error("Failed to update customer");
-    }
+    const payload = values as CustomerUpdatePayload;
+    await updateCustomer({ id: editingCustomer.id, payload });
+    message.success("Customer updated successfully");
+    setIsEditModalVisible(false);
+    setEditingCustomer(null);
   };
 
   const handleDeleteCustomer = async (id: string) => {
@@ -397,12 +359,8 @@ export default function CustomersPage() {
           {/* Create Customer Modal */}
           <CustomerModal
             visible={isCreateModalVisible}
-            onCancel={() => {
-              setIsCreateModalVisible(false);
-              createForm.resetFields();
-            }}
+            onCancel={() => setIsCreateModalVisible(false)}
             onSubmit={handleCreateCustomer}
-            form={createForm}
             loading={isCreating}
             mode="create"
           />
@@ -413,10 +371,8 @@ export default function CustomersPage() {
             onCancel={() => {
               setIsEditModalVisible(false);
               setEditingCustomer(null);
-              editForm.resetFields();
             }}
             onSubmit={handleUpdateCustomer}
-            form={editForm}
             loading={isUpdating}
             mode="edit"
             initialValues={editingCustomer || undefined}

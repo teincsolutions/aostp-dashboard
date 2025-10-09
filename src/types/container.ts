@@ -7,6 +7,12 @@ export enum ContainerStatus {
   CLOSED = 'CLOSED',
 }
 
+// Container type enum for Packing List filtering
+export enum ContainerType {
+  CONTAINER = 'CONTAINER', // Sea freight
+  BAG = 'BAG', // Air freight
+}
+
 // Base Container interface
 export interface Container {
   id: string;
@@ -16,6 +22,7 @@ export interface Container {
   departureCity: string;
   destinationCity: string;
   eta: string;
+  containerType: ContainerType;
   status: ContainerStatus;
   notes?: string;
   packingListCount?: number;
@@ -44,6 +51,7 @@ export interface ContainerCreatePayload {
   departureCity: string;
   destinationCity: string;
   eta: string;
+  containerType: ContainerType;
   status: ContainerStatus;
   notes?: string;
 }

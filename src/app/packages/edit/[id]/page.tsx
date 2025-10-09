@@ -99,12 +99,11 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
   // Handler to open modal from select
   const handleAddCustomerClick = () => {
     setCustomerModalVisible(true);
-    customerModalForm.resetFields();
   };
 
   // Handler for customer creation (backend)
   const handleCreateCustomer = async (
-    values: CustomerCreatePayload | CustomerUpdatePayload
+    values: any
   ) => {
     setCustomerModalLoading(true);
     try {
@@ -126,7 +125,6 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
         message.error("Invalid customer payload");
       }
       setCustomerModalVisible(false);
-      customerModalForm.resetFields();
     } catch (err) {
       // Robust server validation error handling
       interface ErrorResponse {
@@ -561,10 +559,8 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
             visible={customerModalVisible}
             onCancel={() => {
               setCustomerModalVisible(false);
-              customerModalForm.resetFields();
             }}
             onSubmit={handleCreateCustomer}
-            form={customerModalForm}
             loading={customerModalLoading}
             mode="create"
           />

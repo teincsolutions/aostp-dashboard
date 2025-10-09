@@ -3,19 +3,37 @@
 "use client";
 
 import React from "react";
-import { Modal, Form, Row, Col, Input, Select, Space, Button } from "antd";
+import { Modal, Row, Col, Input, Select, Space, Button, Form } from "antd";
+import { Formik, FormikProps, FormikHelpers } from "formik";
+import { message } from "antd";
+import * as Yup from "yup";
 import { IdType, PreferredChannel, CustomerCreatePayload, CustomerUpdatePayload, Customer } from "@/types/customer";
+import { customerCreateSchema, customerUpdateSchema } from "@/utils/forms/customerSchemas";
+import { getServerValidationErrors } from "@/utils/forms/errorUtils";
 
 const { Option } = Select;
+
+interface CustomerFormikValues {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  alternatePhone?: string;
+  address?: string;
+  city: string;
+  country: string;
+  idType: string;
+  idNumber: string;
+  preferredChannel?: string;
+}
 
 interface CustomerModalProps {
   visible: boolean;
   onCancel: () => void;
-  onSubmit: (values: CustomerCreatePayload | CustomerUpdatePayload) => void;
-  form: any;
   loading?: boolean;
   mode: "create" | "edit";
-  initialValues?: Partial<Customer>;
+  initialValues?: Partial<CustomerFormikValues>;
+  onSubmit: (values: CustomerFormikValues) => Promise<void>;
 }
 
 const idTypeOptions = [
@@ -34,128 +52,233 @@ const preferredChannelOptions = [
 export const CustomerModal: React.FC<CustomerModalProps> = ({
   visible,
   onCancel,
-  onSubmit,
-  form,
   loading,
   mode,
   initialValues = {},
-}) => (
-  <Modal
-    title={mode === "create" ? "Create New Customer" : "Edit Customer"}
-    open={visible}
-    onCancel={onCancel}
-    footer={null}
-    width={700}
-  >
-    <Form
-      form={form}
-      layout="vertical"
-      onFinish={onSubmit}
-      initialValues={initialValues}
+  onSubmit,
+}) => {
+  const schema = mode === "create" ? customerCreateSchema : customerUpdateSchema;
+
+  return (
+    <Formik<CustomerFormikValues>
+      initialValues={{
+        firstName: "",
+        lastName: "",
+        email: "",
+        phoneNumber: "",
+        alternatePhone: "",
+        address: "",
+        city: "",
+        country: "",
+        idType: "",
+        idNumber: "",
+        preferredChannel: "",
+        ...initialValues,
+      }}
+      validationSchema={schema}
+      onSubmit={async (values, { setErrors }) => {
+        try {
+          await onSubmit(values);
+        } catch (error: any) {
+          const fieldErrors = getServerValidationErrors(error);
+          if (fieldErrors) {
+            setErrors(fieldErrors);
+          } else {
+            message.error(error.response?.data?.message || "Something went wrong");
+          }
+        }
+      }}
     >
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            name="firstName"
-            label="First Name"
-            rules={[{ required: true, message: "Please enter first name" }]}
-          >
-            <Input />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="lastName"
-            label="Last Name"
-            rules={[{ required: true, message: "Please enter last name" }]}
-          >
-            <Input />
-          </Form.Item>
-        </Col>
-      </Row>
+      {(formik) => (
+        <Modal
+          title={mode === "create" ? "Create New Customer" : "Edit Customer"}
+          open={visible}
+          onCancel={onCancel}
+          footer={null}
+          width={700}
+        >
+          <form onSubmit={(formik as any).handleSubmit}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="First Name"
+                  help={formik.touched.firstName && formik.errors.firstName}
+                  hasFeedback={!!formik.errors.firstName}
+                  validateStatus={formik.touched.firstName && formik.errors.firstName ? "error" : ""}
+                >
+                  <Input
+                    placeholder="Enter first name"
+                    value={formik.values.firstName}
+                    onChange={(e) => formik.setFieldValue("firstName", e.target.value)}
+                    onBlur={() => formik.setFieldTouched("firstName", true)}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="Last Name"
+                  help={formik.touched.lastName && formik.errors.lastName}
+                  hasFeedback={!!formik.errors.lastName}
+                  validateStatus={formik.touched.lastName && formik.errors.lastName ? "error" : ""}
+                >
+                  <Input
+                    placeholder="Enter last name"
+                    value={formik.values.lastName}
+                    onChange={(e) => formik.setFieldValue("lastName", e.target.value)}
+                    onBlur={() => formik.setFieldTouched("lastName", true)}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: "Please enter email" },
-              { type: "email", message: "Please enter a valid email" },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="phoneNumber"
-            label="Phone Number"
-            rules={[{ required: true, message: "Please enter phone number" }]}
-          >
-            <Input />
-          </Form.Item>
-        </Col>
-      </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="Email"
+                  help={formik.touched.email && formik.errors.email}
+                  hasFeedback={!!formik.errors.email}
+                  validateStatus={formik.touched.email && formik.errors.email ? "error" : ""}
+                >
+                  <Input
+                    placeholder="Enter email"
+                    value={formik.values.email}
+                    onChange={(e) => formik.setFieldValue("email", e.target.value)}
+                    onBlur={() => formik.setFieldTouched("email", true)}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="Phone Number"
+                  help={formik.touched.phoneNumber && formik.errors.phoneNumber}
+                  hasFeedback={!!formik.errors.phoneNumber}
+                  validateStatus={formik.touched.phoneNumber && formik.errors.phoneNumber ? "error" : ""}
+                >
+                  <Input
+                    placeholder="Enter phone number"
+                    value={formik.values.phoneNumber}
+                    onChange={(e) => formik.setFieldValue("phoneNumber", e.target.value)}
+                    onBlur={() => formik.setFieldTouched("phoneNumber", true)}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
 
-      <Form.Item name="alternatePhone" label="Alternate Phone">
-        <Input />
-      </Form.Item>
+            <Form.Item label="Alternate Phone">
+              <Input
+                placeholder="Enter alternate phone"
+                value={formik.values.alternatePhone}
+                onChange={(e) => formik.setFieldValue("alternatePhone", e.target.value)}
+              />
+            </Form.Item>
 
-      <Form.Item name="address" label="Address">
-        <Input />
-      </Form.Item>
+            <Form.Item label="Address">
+              <Input
+                placeholder="Enter address"
+                value={formik.values.address}
+                onChange={(e) => formik.setFieldValue("address", e.target.value)}
+              />
+            </Form.Item>
 
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item name="city" label="City">
-            <Input />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="country" label="Country">
-            <Input />
-          </Form.Item>
-        </Col>
-      </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="City"
+                  help={formik.touched.city && formik.errors.city}
+                  hasFeedback={!!formik.errors.city}
+                  validateStatus={formik.touched.city && formik.errors.city ? "error" : ""}
+                >
+                  <Input
+                    placeholder="Enter city"
+                    value={formik.values.city}
+                    onChange={(e) => formik.setFieldValue("city", e.target.value)}
+                    onBlur={() => formik.setFieldTouched("city", true)}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="Country"
+                  help={formik.touched.country && formik.errors.country}
+                  hasFeedback={!!formik.errors.country}
+                  validateStatus={formik.touched.country && formik.errors.country ? "error" : ""}
+                >
+                  <Input
+                    placeholder="Enter country"
+                    value={formik.values.country}
+                    onChange={(e) => formik.setFieldValue("country", e.target.value)}
+                    onBlur={() => formik.setFieldTouched("country", true)}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item name="idType" label="ID Type">
-            <Select allowClear>
-              {idTypeOptions.map((option) => (
-                <Option key={option.value} value={option.value}>
-                  {option.label}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="idNumber" label="ID Number">
-            <Input />
-          </Form.Item>
-        </Col>
-      </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="ID Type"
+                  help={formik.touched.idType && formik.errors.idType}
+                  hasFeedback={!!formik.errors.idType}
+                  validateStatus={formik.touched.idType && formik.errors.idType ? "error" : ""}
+                >
+                  <Select
+                    placeholder="Select ID type"
+                    value={formik.values.idType}
+                    onChange={(value) => formik.setFieldValue("idType", value)}
+                    onBlur={() => formik.setFieldTouched("idType", true)}
+                    allowClear
+                  >
+                    {idTypeOptions.map((option) => (
+                      <Option key={option.value} value={option.value}>
+                        {option.label}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="ID Number"
+                  help={formik.touched.idNumber && formik.errors.idNumber}
+                  hasFeedback={!!formik.errors.idNumber}
+                  validateStatus={formik.touched.idNumber && formik.errors.idNumber ? "error" : ""}
+                >
+                  <Input
+                    placeholder="Enter ID number"
+                    value={formik.values.idNumber}
+                    onChange={(e) => formik.setFieldValue("idNumber", e.target.value)}
+                    onBlur={() => formik.setFieldTouched("idNumber", true)}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
 
-      <Form.Item name="preferredChannel" label="Preferred Channel">
-        <Select allowClear>
-          {preferredChannelOptions.map((option) => (
-            <Option key={option.value} value={option.value}>
-              {option.label}
-            </Option>
-          ))}
-        </Select>
-      </Form.Item>
+            <Form.Item label="Preferred Channel">
+              <Select
+                placeholder="Select preferred channel"
+                value={formik.values.preferredChannel}
+                onChange={(value) => formik.setFieldValue("preferredChannel", value)}
+                allowClear
+              >
+                {preferredChannelOptions.map((option) => (
+                  <Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
 
-      <Form.Item>
-        <Space>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            {mode === "create" ? "Create Customer" : "Update Customer"}
-          </Button>
-          <Button onClick={onCancel}>Cancel</Button>
-        </Space>
-      </Form.Item>
-    </Form>
-  </Modal>
-);
+            <div style={{ marginTop: 24 }}>
+              <Space>
+                <Button type="primary" htmlType="submit" loading={loading}>
+                  {mode === "create" ? "Create Customer" : "Update Customer"}
+                </Button>
+                <Button onClick={onCancel}>Cancel</Button>
+              </Space>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </Formik>
+  );
+};

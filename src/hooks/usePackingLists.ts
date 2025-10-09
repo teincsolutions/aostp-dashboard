@@ -57,11 +57,11 @@ export const useUnassignedPackages = (params: { search?: string; page?: number; 
   });
 };
 
-// Hook for fetching active containers
-export const useActiveContainers = () => {
+// Hook for fetching active containers (optionally filtered by container type)
+export const useActiveContainers = (containerType?: string) => {
   return useQuery({
-    queryKey: packingListKeys.activeContainers(),
-    queryFn: () => packingListService.getActiveContainers(),
+    queryKey: [...packingListKeys.activeContainers(), containerType].filter(Boolean),
+    queryFn: () => packingListService.getActiveContainers(containerType),
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
@@ -146,6 +146,16 @@ export const usePackingListMutations = () => {
     },
   });
 
+  // Finalize packing list mutation (generates invoices without FX conversion per UC12)
+  const finalizePackingList = useMutation({
+    mutationFn: (id: string) =>
+      packingListService.finalizePackingList(id),
+    onSuccess: () => {
+      // Invalidate packing lists to refresh data
+      queryClient.invalidateQueries({ queryKey: packingListKeys.lists() });
+    },
+  });
+
   return {
     createPackingList,
     updatePackingList,
@@ -153,6 +163,7 @@ export const usePackingListMutations = () => {
     addPackagesToPackingList,
     removePackagesToPackingList: removePackagesFromPackingList,
     exportPackingList,
+    finalizePackingList,
     // Loading states
     isCreating: createPackingList.isPending,
     isUpdating: updatePackingList.isPending,
@@ -160,5 +171,6 @@ export const usePackingListMutations = () => {
     isAddingPackages: addPackagesToPackingList.isPending,
     isRemovingPackages: removePackagesFromPackingList.isPending,
     isExporting: exportPackingList.isPending,
+    isFinalizing: finalizePackingList.isPending,
   };
 };
