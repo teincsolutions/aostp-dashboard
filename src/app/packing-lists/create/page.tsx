@@ -395,7 +395,7 @@ const PackingListCreatePage: React.FC = () => {
   ];
 
   return (
-    <AuthGuard requiredRoles={[Role.OPERATIONS_CLERK, Role.FINANCE_MANAGER]}>
+    <AuthGuard requiredRoles={[Role.OPERATIONS_CLERK, Role.FINANCE_MANAGER, Role.SUPER_ADMIN]}>
       <AppLayout>
         <div className="p-6 max-w-6xl mx-auto">
           <div className="mb-6">
