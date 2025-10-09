@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Button,
   Card,
@@ -17,10 +18,10 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Formik, Form, Field } from "formik";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { useUsers, useCreateUser, useResetUserPassword } from "@/hooks/useUsers";
+import { useUsers, useResetUserPassword } from "@/hooks/useUsers";
 import { getUserColumns } from "./columns";
-import { Role, UserStatus, UserCreatePayload, User } from "@/types/user";
-import { userCreateSchema, userUpdateSchema } from "@/utils/forms/userSchemas";
+import { Role, UserStatus, User } from "@/types/user";
+import { userUpdateSchema } from "@/utils/forms/userSchemas";
 import { getServerValidationErrors } from "@/utils/forms/errorUtils";
 import type { TablePaginationConfig } from "antd/es/table";
 import type { FilterValue } from "antd/es/table/interface";
@@ -30,7 +31,6 @@ const roleOptions = [
   { label: "Finance Manager", value: Role.FINANCE_MANAGER },
   { label: "Operations Clerk", value: Role.OPERATIONS_CLERK },
   { label: "Payment Clerk", value: Role.PAYMENT_CLERK },
-  { label: "Customer", value: Role.CUSTOMER },
 ];
 
 const statusOptions = [
@@ -41,12 +41,12 @@ const statusOptions = [
 
 
 export default function UsersPage() {
+  const router = useRouter();
   const [search, setSearch] = useState<string>("");
   const [role, setRole] = useState<Role | undefined>();
   const [status, setStatus] = useState<UserStatus | undefined>();
   const [page, setPage] = useState<number>(1);
   const [limit, setLimit] = useState<number>(10);
-  const [createModal, setCreateModal] = useState<boolean>(false);
   const [editModal, setEditModal] = useState<boolean>(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
@@ -63,7 +63,6 @@ export default function UsersPage() {
         : undefined,
   });
 
-  const createUser = useCreateUser();
   const resetPasswordMutation = useResetUserPassword();
 
   const handleEditUser = (user: User) => {
@@ -124,7 +123,7 @@ export default function UsersPage() {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => setCreateModal(true)}
+              onClick={() => router.push("/users/create")}
             >
               Add User
             </Button>
@@ -194,101 +193,7 @@ export default function UsersPage() {
               onChange={handleTableChange}
             />
           </Card>
-          <Modal
-            title="Create User"
-            open={createModal}
-            onCancel={() => setCreateModal(false)}
-            footer={null}
-            destroyOnHidden
-          >
-            <Formik<UserCreatePayload>
-              initialValues={{
-                email: "",
-                name: "",
-                password: "",
-                role: Role.CUSTOMER,
-              }}
-              validationSchema={userCreateSchema}
-              onSubmit={async (
-                values: UserCreatePayload,
-                { setSubmitting, resetForm, setErrors }
-              ) => {
-                try {
-                  await createUser.mutateAsync(values);
-                  notification.success({ message: "User created" });
-                  setCreateModal(false);
-                  resetForm();
-                  refetch();
-                } catch (err: unknown) {
-                  const serverErrors = getServerValidationErrors(err);
-                  if (serverErrors) {
-                    setErrors(serverErrors);
-                  } else {
-                    notification.error({
-                      message: (err as Error)?.message || "Create failed",
-                    });
-                  }
-                } finally {
-                  setSubmitting(false);
-                }
-              }}
-            >
-              {({ errors, touched, isSubmitting, handleChange, values }) => (
-                <Form>
-                  <div className="mb-4">
-                    <label>Email</label>
-                    <Field name="email" as={Input} />
-                    {errors.email && touched.email && (
-                      <div className="text-red-500 text-xs">{errors.email}</div>
-                    )}
-                  </div>
-                  <div className="mb-4">
-                    <label>Name</label>
-                    <Field name="name" as={Input} />
-                    {errors.name && touched.name && (
-                      <div className="text-red-500 text-xs">{errors.name}</div>
-                    )}
-                  </div>
-                  <div className="mb-4">
-                    <label>Password</label>
-                    <Field name="password" as={Input.Password} />
-                    {errors.password && touched.password && (
-                      <div className="text-red-500 text-xs">
-                        {errors.password}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mb-4">
-                    <label>Role</label>
-                    <Select
-                      value={values.role}
-                      onChange={(v) =>
-                        handleChange({ target: { name: "role", value: v } })
-                      }
-                      style={{ width: "100%" }}
-                    >
-                      {roleOptions.map((opt) => (
-                        <Select.Option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </Select.Option>
-                      ))}
-                    </Select>
-                    {errors.role && touched.role && (
-                      <div className="text-red-500 text-xs">{errors.role}</div>
-                    )}
-                  </div>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={isSubmitting}
-                    block
-                  >
-                    Create
-                  </Button>
-                </Form>
-              )}
-            </Formik>
-          </Modal>
+
           <Modal
             title="Edit User"
             open={editModal}
@@ -304,7 +209,7 @@ export default function UsersPage() {
                 firstName: editingUser?.firstName || "",
                 lastName: editingUser?.lastName || "",
                 email: editingUser?.email || "",
-                role: editingUser?.role || Role.CUSTOMER,
+                role: editingUser?.role || Role.OPERATIONS_CLERK,
               }}
               validationSchema={userUpdateSchema}
               onSubmit={async (

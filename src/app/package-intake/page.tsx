@@ -53,7 +53,6 @@ const initialValues = {
   customerId: "",
   description: "",
   quantity: 1,
-  value: 0,
   shippingMode: "SEA",
   airShippingType: "",
   warehouseLocation: "W1",
@@ -236,7 +235,6 @@ export default function PackageIntakePage() {
         customerId: values.customerId,
         description: values.description,
         quantity: values.quantity,
-        value: values.value,
         shippingMode: values.shippingMode,
         warehouseLocation: values.warehouseLocation || "W1",
         notes: values.notes,
@@ -399,14 +397,6 @@ export default function PackageIntakePage() {
                     rules={[{ required: true, type: "number", min: 1 }]}
                   >
                     <InputNumber min={1} className="w-full" placeholder="Number of items" />
-                  </Form.Item>
-
-                  <Form.Item
-                    label="Value"
-                    name="value"
-                    rules={[{ required: true, type: "number", min: 0 }]}
-                  >
-                    <InputNumber min={0} className="w-full" placeholder="Declared value" />
                   </Form.Item>
 
                   <Form.Item

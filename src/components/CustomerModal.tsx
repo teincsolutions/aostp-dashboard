@@ -16,14 +16,13 @@ const { Option } = Select;
 interface CustomerFormikValues {
   firstName: string;
   lastName: string;
-  email: string;
   phoneNumber: string;
+  address: string;
+  email?: string;
   alternatePhone?: string;
-  address?: string;
-  city: string;
-  country: string;
-  idType: string;
-  idNumber: string;
+  city?: string;
+  idType?: string;
+  idNumber?: string;
   preferredChannel?: string;
 }
 
@@ -64,20 +63,26 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       initialValues={{
         firstName: "",
         lastName: "",
-        email: "",
         phoneNumber: "",
-        alternatePhone: "",
         address: "",
+        email: "",
+        alternatePhone: "",
         city: "",
-        country: "",
         idType: "",
         idNumber: "",
-        preferredChannel: "",
+        preferredChannel: "SMS",
         ...initialValues,
       }}
       validationSchema={schema}
+      enableReinitialize={false}
       onSubmit={async (values, { setErrors }) => {
         try {
+          // remove empty strings for optional fields
+          Object.keys(values).forEach((key) => {
+            if (values[key as keyof CustomerFormikValues] === "") {
+              delete values[key as keyof CustomerFormikValues];
+            }
+          });
           await onSubmit(values);
         } catch (error: any) {
           const fieldErrors = getServerValidationErrors(error);
@@ -97,136 +102,115 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           footer={null}
           width={700}
         >
-          <form onSubmit={(formik as any).handleSubmit}>
+          <form onSubmit={(formik as any).handleSubmit} className="space-y-4">
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  label="First Name"
-                  help={formik.touched.firstName && formik.errors.firstName}
-                  hasFeedback={!!formik.errors.firstName}
-                  validateStatus={formik.touched.firstName && formik.errors.firstName ? "error" : ""}
-                >
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">First Name *</label>
                   <Input
                     placeholder="Enter first name"
                     value={formik.values.firstName}
                     onChange={(e) => formik.setFieldValue("firstName", e.target.value)}
                     onBlur={() => formik.setFieldTouched("firstName", true)}
+                    status={formik.touched.firstName && formik.errors.firstName ? "error" : ""}
                   />
-                </Form.Item>
+                  {formik.touched.firstName && formik.errors.firstName && (
+                    <div className="text-red-500 text-xs">{formik.errors.firstName}</div>
+                  )}
+                </div>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  label="Last Name"
-                  help={formik.touched.lastName && formik.errors.lastName}
-                  hasFeedback={!!formik.errors.lastName}
-                  validateStatus={formik.touched.lastName && formik.errors.lastName ? "error" : ""}
-                >
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">Last Name *</label>
                   <Input
                     placeholder="Enter last name"
                     value={formik.values.lastName}
                     onChange={(e) => formik.setFieldValue("lastName", e.target.value)}
                     onBlur={() => formik.setFieldTouched("lastName", true)}
+                    status={formik.touched.lastName && formik.errors.lastName ? "error" : ""}
                   />
-                </Form.Item>
+                  {formik.touched.lastName && formik.errors.lastName && (
+                    <div className="text-red-500 text-xs">{formik.errors.lastName}</div>
+                  )}
+                </div>
               </Col>
             </Row>
 
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  label="Email"
-                  help={formik.touched.email && formik.errors.email}
-                  hasFeedback={!!formik.errors.email}
-                  validateStatus={formik.touched.email && formik.errors.email ? "error" : ""}
-                >
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
                   <Input
                     placeholder="Enter email"
                     value={formik.values.email}
                     onChange={(e) => formik.setFieldValue("email", e.target.value)}
                     onBlur={() => formik.setFieldTouched("email", true)}
+                    status={formik.touched.email && formik.errors.email ? "error" : ""}
                   />
-                </Form.Item>
+                  {formik.touched.email && formik.errors.email && (
+                    <div className="text-red-500 text-xs">{formik.errors.email}</div>
+                  )}
+                </div>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  label="Phone Number"
-                  help={formik.touched.phoneNumber && formik.errors.phoneNumber}
-                  hasFeedback={!!formik.errors.phoneNumber}
-                  validateStatus={formik.touched.phoneNumber && formik.errors.phoneNumber ? "error" : ""}
-                >
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">Phone Number *</label>
                   <Input
                     placeholder="Enter phone number"
                     value={formik.values.phoneNumber}
                     onChange={(e) => formik.setFieldValue("phoneNumber", e.target.value)}
                     onBlur={() => formik.setFieldTouched("phoneNumber", true)}
+                    status={formik.touched.phoneNumber && formik.errors.phoneNumber ? "error" : ""}
                   />
-                </Form.Item>
+                  {formik.touched.phoneNumber && formik.errors.phoneNumber && (
+                    <div className="text-red-500 text-xs">{formik.errors.phoneNumber}</div>
+                  )}
+                </div>
               </Col>
             </Row>
 
-            <Form.Item label="Alternate Phone">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Alternate Phone</label>
               <Input
                 placeholder="Enter alternate phone"
                 value={formik.values.alternatePhone}
                 onChange={(e) => formik.setFieldValue("alternatePhone", e.target.value)}
               />
-            </Form.Item>
+            </div>
 
-            <Form.Item label="Address">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Address *</label>
               <Input
                 placeholder="Enter address"
                 value={formik.values.address}
                 onChange={(e) => formik.setFieldValue("address", e.target.value)}
+                status={formik.touched.address && formik.errors.address ? "error" : ""}
               />
-            </Form.Item>
+              {formik.touched.address && formik.errors.address && (
+                <div className="text-red-500 text-xs">{formik.errors.address}</div>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">City</label>
+              <Input
+                placeholder="Enter city"
+                value={formik.values.city}
+                onChange={(e) => formik.setFieldValue("city", e.target.value)}
+              />
+            </div>
 
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  label="City"
-                  help={formik.touched.city && formik.errors.city}
-                  hasFeedback={!!formik.errors.city}
-                  validateStatus={formik.touched.city && formik.errors.city ? "error" : ""}
-                >
-                  <Input
-                    placeholder="Enter city"
-                    value={formik.values.city}
-                    onChange={(e) => formik.setFieldValue("city", e.target.value)}
-                    onBlur={() => formik.setFieldTouched("city", true)}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  label="Country"
-                  help={formik.touched.country && formik.errors.country}
-                  hasFeedback={!!formik.errors.country}
-                  validateStatus={formik.touched.country && formik.errors.country ? "error" : ""}
-                >
-                  <Input
-                    placeholder="Enter country"
-                    value={formik.values.country}
-                    onChange={(e) => formik.setFieldValue("country", e.target.value)}
-                    onBlur={() => formik.setFieldTouched("country", true)}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  label="ID Type"
-                  help={formik.touched.idType && formik.errors.idType}
-                  hasFeedback={!!formik.errors.idType}
-                  validateStatus={formik.touched.idType && formik.errors.idType ? "error" : ""}
-                >
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">ID Type</label>
                   <Select
-                    placeholder="Select ID type"
+                    placeholder={"Select ID type"}
                     value={formik.values.idType}
                     onChange={(value) => formik.setFieldValue("idType", value)}
                     onBlur={() => formik.setFieldTouched("idType", true)}
                     allowClear
+                    className="w-full"
                   >
                     {idTypeOptions.map((option) => (
                       <Option key={option.value} value={option.value}>
@@ -234,31 +218,35 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                       </Option>
                     ))}
                   </Select>
-                </Form.Item>
+                  {formik.touched.idType && formik.errors.idType && (
+                    <div className="text-red-500 text-xs">{formik.errors.idType}</div>
+                  )}
+                </div>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  label="ID Number"
-                  help={formik.touched.idNumber && formik.errors.idNumber}
-                  hasFeedback={!!formik.errors.idNumber}
-                  validateStatus={formik.touched.idNumber && formik.errors.idNumber ? "error" : ""}
-                >
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">ID Number</label>
                   <Input
                     placeholder="Enter ID number"
                     value={formik.values.idNumber}
                     onChange={(e) => formik.setFieldValue("idNumber", e.target.value)}
                     onBlur={() => formik.setFieldTouched("idNumber", true)}
                   />
-                </Form.Item>
+                  {formik.touched.idNumber && formik.errors.idNumber && (
+                    <div className="text-red-500 text-xs">{formik.errors.idNumber}</div>
+                  )}
+                </div>
               </Col>
             </Row>
 
-            <Form.Item label="Preferred Channel">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Preferred Channel</label>
               <Select
                 placeholder="Select preferred channel"
                 value={formik.values.preferredChannel}
                 onChange={(value) => formik.setFieldValue("preferredChannel", value)}
                 allowClear
+                className="w-full"
               >
                 {preferredChannelOptions.map((option) => (
                   <Option key={option.value} value={option.value}>
@@ -266,15 +254,13 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                   </Option>
                 ))}
               </Select>
-            </Form.Item>
+            </div>
 
-            <div style={{ marginTop: 24 }}>
-              <Space>
-                <Button type="primary" htmlType="submit" loading={loading}>
-                  {mode === "create" ? "Create Customer" : "Update Customer"}
-                </Button>
-                <Button onClick={onCancel}>Cancel</Button>
-              </Space>
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button onClick={onCancel}>Cancel</Button>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                {mode === "create" ? "Create Customer" : "Update Customer"}
+              </Button>
             </div>
           </form>
         </Modal>

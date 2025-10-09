@@ -7,7 +7,6 @@ export enum Role {
   FINANCE_MANAGER = "FINANCE_MANAGER",
   OPERATIONS_CLERK = "OPERATIONS_CLERK",
   PAYMENT_CLERK = "PAYMENT_CLERK",
-  CUSTOMER = "CUSTOMER",
 }
 
 export enum UserStatus {
@@ -32,12 +31,15 @@ export interface User {
 }
 
 export interface UserCreatePayload {
+  fullName: string;
+  username: string;
   email: string;
-  name: string;
-  password: string;
+  phone?: string;
+  password?: string; // Optional for API if generated
   role: UserRole;
-  status?: UserStatus;
-  twoFactorEnabled?: boolean;
+  warehouseId?: string;
+  isActive: boolean;
+  force2FA: boolean;
 }
 
 export interface UserUpdatePayload {

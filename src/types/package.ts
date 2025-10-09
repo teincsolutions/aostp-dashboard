@@ -38,7 +38,6 @@ export interface PackageIntakePayload {
   weight?: number; // Optional - added during package management before packing lists
   cbm?: number; // Optional - added during package management before packing lists
   quantity: number;
-  value: number;
   shippingMode: "SEA" | "AIR";
   airShippingType?: string;
   warehouseLocation: string;
@@ -55,7 +54,6 @@ export interface PackageIntake {
   weight: number;
   cbm: number;
   quantity: number;
-  value: number;
   shippingMode: "SEA" | "AIR";
   airShippingType?: string | null;
   status: string;

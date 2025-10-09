@@ -3,20 +3,30 @@ import { Role } from "@/types/user";
 
 // Schema for creating a new user
 export const userCreateSchema = Yup.object().shape({
+  fullName: Yup.string()
+    .required("Full name is required")
+    .min(2, "Full name must be at least 2 characters")
+    .max(100, "Full name must be no more than 100 characters"),
+  username: Yup.string()
+    .required("Username is required")
+    .min(3, "Username must be at least 3 characters")
+    .max(50, "Username must be no more than 50 characters"),
   email: Yup.string()
     .email("Invalid email format")
     .required("Email is required"),
-  name: Yup.string()
-    .required("Name is required")
-    .min(2, "Name must be at least 2 characters")
-    .max(100, "Name must be no more than 100 characters"),
-  password: Yup.string()
-    .required("Password is required")
-    .min(6, "Password must be at least 6 characters")
-    .max(128, "Password must be no more than 128 characters"),
+  phone: Yup.string()
+    .optional()
+    .matches(/^\+?[\d\s-\(\)]+$/, "Invalid phone number format"),
+  warehouseId: Yup.string().optional(),
+  isActive: Yup.boolean().required(),
+  force2FA: Yup.boolean().required(),
   role: Yup.mixed<Role>()
     .oneOf(Object.values(Role), "Invalid role selected")
     .required("Role is required"),
+  password: Yup.string()
+    .optional()
+    .min(6, "Password must be at least 6 characters")
+    .max(128, "Password must be no more than 128 characters"),
 });
 
 // Schema for updating an existing user (all fields optional)

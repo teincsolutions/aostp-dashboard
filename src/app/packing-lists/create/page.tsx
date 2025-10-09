@@ -152,7 +152,6 @@ const PackingListCreatePage: React.FC = () => {
           description: pkg.description || '',
           weight: pkg.weight,
           cbm: pkg.cbm,
-          value: pkg.value,
           customerId: pkg.customerId,
           customerName: `${pkg.customer?.firstName} ${pkg.customer?.lastName}`,
           rate: rateValue,
