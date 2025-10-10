@@ -21,6 +21,7 @@ import {
   Checkbox,
   Typography,
 } from "antd";
+import { toast } from "sonner";
 import {
   SearchOutlined,
   DollarOutlined,
@@ -116,7 +117,7 @@ export default function PaymentsPage() {
 
   const handlePaymentSubmit = async (values: PaymentCreatePayload & { amount: string }) => {
     if (selectedInvoices.length === 0) {
-      message.error("Please select at least one invoice to pay");
+      toast.error("Please select at least one invoice to pay");
       return;
     }
 
@@ -124,7 +125,7 @@ export default function PaymentsPage() {
     const amount = parseFloat(values.amount);
 
     if (amount > totalSelected) {
-      message.error("Payment amount cannot exceed the total balance of selected invoices");
+      toast.error("Payment amount cannot exceed the total balance of selected invoices");
       return;
     }
 
@@ -140,12 +141,12 @@ export default function PaymentsPage() {
       };
 
       const payment = await makePayment(paymentData);
-      message.success("Payment processed successfully");
+      toast.success("Payment processed successfully");
 
       // Generate receipt automatically
       try {
         await generateReceipt(payment.id);
-        message.success("Receipt generated successfully");
+        toast.success("Receipt generated successfully");
       } catch (error) {
         message.warning("Payment processed but receipt generation failed");
       }
@@ -161,7 +162,7 @@ export default function PaymentsPage() {
       }, 500);
 
     } catch (error) {
-      message.error("Failed to process payment");
+      toast.error("Failed to process payment");
     }
   };
 

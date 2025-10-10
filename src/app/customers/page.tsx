@@ -27,9 +27,21 @@ import {
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { useCustomers, useCustomerMutations, useCustomerStats, useExportCustomers } from "@/hooks/useCustomers";
-import { CustomerCreatePayload, CustomerUpdatePayload, IdType, PreferredChannel, Customer } from "@/types/customer";
+import {
+  useCustomers,
+  useCustomerMutations,
+  useCustomerStats,
+  useExportCustomers,
+} from "@/hooks/useCustomers";
+import {
+  CustomerCreatePayload,
+  CustomerUpdatePayload,
+  IdType,
+  PreferredChannel,
+  Customer,
+} from "@/types/customer";
 import { getCustomerColumns } from "@/app/customers/columns";
+import { toast } from "sonner";
 
 const { Option } = Select;
 
@@ -43,7 +55,9 @@ export default function CustomersPage() {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -97,12 +111,39 @@ export default function CustomersPage() {
     setChannelFilter(value);
     setCurrentPage(1);
   };
+  const handleError = (err: any) => {
+    // Robust server validation error handling
+    interface ErrorResponse {
+      response?: {
+        data?: {
+          errors?: string[];
+          message?: string;
+        };
+      };
+    }
+    const response =
+      typeof err === "object" && err !== null && "response" in err
+        ? (err as ErrorResponse).response
+        : undefined;
+    if (response?.data?.errors && Array.isArray(response.data.errors)) {
+      response.data.errors.forEach((e: string) => toast.error(e));
+      // Keep modal open for correction
+    } else if (response?.data?.message) {
+      toast.error(response.data.message);
+    } else {
+      toast.error("Failed to add customer");
+    }
+  };
 
   const handleCreateCustomer = async (values: any) => {
-    const payload = values as CustomerCreatePayload;
-    await createCustomer(payload);
-    message.success("Customer created successfully");
-    setIsCreateModalVisible(false);
+    try {
+      const payload = values as CustomerCreatePayload;
+      await createCustomer(payload);
+      toast.success("Customer created successfully");
+      setIsCreateModalVisible(false);
+    } catch (err) {
+      handleError(err);
+    }
   };
 
   const handleEditCustomer = (customer: Customer) => {
@@ -110,21 +151,26 @@ export default function CustomersPage() {
     setIsEditModalVisible(true);
   };
 
-  const handleUpdateCustomer = async (values: any) => {
+  const handleUpdateCustomer = async (values: Customer) => {
     if (!editingCustomer) return;
-    const payload = values as CustomerUpdatePayload;
-    await updateCustomer({ id: editingCustomer.id, payload });
-    message.success("Customer updated successfully");
-    setIsEditModalVisible(false);
-    setEditingCustomer(null);
+    try {
+      const { id, createdAt, updatedAt, customerCode, _count, ...payload } =
+        values;
+      await updateCustomer({ id: editingCustomer.id, payload });
+      toast.success("Customer updated successfully");
+      setIsEditModalVisible(false);
+      setEditingCustomer(null);
+    } catch (error) {
+      handleError(error);
+    }
   };
 
   const handleDeleteCustomer = async (id: string) => {
     try {
       await deleteCustomer(id);
-      message.success("Customer deleted successfully");
+      toast.success("Customer deleted successfully");
     } catch (error) {
-      message.error("Failed to delete customer");
+      handleError(error);
     }
   };
 
@@ -133,17 +179,17 @@ export default function CustomersPage() {
     if (!customer) return;
 
     const newStatus =
-      typeof isActive === "boolean"
-        ? isActive
-        : !customer.isActive;
+      typeof isActive === "boolean" ? isActive : !customer.isActive;
 
     try {
       await toggleCustomerStatus({ id, isActive: newStatus });
-      message.success(
-        `Customer ${customer.isActive ? "deactivated" : "activated"} successfully`
+      toast.success(
+        `Customer ${
+          customer.isActive ? "deactivated" : "activated"
+        } successfully`
       );
     } catch (error) {
-      message.error(
+      toast.error(
         `Failed to ${customer.isActive ? "deactivate" : "activate"} customer`
       );
     }
@@ -168,9 +214,9 @@ export default function CustomersPage() {
         },
         format,
       });
-      message.success(`Exported selected customers as ${format.toUpperCase()}`);
+      toast.success(`Exported selected customers as ${format.toUpperCase()}`);
     } catch (error) {
-      message.error("Failed to export selected customers");
+      toast.error("Failed to export selected customers");
     } finally {
       setExportLoading(false);
     }
@@ -179,7 +225,8 @@ export default function CustomersPage() {
   // Table columns
   const columns = getCustomerColumns({
     onEdit: handleEditCustomer,
-    onToggleStatus: (id: string, isActive: boolean) => handleToggleCustomerStatus(id, isActive),
+    onToggleStatus: (id: string, isActive: boolean) =>
+      handleToggleCustomerStatus(id, isActive),
     onViewStats: handleViewCustomerDetails,
     onExport: async (id: string) => {
       setExportLoading(true);
@@ -188,9 +235,9 @@ export default function CustomersPage() {
           params: { ids: [id] },
           format: "pdf",
         });
-        message.success("Customer exported successfully");
+        toast.success("Customer exported successfully");
       } catch {
-        message.error("Failed to export customer");
+        toast.error("Failed to export customer");
       } finally {
         setExportLoading(false);
       }
@@ -217,13 +264,16 @@ export default function CustomersPage() {
 
   // Statistics
   const totalCustomers = customers?.total || 0;
-  const activeCustomers = customers?.data?.filter((c: Customer) => c.isActive).length || 0;
-  const inactiveCustomers = customers?.data?.filter((c: Customer) => !c.isActive).length || 0;
+  const activeCustomers =
+    customers?.data?.filter((c: Customer) => c.isActive).length || 0;
+  const inactiveCustomers =
+    customers?.data?.filter((c: Customer) => !c.isActive).length || 0;
 
   // Row selection config
   const rowSelection = {
     selectedRowKeys,
-    onChange: (newSelectedRowKeys: React.Key[]) => setSelectedRowKeys(newSelectedRowKeys),
+    onChange: (newSelectedRowKeys: React.Key[]) =>
+      setSelectedRowKeys(newSelectedRowKeys),
   };
 
   return (
@@ -311,8 +361,10 @@ export default function CustomersPage() {
                 onChange={handleIdTypeFilter}
                 allowClear
               >
-                {idTypeOptions.map(opt => (
-                  <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+                {idTypeOptions.map((opt) => (
+                  <Option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </Option>
                 ))}
               </Select>
               <Select
@@ -321,8 +373,10 @@ export default function CustomersPage() {
                 onChange={handleChannelFilter}
                 allowClear
               >
-                {preferredChannelOptions.map(opt => (
-                  <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+                {preferredChannelOptions.map((opt) => (
+                  <Option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </Option>
                 ))}
               </Select>
             </div>

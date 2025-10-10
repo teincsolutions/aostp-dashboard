@@ -16,6 +16,7 @@ import {
   Image,
   Spin,
 } from "antd";
+import { toast } from "sonner";
 import { UploadOutlined } from "@ant-design/icons";
 import { CustomerModal } from "@/components/CustomerModal";
 import { Form as AntdForm } from "antd";
@@ -105,10 +106,10 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
         );
         if (created?.id) {
           form.setFieldsValue({ customerId: created.id });
-          message.success("Customer added");
+          toast.success("Customer added");
         }
       } else {
-        message.error("Invalid customer payload");
+        toast.error("Invalid customer payload");
       }
       setCustomerModalVisible(false);
     } catch (err) {
@@ -126,12 +127,12 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
           ? (err as ErrorResponse).response
           : undefined;
       if (response?.data?.errors && Array.isArray(response.data.errors)) {
-        response.data.errors.forEach((e: string) => message.error(e));
+        response.data.errors.forEach((e: string) => toast.error(e));
         // Keep modal open for correction
       } else if (response?.data?.message) {
-        message.error(response.data.message);
+        toast.error(response.data.message);
       } else {
-        message.error("Failed to add customer");
+        toast.error("Failed to add customer");
       }
     } finally {
       setCustomerModalLoading(false);
@@ -141,11 +142,11 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
   // Upload validation and mapping
   const beforeUpload = (file: import("antd").UploadFile) => {
     if (!["image/jpeg", "image/png"].includes(file.type || "")) {
-      message.error("Only JPG/PNG files allowed");
+      toast.error("Only JPG/PNG files allowed");
       return Upload.LIST_IGNORE;
     }
     if ((file.size || 0) > 5 * 1024 * 1024) {
-      message.error("Max file size is 5MB");
+      toast.error("Max file size is 5MB");
       return Upload.LIST_IGNORE;
     }
     return true;
@@ -189,7 +190,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
       ]);
       if (options.onSuccess) options.onSuccess("ok");
     } catch (err) {
-      message.error("Photo upload failed on selection");
+      toast.error("Photo upload failed on selection");
       if (options.onError) options.onError(new Error("Photo upload failed"));
     }
   };
@@ -256,7 +257,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
 
       await updatePackageMutation({ id, payload });
 
-      message.success("Package updated successfully");
+      toast.success("Package updated successfully");
       router.push("/packages");
     } catch (err) {
       // Handle validation errors from server response
@@ -273,17 +274,17 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
           ? (err as ErrorResponse).response
           : undefined;
       if (response?.data?.errors && Array.isArray(response.data.errors)) {
-        response.data.errors.forEach((e: string) => message.error(e));
+        response.data.errors.forEach((e: string) => toast.error(e));
       } else if (response?.data?.message) {
-        message.error(response.data.message);
+        toast.error(response.data.message);
       } else {
-        message.error("Package update failed");
+        toast.error("Package update failed");
       }
     }
   };
 
   const onFinishFailed = () => {
-    message.error("Please fix validation errors");
+    toast.error("Please fix validation errors");
   };
 
   if (packageLoading) {

@@ -97,9 +97,6 @@ export default function PackageIntakePage() {
 
   // Determine if user is admin and get current warehouse details
   const isAdmin = user?.role === "SUPER_ADMIN";
-  const currentWarehouse = warehouses?.data?.find(
-    (w) => w.id === selectedWarehouseId
-  );
 
   // Customer invoices - fetch when customer is selected
   const { data: customerInvoices, isLoading: invoicesLoading } =

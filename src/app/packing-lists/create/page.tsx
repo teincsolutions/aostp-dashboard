@@ -21,6 +21,7 @@ import {
   Spin,
   Popconfirm,
 } from "antd";
+import { toast } from "sonner";
 import {
   LeftOutlined,
   RightOutlined,
@@ -192,7 +193,7 @@ const PackingListCreatePage: React.FC = () => {
     } else if (currentStep === 1) {
       // Validate package assignment
       if (selectedPackageIds.length === 0) {
-        message.error("Please select at least one package");
+        toast.error("Please select at least one package");
         return;
       }
       setCurrentStep(2);
@@ -250,11 +251,11 @@ const PackingListCreatePage: React.FC = () => {
       // Finalize packing list (generates invoices without FX conversion per UC12)
       await finalizePackingList.mutateAsync(packingListId);
 
-      message.success("Packing list created and invoices generated successfully");
+      toast.success("Packing list created and invoices generated successfully");
       router.push('/packing-lists');
 
     } catch (error: any) {
-      message.error(error.response?.data?.message || "Failed to finalize packing list");
+      toast.error(error.response?.data?.message || "Failed to finalize packing list");
     } finally {
       setLoading(false);
     }
@@ -554,7 +555,7 @@ const PackingListCreatePage: React.FC = () => {
                   layout="vertical"
                   onFinish={(values) => {
                     setPackingListData(prev => ({ ...prev, containerId: values.containerId }));
-                    message.success("Container selected");
+                    toast.success("Container selected");
                   }}
                 >
                   <Row gutter={16}>

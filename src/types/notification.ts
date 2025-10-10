@@ -12,17 +12,31 @@ export enum NotificationStatus {
   PENDING = "PENDING",
 }
 
+// Notification type enum (based on sample data)
+export enum NotificationType {
+  PACKAGE_INTAKE = "PACKAGE_INTAKE",
+  // Add other types as needed
+}
+
+// Notification metadata interface
+export interface NotificationMetadata {
+  packageId?: string;
+  trackingCode?: string;
+  [key: string]: unknown;
+}
+
 // Notification log interface
 export interface NotificationLog {
   id: string;
+  customerId: string;
+  type: NotificationType;
   channel: NotificationChannel;
   recipient: string;
-  customerId: string;
-  customerName?: string;
-  template: string;
-  event: string;
+  subject: string;
+  content: string;
   status: NotificationStatus;
-  errorMessage?: string;
+  sentAt: string;
+  failReason?: string;
+  metadata: NotificationMetadata;
   createdAt: string;
-  payload: Record<string, unknown>;
 }

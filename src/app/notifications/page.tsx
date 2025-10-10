@@ -22,9 +22,9 @@ export default function NotificationsPage() {
   const [limit, setLimit] = useState<number>(10);
 
   // Modal state
-  const [detailsModal, setDetailsModal] = useState<{ visible: boolean; payload?: Record<string, unknown> }>({
+  const [detailsModal, setDetailsModal] = useState<{ visible: boolean; record?: NotificationLog }>({
     visible: false,
-    payload: undefined,
+    record: undefined,
   });
 
   // Query
@@ -53,7 +53,7 @@ export default function NotificationsPage() {
               <Button
                 size="small"
                 onClick={() =>
-                  setDetailsModal({ visible: true, payload: record.payload })
+                  setDetailsModal({ visible: true, record })
                 }
               >
                 Details
@@ -178,13 +178,13 @@ export default function NotificationsPage() {
           />
           <Modal
             open={detailsModal.visible}
-            title="Notification Payload"
+            title="Notification Details"
             footer={null}
             onCancel={() => setDetailsModal({ visible: false })}
             width={600}
           >
             <pre className="whitespace-pre-wrap text-xs">
-              {detailsModal.payload ? JSON.stringify(detailsModal.payload, null, 2) : "No payload"}
+              {detailsModal.record ? JSON.stringify(detailsModal.record, null, 2) : "No record"}
             </pre>
           </Modal>
         </div>

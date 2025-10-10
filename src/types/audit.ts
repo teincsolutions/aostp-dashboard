@@ -9,17 +9,20 @@ export enum AuditAction {
 }
 
 export enum AuditEntityType {
-  USER = "USER",
-  CUSTOMER = "CUSTOMER",
-  PACKAGE = "PACKAGE",
-  CONTAINER = "CONTAINER",
-  INVOICE = "INVOICE",
-  PAYMENT = "PAYMENT",
-  NOTIFICATION = "NOTIFICATION",
-  EXCHANGE_RATE = "EXCHANGE_RATE",
-  SHIPPING_RATE = "SHIPPING_RATE",
-  OTHER = "OTHER",
-}
+  USER = "User",
+  CUSTOMER = "Customer",
+  PACKAGE = "Package",
+  CONTAINER = "Container",
+  INVOICE = "Invoice",
+  PAYMENT = "Payment",
+  NOTIFICATION = "Notification",
+  EXCHANGE_RATE = "ExchangeRate",
+  WAREHOUSE = "Warehouse",
+  SHIPPING_RATE = "ShippingRate",
+  PACKING_LIST = "PackingList",
+  PACKAGE_DELIVERY = "PackageDelivery",
+  OTHER = "Other",
+} 
 
 export interface AuditLog {
   id: string;

@@ -15,6 +15,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { useAuthStore } from "@/store/authStore";
 import { WarehousePackage, WarehouseCreatePayload, WarehouseUpdatePayload, Warehouse } from "@/types/warehouse";
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { toast } from "sonner";
 import { GetWarehousePackagesParams } from "@/services/warehouseService";
 
 const { RangePicker } = DatePicker;
@@ -87,11 +88,11 @@ export default function WarehousePage() {
   const handleCreateWarehouse = async (values: WarehouseCreatePayload) => {
     try {
       await createWarehouse(values);
-      message.success("Warehouse created successfully");
+      toast.success("Warehouse created successfully");
       setIsCreateModalVisible(false);
       createForm.resetFields();
     } catch (error) {
-      message.error("Failed to create warehouse");
+      toast.error("Failed to create warehouse");
     }
   };
 
@@ -108,12 +109,12 @@ export default function WarehousePage() {
     if (!editingWarehouse) return;
     try {
       await updateWarehouse({ id: editingWarehouse.id, data: values });
-      message.success("Warehouse updated successfully");
+      toast.success("Warehouse updated successfully");
       setIsEditModalVisible(false);
       setEditingWarehouse(null);
       editForm.resetFields();
     } catch (error) {
-      message.error("Failed to update warehouse");
+      toast.error("Failed to update warehouse");
     }
   };
 
@@ -121,27 +122,27 @@ export default function WarehousePage() {
     const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
       await updateWarehouseStatus({ id, status: newStatus });
-      message.success(`Warehouse ${newStatus.toLowerCase()} successfully`);
+      toast.success(`Warehouse ${newStatus.toLowerCase()} successfully`);
     } catch (error) {
-      message.error("Failed to update warehouse status");
+      toast.error("Failed to update warehouse status");
     }
   };
 
   const handleDeleteWarehouse = async (id: string) => {
     try {
       await deleteWarehouse(id);
-      message.success("Warehouse deleted successfully");
+      toast.success("Warehouse deleted successfully");
     } catch (error) {
-      message.error("Failed to delete warehouse");
+      toast.error("Failed to delete warehouse");
     }
   };
 
   const handleUpdateWarehouseDays = async () => {
     try {
       await updateWarehouseDays();
-      message.success("Warehouse days updated successfully");
+      toast.success("Warehouse days updated successfully");
     } catch (error) {
-      message.error("Failed to update warehouse days");
+      toast.error("Failed to update warehouse days");
     }
   };
 

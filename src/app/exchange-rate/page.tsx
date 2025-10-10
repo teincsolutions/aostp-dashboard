@@ -12,6 +12,7 @@ import { useShippingRates } from "@/hooks/useShippingRates";
 import { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import { message } from "antd";
+import { toast } from "sonner";
 import { getServerValidationErrors } from "@/utils/forms/errorUtils";
 
 const ROLES_ALLOWED = ["FINANCE_MANAGER", "SUPER_ADMIN"];
@@ -271,7 +272,7 @@ export default function RateManagementPage() {
                         const overlapValidation = validateExchangeRateDateOverlap(effectiveFrom);
 
                         if (!overlapValidation.isValid) {
-                          message.error(overlapValidation.message);
+                          toast.error(overlapValidation.message);
                           return;
                         }
 
@@ -282,14 +283,14 @@ export default function RateManagementPage() {
                           toCurrency: "GHS",
                         };
                         await setActiveRate(payload);
-                        message.success("Exchange rate set successfully");
+                        toast.success("Exchange rate set successfully");
                         resetForm();
                       } catch (error: any) {
                         const fieldErrors = getServerValidationErrors(error);
                         if (fieldErrors) {
                           setErrors(fieldErrors);
                         } else {
-                          message.error(error.response?.data?.message || "Failed to set exchange rate");
+                          toast.error(error.response?.data?.message || "Failed to set exchange rate");
                         }
                       }
                     }}
@@ -413,7 +414,7 @@ export default function RateManagementPage() {
                         );
 
                         if (!overlapValidation.isValid) {
-                          message.error(overlapValidation.message);
+                          toast.error(overlapValidation.message);
                           return;
                         }
 
@@ -424,14 +425,14 @@ export default function RateManagementPage() {
                           effectiveFrom: dayjs(values.effectiveFrom).toISOString(),
                         };
                         await setShippingRate(payload);
-                        message.success("Shipping rate set successfully");
+                        toast.success("Shipping rate set successfully");
                         resetForm();
                       } catch (error: any) {
                         const fieldErrors = getServerValidationErrors(error);
                         if (fieldErrors) {
                           setErrors(fieldErrors);
                         } else {
-                          message.error(error.response?.data?.message || "Failed to set shipping rate");
+                          toast.error(error.response?.data?.message || "Failed to set shipping rate");
                         }
                       }
                     }}

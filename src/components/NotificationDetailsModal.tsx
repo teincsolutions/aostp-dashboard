@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Modal, Button, Descriptions, Tag, message, Space } from "antd";
+import { toast } from "sonner";
 import { NotificationOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useRetryNotification } from "@/hooks/useNotifications";
 
@@ -39,10 +40,10 @@ export const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> =
   const handleRetry = async () => {
     try {
       await retryNotification(notification.id);
-      message.success("Notification retry initiated successfully");
+      toast.success("Notification retry initiated successfully");
       onCancel();
     } catch (error) {
-      message.error("Failed to retry notification");
+      toast.error("Failed to retry notification");
     }
   };
 

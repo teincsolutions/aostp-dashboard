@@ -12,6 +12,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useAuthStore } from "@/store/authStore";
 import dayjs from "dayjs";
+import { toast } from "sonner";
 
 const { RangePicker } = DatePicker;
 
@@ -111,9 +112,9 @@ export default function AuditLogsPage() {
       a.download = `audit-logs.${format === "csv" ? "csv" : "xlsx"}`;
       a.click();
       window.URL.revokeObjectURL(url);
-      message.success("Export successful");
+      toast.success("Export successful");
     } catch (_) {
-      message.error("Export failed");
+      toast.error("Export failed");
     } finally {
       setExporting(false);
     }

@@ -1,43 +1,54 @@
-import * as Yup from 'yup';
+import * as Yup from "yup";
 
 export const customerCreateSchema = Yup.object({
   firstName: Yup.string()
-    .required('First name is required')
-    .max(100, 'First name must be shorter than or equal to 100 characters'),
+    .required("First name is required")
+    .max(100, "First name must be shorter than or equal to 100 characters"),
   lastName: Yup.string()
-    .required('Last name is required')
-    .max(100, 'Last name must be shorter than or equal to 100 characters'),
-  phoneNumber: Yup.string()
-    .required('Phone number is required'),
-  address: Yup.string().required('Address is required'),
-  email: Yup.string()
-    .email('Please enter a valid email'),
+    .required("Last name is required")
+    .max(100, "Last name must be shorter than or equal to 100 characters"),
+  phoneNumber: Yup.string().required("Phone number is required"),
+  address: Yup.string().required("Address is required"),
+  email: Yup.string().email("Please enter a valid email"),
   alternatePhone: Yup.string(),
   city: Yup.string(),
-  idType: Yup.mixed()
-    .oneOf(['NATIONAL_ID', 'PASSPORT', 'DRIVERS_LICENSE', 'VOTER_ID'], 'Invalid ID type'),
+  idType: Yup.mixed().oneOf(
+    ["NATIONAL_ID", "PASSPORT", "DRIVERS_LICENSE", "VOTER_ID"],
+    "Invalid ID type"
+  ),
   idNumber: Yup.string(),
   preferredChannel: Yup.mixed()
-    .oneOf(['SMS', 'EMAIL', 'WHATSAPP'], 'Invalid preferred channel')
+    .oneOf(["SMS", "EMAIL", "WHATSAPP"], "Invalid preferred channel")
     .optional(),
 });
 
 export const customerUpdateSchema = Yup.object({
-  firstName: Yup.string()
-    .max(100, 'First name must be shorter than or equal to 100 characters'),
-  lastName: Yup.string()
-    .max(100, 'Last name must be shorter than or equal to 100 characters'),
-  email: Yup.string()
-    .email('Please enter a valid email'),
+  firstName: Yup.string().max(
+    100,
+    "First name must be shorter than or equal to 100 characters"
+  ),
+  lastName: Yup.string().max(
+    100,
+    "Last name must be shorter than or equal to 100 characters"
+  ),
+  email: Yup.string().email("Please enter a valid email").notRequired(),
   phoneNumber: Yup.string(),
-  alternatePhone: Yup.string(),
-  address: Yup.string(),
-  city: Yup.string(),
-  country: Yup.string(),
+  alternatePhone: Yup.string().notRequired(),
+  address: Yup.string().notRequired(),
+  city: Yup.string().notRequired(),
+  country: Yup.string().notRequired(),
   idType: Yup.mixed()
-    .oneOf(['NATIONAL_ID', 'PASSPORT', 'DRIVERS_LICENSE', 'VOTER_ID'], 'Invalid ID type'),
-  idNumber: Yup.string(),
+    .oneOf(
+      ["NATIONAL_ID", "PASSPORT", "DRIVERS_LICENSE", "VOTER_ID"],
+      "Invalid ID type"
+    )
+    .notRequired(),
+  idNumber: Yup.string().when("idType", (value, schema) => {
+    return value
+      ? schema.required("ID number is required when ID type is set")
+      : schema.notRequired();
+  }),
   preferredChannel: Yup.mixed()
-    .oneOf(['SMS', 'EMAIL', 'WHATSAPP'], 'Invalid preferred channel')
+    .oneOf(["SMS", "EMAIL", "WHATSAPP"], "Invalid preferred channel")
     .optional(),
 });

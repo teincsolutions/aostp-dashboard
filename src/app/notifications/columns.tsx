@@ -1,6 +1,6 @@
 import { ColumnsType } from "antd/es/table";
 import { Tag, Button, Tooltip } from "antd";
-import { NotificationLog, NotificationChannel, NotificationStatus } from "@/types/notification";
+import { NotificationLog, NotificationChannel, NotificationStatus, NotificationType } from "@/types/notification";
 
 export const columns: ColumnsType<NotificationLog> = [
   {
@@ -19,18 +19,26 @@ export const columns: ColumnsType<NotificationLog> = [
     ],
   },
   {
+    title: "Type",
+    dataIndex: "type",
+    key: "type",
+    render: (type: NotificationType) => <Tag>{type}</Tag>,
+    filters: [
+      { text: "Package Intake", value: NotificationType.PACKAGE_INTAKE },
+      // Add other types as needed
+    ],
+  },
+  {
     title: "Recipient",
     dataIndex: "recipient",
     key: "recipient",
     ellipsis: true,
   },
   {
-    title: "Template/Event",
-    dataIndex: "template",
-    key: "template",
-    render: (_: string, record) => (
-      <span>{record.template} / {record.event}</span>
-    ),
+    title: "Subject",
+    dataIndex: "subject",
+    key: "subject",
+    ellipsis: true,
   },
   {
     title: "Status",
@@ -48,11 +56,11 @@ export const columns: ColumnsType<NotificationLog> = [
     ],
   },
   {
-    title: "Error Message",
-    dataIndex: "errorMessage",
-    key: "errorMessage",
-    ellipsis: true,
-    render: (msg?: string) => msg || "-",
+    title: "Sent At",
+    dataIndex: "sentAt",
+    key: "sentAt",
+    render: (date: string) => new Date(date).toLocaleString(),
+    sorter: true,
   },
   {
     title: "Created At",
@@ -60,6 +68,13 @@ export const columns: ColumnsType<NotificationLog> = [
     key: "createdAt",
     render: (date: string) => new Date(date).toLocaleString(),
     sorter: true,
+  },
+  {
+    title: "Fail Reason",
+    dataIndex: "failReason",
+    key: "failReason",
+    ellipsis: true,
+    render: (msg?: string) => msg || "-",
   },
   {
     title: "Actions",

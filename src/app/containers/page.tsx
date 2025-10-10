@@ -18,6 +18,7 @@ import {
   DatePicker,
   Progress,
 } from "antd";
+import { toast } from "sonner";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -163,12 +164,12 @@ export default function ContainersPage() {
       };
 
       await createContainer(payload);
-      message.success("Container created successfully");
+      toast.success("Container created successfully");
       setIsCreateModalVisible(false);
       createForm.resetFields();
     } catch (error: any) {
       console.log(error.response.data);
-      message.error("Failed to create container");
+      toast.error("Failed to create container");
     }
   };
 
@@ -206,23 +207,23 @@ export default function ContainersPage() {
         id: editingContainer.id,
         containerData: payload,
       });
-      message.success("Container updated successfully");
+      toast.success("Container updated successfully");
       setIsEditModalVisible(false);
       setEditingContainer(null);
       editForm.resetFields();
     } catch (error: any) {
       console.log(error.response.data);
-      message.error("Failed to update container");
+      toast.error("Failed to update container");
     }
   };
 
   const handleDeleteContainer = async (id: string) => {
     try {
       await deleteContainer(id);
-      message.success("Container deleted successfully");
+      toast.success("Container deleted successfully");
     } catch (error: any) {
       console.log(error.response.data);
-      message.error("Failed to delete container");
+      toast.error("Failed to delete container");
     }
   };
 
@@ -232,12 +233,12 @@ export default function ContainersPage() {
   ) => {
     try {
       await updateContainerStatus({ id, status });
-      message.success("Container status updated successfully");
+      toast.success("Container status updated successfully");
       setIsStatusUpdateModalVisible(false);
       setUpdatingContainer(null);
     } catch (error: any) {
       console.log(error.response.data);
-      message.error("Failed to update container status");
+      toast.error("Failed to update container status");
     }
   };
 
@@ -249,14 +250,14 @@ export default function ContainersPage() {
   const handleExportManifest = async (id: string, format: ExportFormat) => {
     try {
       const result = await exportContainerManifest({ id, format });
-      message.success("Manifest exported successfully");
+      toast.success("Manifest exported successfully");
       // Open the download URL in a new tab
       if (result.downloadUrl) {
         window.open(result.downloadUrl, "_blank");
       }
     } catch (error: any) {
       console.log(error.response.data);
-      message.error("Failed to export manifest");
+      toast.error("Failed to export manifest");
     }
   };
 

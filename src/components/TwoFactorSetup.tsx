@@ -55,10 +55,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
         setSetupData(setupData);
         setShowSetupModal(true);
       } else {
-        message.error('Failed to enable 2FA');
+        toast.error('Failed to enable 2FA');
       }
     } catch (error) {
-      message.error('Failed to enable 2FA');
+      toast.error('Failed to enable 2FA');
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
   // Handle verifying 2FA setup
   const handleVerifySetup = async () => {
     if (!verificationToken.trim()) {
-      message.error('Please enter the verification token');
+      toast.error('Please enter the verification token');
       return;
     }
 
@@ -75,13 +75,13 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
       setLoading(true);
       await AuthService.verifyTwoFactor({ token: verificationToken });
 
-      message.success('Two-factor authentication enabled successfully');
+      toast.success('Two-factor authentication enabled successfully');
       setShowSetupModal(false);
       setSetupData(null);
       setVerificationToken('');
       onStatusChange?.(true);
     } catch (error) {
-      message.error('Verification failed');
+      toast.error('Verification failed');
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
   // Handle disabling 2FA
   const handleDisable2FA = async () => {
     if (!disableToken.trim()) {
-      message.error('Please enter the verification token');
+      toast.error('Please enter the verification token');
       return;
     }
 
@@ -98,12 +98,12 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
       setLoading(true);
       await AuthService.disableTwoFactor({ token: disableToken });
 
-      message.success('Two-factor authentication disabled successfully');
+      toast.success('Two-factor authentication disabled successfully');
       setShowDisableModal(false);
       setDisableToken('');
       onStatusChange?.(false);
     } catch (error) {
-      message.error('Failed to disable 2FA');
+      toast.error('Failed to disable 2FA');
     } finally {
       setLoading(false);
     }
@@ -130,10 +130,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
           ),
         });
       } else {
-        message.error('Failed to request backup code');
+        toast.error('Failed to request backup code');
       }
     } catch (error) {
-      message.error('Failed to request backup code');
+      toast.error('Failed to request backup code');
     } finally {
       setLoading(false);
     }

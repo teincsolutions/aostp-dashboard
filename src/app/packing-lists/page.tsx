@@ -25,6 +25,7 @@ import {
   Badge,
   Table as AntTable,
 } from "antd";
+import { toast } from "sonner";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -217,11 +218,11 @@ export default function PackingListsPage() {
   const handleCreatePackingList = async (values: PackingListCreatePayload) => {
     try {
       await createPackingList.mutateAsync(values);
-      message.success("Packing list created successfully");
+      toast.success("Packing list created successfully");
       setIsCreateModalVisible(false);
       createForm.resetFields();
     } catch (error: any) {
-      message.error("Failed to create packing list", error.response.data.message);
+      toast.error("Failed to create packing list", error.response.data.message);
     }
   };
 
@@ -254,21 +255,21 @@ export default function PackingListsPage() {
           eta: values.eta ? new Date(values.eta).toISOString() : undefined,
         },
       });
-      message.success("Packing list updated successfully");
+      toast.success("Packing list updated successfully");
       setIsEditModalVisible(false);
       setEditingPackingList(null);
       editForm.resetFields();
     } catch (error: any) {
-      message.error("Failed to update packing list", error.response.data.message);
+      toast.error("Failed to update packing list", error.response.data.message);
     }
   };
 
   const handleDeletePackingList = async (id: string) => {
     try {
       await deletePackingList.mutateAsync(id);
-      message.success("Packing list deleted successfully");
+      toast.success("Packing list deleted successfully");
     } catch (error: any) {
-      message.error("Failed to delete packing list", error.response.data.message);
+      toast.error("Failed to delete packing list", error.response.data.message);
     }
   };
 
@@ -283,9 +284,9 @@ export default function PackingListsPage() {
   ) => {
     try {
       await exportPackingList.mutateAsync({ id, format });
-      message.success(`Packing list exported as ${format} successfully`);
+      toast.success(`Packing list exported as ${format} successfully`);
     } catch (error: any) {
-      message.error(`Failed to export packing list as ${format}`, error.response.data.message);
+      toast.error(`Failed to export packing list as ${format}`, error.response.data.message);
     }
   };
 
@@ -303,12 +304,12 @@ export default function PackingListsPage() {
         id: assignmentPackingList.id,
         packageIds: selectedPackageIds,
       });
-      message.success(`${selectedPackageIds.length} packages added successfully`);
+      toast.success(`${selectedPackageIds.length} packages added successfully`);
       setSelectedPackageIds([]);
       setIsPackageAssignmentModalVisible(false);
       setAssignmentPackingList(null);
     } catch (error: any) {
-      message.error("Failed to add packages to packing list", error.response.data.message);
+      toast.error("Failed to add packages to packing list", error.response.data.message);
     }
   };
 
