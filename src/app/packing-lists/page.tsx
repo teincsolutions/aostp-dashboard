@@ -115,7 +115,6 @@ export default function PackingListsPage() {
   // State for UI
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [loadingCityFilter, setLoadingCityFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState<
     [Dayjs | null, Dayjs | null] | null
   >(null);
@@ -143,7 +142,6 @@ export default function PackingListsPage() {
     limit: pageSize,
     search: searchText,
     status: statusFilter ? (statusFilter as PackingListStatus) : undefined,
-    loadingCity: loadingCityFilter,
     dateFrom:
       dateRange && dateRange[0] ? dateRange[0].format("YYYY-MM-DD") : undefined,
     dateTo:
@@ -197,11 +195,6 @@ export default function PackingListsPage() {
 
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value);
-    setCurrentPage(1);
-  };
-
-  const handleLoadingCityFilter = (value: string) => {
-    setLoadingCityFilter(value);
     setCurrentPage(1);
   };
 
@@ -423,7 +416,7 @@ export default function PackingListsPage() {
 
           {/* Filters */}
           <Card className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               <Input
                 placeholder="Search packing lists..."
                 prefix={<SearchOutlined />}
@@ -443,12 +436,6 @@ export default function PackingListsPage() {
                   </Option>
                 ))}
               </Select>
-              <Input
-                placeholder="Loading city"
-                value={loadingCityFilter}
-                onChange={(e) => handleLoadingCityFilter(e.target.value)}
-                allowClear
-              />
               <Select
                 placeholder="Shipment Mode"
                 value={shipmentModeFilter}
@@ -474,7 +461,6 @@ export default function PackingListsPage() {
                 onClick={() => {
                   setSearchText("");
                   setStatusFilter("");
-                  setLoadingCityFilter("");
                   setShipmentModeFilter("");
                   setDateRange(null);
                   setCurrentPage(1);

@@ -129,8 +129,6 @@ export interface PackingListQueryParams {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   status?: PackingListStatus;
-  containerId?: string;
-  loadingCity?: string;
   dateFrom?: string;
   dateTo?: string;
   search?: string;

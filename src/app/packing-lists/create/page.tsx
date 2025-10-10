@@ -94,9 +94,8 @@ const PackingListCreatePage: React.FC = () => {
     return container.containerType === containerType;
   });
   const { data: unassignedPackages, isLoading: packagesLoading } = useUnassignedPackages({
-    search: "",
     page: 1,
-    limit: 1000,
+    limit: 100,
   });
   const { activeRates: shippingRates = [] } = useShippingRates();
 
@@ -115,7 +114,7 @@ const PackingListCreatePage: React.FC = () => {
 
   // Calculate package assignments with shipping rates
   useEffect(() => {
-    if (selectedPackageIds.length > 0 && shippingRates.length > 0) {
+    if (selectedPackageIds.length > 0) {
       const assignments: PackageAssignmentWithCalc[] = selectedPackageIds.map(id => {
         const pkg = unassignedPackages?.data?.find(p => p.id === id);
         if (!pkg) return null;
@@ -397,7 +396,7 @@ const PackingListCreatePage: React.FC = () => {
   return (
     <AuthGuard requiredRoles={[Role.SUPER_ADMIN, Role.OPERATIONS_CLERK, Role.FINANCE_MANAGER]}>
       <AppLayout>
-        <div className="p-6 max-w-6xl mx-auto">
+        <div className="p-4 md:p-6 max-w-full md:max-w-6xl mx-auto">
           <div className="mb-6">
             <Title level={2}>Create New Packing List</Title>
             <Text type="secondary">Complete the steps below to create a new packing list</Text>
@@ -424,7 +423,7 @@ const PackingListCreatePage: React.FC = () => {
                 }}
               >
                 <Row gutter={16}>
-                  <Col span={12}>
+                  <Col xs={24} lg={12}>
                     <Form.Item
                       name="name"
                       label="Packing List Name"
@@ -433,7 +432,7 @@ const PackingListCreatePage: React.FC = () => {
                       <Input placeholder="e.g., PL-2025-001" />
                     </Form.Item>
                   </Col>
-                  <Col span={12}>
+                  <Col xs={24} lg={12}>
                     <Form.Item
                       name="loadingCity"
                       label="Loading City"
@@ -445,7 +444,7 @@ const PackingListCreatePage: React.FC = () => {
                 </Row>
 
                 <Row gutter={16}>
-                  <Col span={8}>
+                  <Col xs={24} sm={12} md={8}>
                     <Form.Item
                       name="loadingDate"
                       label="Loading Date"
@@ -454,12 +453,12 @@ const PackingListCreatePage: React.FC = () => {
                       <DatePicker className="w-full" />
                     </Form.Item>
                   </Col>
-                  <Col span={8}>
+                  <Col xs={24} sm={12} md={8}>
                     <Form.Item name="eta" label="Estimated Time of Arrival">
                       <DatePicker className="w-full" />
                     </Form.Item>
                   </Col>
-                  <Col span={8}>
+                  <Col xs={24} md={8}>
                     <Form.Item name="notes" label="Notes">
                       <Input.TextArea rows={1} />
                     </Form.Item>
@@ -481,6 +480,7 @@ const PackingListCreatePage: React.FC = () => {
                     rowKey="id"
                     pagination={{ pageSize: 10 }}
                     size="small"
+                    scroll={{ x: true }}
                   />
                 </div>
 
@@ -493,6 +493,7 @@ const PackingListCreatePage: React.FC = () => {
                     rowKey="packageId"
                     pagination={false}
                     size="small"
+                    scroll={{ x: true }}
                     summary={() => (
                       <Table.Summary.Row>
                         <Table.Summary.Cell index={0} colSpan={3}>
@@ -559,7 +560,7 @@ const PackingListCreatePage: React.FC = () => {
                   }}
                 >
                   <Row gutter={16}>
-                    <Col span={18}>
+                    <Col xs={24} lg={18}>
                       <Form.Item name="containerId" label={`Select Container ${filteredContainers.length === 0 ? '(No containers available)' : `(${filteredContainers.length} available)`}`}>
                         <Select
                           placeholder="Choose a container"
@@ -578,12 +579,13 @@ const PackingListCreatePage: React.FC = () => {
                         </Select>
                       </Form.Item>
                     </Col>
-                    <Col span={6}>
+                    <Col xs={24} lg={6}>
                       <Button
                         type="default"
                         icon={<PlusOutlined />}
                         onClick={() => setContainerModalVisible(true)}
                         className="mt-8"
+                        block
                       >
                         Create New
                       </Button>
@@ -607,21 +609,21 @@ const PackingListCreatePage: React.FC = () => {
 
                 <Card size="small" title="Basic Information">
                   <Row gutter={16}>
-                    <Col span={12}>
+                    <Col xs={24} sm={12}>
                       <Text strong>Name:</Text> {packingListData.name}
                     </Col>
-                    <Col span={12}>
+                    <Col xs={24} sm={12}>
                       <Text strong>Loading City:</Text> {packingListData.loadingCity}
                     </Col>
                   </Row>
                   <Row gutter={16} className="mt-2">
-                    <Col span={12}>
+                    <Col xs={24} sm={12}>
                       <Text strong>Loading Date:</Text>{" "}
                       {packingListData.loadingDate
                         ? dayjs(packingListData.loadingDate).format("DD/MM/YYYY")
                         : "N/A"}
                     </Col>
-                    <Col span={12}>
+                    <Col xs={24} sm={12}>
                       <Text strong>ETA:</Text>{" "}
                       {packingListData.eta
                         ? dayjs(packingListData.eta).format("DD/MM/YYYY")
@@ -632,16 +634,16 @@ const PackingListCreatePage: React.FC = () => {
 
                 <Card size="small" title="Summary">
                   <Row gutter={16}>
-                    <Col span={6}>
+                    <Col xs={24} sm={12} md={6}>
                       <Text strong>Packages:</Text> {packageAssignments.length}
                     </Col>
-                    <Col span={6}>
+                    <Col xs={24} sm={12} md={6}>
                       <Text strong>Total Weight:</Text> {totals.weightTotal.toFixed(2)} kg
                     </Col>
-                    <Col span={6}>
+                    <Col xs={24} sm={12} md={6}>
                       <Text strong>Total CBM:</Text> {totals.cbmTotal.toFixed(3)}
                     </Col>
-                    <Col span={6}>
+                    <Col xs={24} sm={12} md={6}>
                       <Text strong>Total Value:</Text> ${totals.usdTotal.toFixed(2)}
                     </Col>
                   </Row>
@@ -679,7 +681,7 @@ const PackingListCreatePage: React.FC = () => {
           </Card>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-6">
+          <div className="flex justify-between gap-4 mt-6 flex-wrap">
             <Button
               disabled={currentStep === 0}
               onClick={handlePrev}
@@ -709,7 +711,7 @@ const PackingListCreatePage: React.FC = () => {
             open={containerModalVisible}
             onCancel={() => setContainerModalVisible(false)}
             footer={null}
-            width={600}
+            width={{ xs: '95%', sm: '90%', md: 600 }}
           >
             <Form
               form={containerForm}
@@ -721,7 +723,7 @@ const PackingListCreatePage: React.FC = () => {
               }}
             >
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} lg={12}>
                   <Form.Item
                     name="containerNumber"
                     label="Container Number"
@@ -730,7 +732,7 @@ const PackingListCreatePage: React.FC = () => {
                     <Input placeholder="e.g., MSCU123456" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} lg={12}>
                   <Form.Item
                     name="containerType"
                     label="Container Type"
@@ -745,7 +747,7 @@ const PackingListCreatePage: React.FC = () => {
               </Row>
 
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} lg={12}>
                   <Form.Item
                     name="departureCity"
                     label="Departure City"
@@ -754,7 +756,7 @@ const PackingListCreatePage: React.FC = () => {
                     <Input placeholder="e.g., Accra" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} lg={12}>
                   <Form.Item
                     name="destinationCity"
                     label="Destination City"
@@ -766,7 +768,7 @@ const PackingListCreatePage: React.FC = () => {
               </Row>
 
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} lg={12}>
                   <Form.Item
                     name="loadingDate"
                     label="Loading Date"
@@ -775,7 +777,7 @@ const PackingListCreatePage: React.FC = () => {
                     <DatePicker className="w-full" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} lg={12}>
                   <Form.Item
                     name="eta"
                     label="Estimated Time of Arrival"
@@ -787,12 +789,12 @@ const PackingListCreatePage: React.FC = () => {
               </Row>
 
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} lg={12}>
                   <Form.Item name="vesselFlight" label="Vessel/Flight Number">
                     <Input placeholder="e.g., MSC ALTA or EK 787" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} lg={12}>
                   <Form.Item name="status" label="Status">
                     <Select>
                       <Option value="PLANNED">Planned</Option>

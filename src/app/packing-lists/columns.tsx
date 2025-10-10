@@ -34,11 +34,6 @@ export const getPackingListColumns = (
     dataIndex: "loadingCity",
     key: "loadingCity",
     render: (city: string) => <span>{city || "N/A"}</span>,
-    filters: [
-      { text: "Accra", value: "Accra" },
-      { text: "Tema", value: "Tema" },
-      { text: "Kumasi", value: "Kumasi" },
-    ],
   },
   {
     title: "Loading Date",
