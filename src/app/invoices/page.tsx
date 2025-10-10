@@ -304,6 +304,7 @@ export default function InvoicesPage() {
               dataSource={invoices?.data || []}
               loading={isLoading}
               rowKey="id"
+              scroll={{ x: true }}
               pagination={{
                 current: currentPage,
                 pageSize,

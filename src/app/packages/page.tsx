@@ -46,7 +46,7 @@ import {
 // Display type for table that uses the new Package structure
 type DisplayPackage = Package & {
   customerName: string;
-  shipmentType: 'SEA' | 'AIR'; // Add for compatibility
+  shipmentType: "SEA" | "AIR"; // Add for compatibility
   createdByName?: string;
 };
 import { useRouter } from "next/navigation";
@@ -101,7 +101,9 @@ export default function PackagesPage() {
   const [consForm] = useForm();
 
   // Receipt modal state
-  const [receiptModalPackageId, setReceiptModalPackageId] = useState<string | null>(null);
+  const [receiptModalPackageId, setReceiptModalPackageId] = useState<
+    string | null
+  >(null);
 
   // Table selection state
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -190,13 +192,29 @@ export default function PackagesPage() {
   };
 
   const handleExportExcelAll = (ids: React.Key[] | null) => {
-    const toExport = ids ? displayPackages.filter(pkg => ids.includes(pkg.id)) : displayPackages;
-    console.log("Export Excel for:", toExport.map(p => p.trackingCode));
+    const toExport = ids
+      ? displayPackages.filter((pkg) => ids.includes(pkg.id))
+      : displayPackages;
+    console.log(
+      "Export Excel for:",
+      toExport.map((p) => p.trackingCode)
+    );
   };
 
   const handleExportPdfAll = (ids: React.Key[] | null) => {
-    const toExport = ids ? displayPackages.filter(pkg => ids.includes(pkg.id)) : displayPackages;
-    console.log("Export PDF for:", toExport.map(p => p.trackingCode));
+    const toExport = ids
+      ? displayPackages.filter((pkg) => ids.includes(pkg.id))
+      : displayPackages;
+    console.log(
+      "Export PDF for:",
+      toExport.map((p) => p.trackingCode)
+    );
+  };
+
+  // shipping mode color map
+  const modeColorMap: { [key: string]: string } = {
+    AIR: "lime",
+    SEA: "blue",
   };
 
   // Create columns with action handlers - new column structure for DisplayPackage
@@ -211,31 +229,29 @@ export default function PackagesPage() {
     {
       title: "Customer",
       key: "customer",
-      render: (record: DisplayPackage) => record.customerName,
+      render: (record: DisplayPackage) =>
+        `${record.customer?.firstName} ${record.customer?.lastName} (${record.customer?.customerCode})`,
       width: 180,
     },
     {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
+      title: "Shipping Mode",
+      dataIndex: "shippingMode",
+      key: "shippingMode",
       ellipsis: true,
       width: 200,
+      render: (mode: string) => (
+        <Tag color={modeColorMap[mode] || "default"}>{mode}</Tag>
+      ),
     },
     {
-      title: "Weight",
-      dataIndex: "weight",
+      title: "Weight/CBM",
       key: "weight",
       sorter: true,
       width: 100,
-      render: (value: number | null) => (value ? `${value} kg` : "N/A"),
-    },
-    {
-      title: "CBM",
-      dataIndex: "cbm",
-      key: "cbm",
-      sorter: true,
-      width: 100,
-      render: (value: any) => value || "N/A",
+      render: (record: DisplayPackage) =>
+        record.shipmentType === ShipmentType.AIR
+          ? `${record.weight ? `${record.weight} kg` : "N/A"}`
+          : `${record.cbm ? `${record.cbm} cbm` : "N/A"}`,
     },
     {
       title: "Quantity",
@@ -283,19 +299,6 @@ export default function PackagesPage() {
       render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-      title: "Shipment Type",
-      dataIndex: "shipmentType",
-      key: "shipmentType",
-      filters: [
-        { text: "Air", value: ShipmentType.AIR },
-        { text: "Sea", value: ShipmentType.SEA },
-      ],
-      width: 140,
-      render: (type: ShipmentType) => (
-        <Tag color={type === ShipmentType.AIR ? "blue" : "green"}>{type}</Tag>
-      ),
-    },
-    {
       title: "Status",
       dataIndex: "status",
       key: "status",
@@ -309,7 +312,7 @@ export default function PackagesPage() {
           [PackageStatusPackages.IN_WAREHOUSE]: "gold",
           [PackageStatusPackages.ASSIGNED]: "blue",
           [PackageStatusPackages.SHIPPED]: "purple",
-          [PackageStatusPackages.ARRIVED]: "green",
+          [PackageStatusPackages.ARRIVED]: "yellowgreen",
           [PackageStatusPackages.RELEASED]: "green",
         };
         return (
@@ -318,14 +321,6 @@ export default function PackagesPage() {
           </Tag>
         );
       },
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      sorter: true,
-      width: 180,
-      render: (date: any) => new Date(date).toLocaleString(),
     },
     {
       title: "Actions",
@@ -398,7 +393,7 @@ export default function PackagesPage() {
   return (
     <AuthGuard>
       <AppLayout>
-        <div className="px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto space-y-4">
+        <div className="py-4 max-w-8xl mx-auto space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
             <h1 className="text-2xl font-bold">Packages</h1>
             <div className="flex gap-4 items-center">
@@ -432,11 +427,31 @@ export default function PackagesPage() {
             </div>
           </div>
           <div className="flex gap-2 mb-4">
-            <Button icon={<FileExcelOutlined />} onClick={() => handleExportExcelAll(selectedRowKeys.length > 0 ? selectedRowKeys : null)}>
-              Export Excel {selectedRowKeys.length > 0 ? `(${selectedRowKeys.length})` : '(All)'}
+            <Button
+              icon={<FileExcelOutlined />}
+              onClick={() =>
+                handleExportExcelAll(
+                  selectedRowKeys.length > 0 ? selectedRowKeys : null
+                )
+              }
+            >
+              Export Excel{" "}
+              {selectedRowKeys.length > 0
+                ? `(${selectedRowKeys.length})`
+                : "(All)"}
             </Button>
-            <Button icon={<FilePdfOutlined />} onClick={() => handleExportPdfAll(selectedRowKeys.length > 0 ? selectedRowKeys : null)}>
-              Export PDF {selectedRowKeys.length > 0 ? `(${selectedRowKeys.length})` : '(All)'}
+            <Button
+              icon={<FilePdfOutlined />}
+              onClick={() =>
+                handleExportPdfAll(
+                  selectedRowKeys.length > 0 ? selectedRowKeys : null
+                )
+              }
+            >
+              Export PDF{" "}
+              {selectedRowKeys.length > 0
+                ? `(${selectedRowKeys.length})`
+                : "(All)"}
             </Button>
           </div>
           <div>
@@ -478,14 +493,64 @@ export default function PackagesPage() {
               setSelectedPackage(null);
             }}
             footer={[
-              <Button key="edit" onClick={() => { setViewModalVisible(false); handleEdit(selectedPackage!); }}>Edit</Button>,
-              <Button key="upload" onClick={() => { setViewModalVisible(false); handleUploadPhoto(selectedPackage!); }}>Upload Photo</Button>,
-              <Button key="status" onClick={() => { setViewModalVisible(false); handleUpdateStatus(selectedPackage!); }}>Update Status</Button>,
-              <Button key="delete" danger onClick={() => { setViewModalVisible(false); handleDelete(selectedPackage!); }}>Delete</Button>,
-              <Button key="receipt" onClick={() => setReceiptModalPackageId(selectedPackage!.id)}>View Receipt</Button>,
-              <Button key="excel" onClick={() => handleExportExcel(selectedPackage!)}>Export Excel</Button>,
-              <Button key="pdf" onClick={() => handleExportPdf(selectedPackage!)}>Export PDF</Button>,
-              <Button key="close" onClick={() => setViewModalVisible(false)}>Close</Button>,
+              <Button
+                key="edit"
+                onClick={() => {
+                  setViewModalVisible(false);
+                  handleEdit(selectedPackage!);
+                }}
+              >
+                Edit
+              </Button>,
+              <Button
+                key="upload"
+                onClick={() => {
+                  setViewModalVisible(false);
+                  handleUploadPhoto(selectedPackage!);
+                }}
+              >
+                Upload Photo
+              </Button>,
+              <Button
+                key="status"
+                onClick={() => {
+                  setViewModalVisible(false);
+                  handleUpdateStatus(selectedPackage!);
+                }}
+              >
+                Update Status
+              </Button>,
+              <Button
+                key="delete"
+                danger
+                onClick={() => {
+                  setViewModalVisible(false);
+                  handleDelete(selectedPackage!);
+                }}
+              >
+                Delete
+              </Button>,
+              <Button
+                key="receipt"
+                onClick={() => setReceiptModalPackageId(selectedPackage!.id)}
+              >
+                View Receipt
+              </Button>,
+              <Button
+                key="excel"
+                onClick={() => handleExportExcel(selectedPackage!)}
+              >
+                Export Excel
+              </Button>,
+              <Button
+                key="pdf"
+                onClick={() => handleExportPdf(selectedPackage!)}
+              >
+                Export PDF
+              </Button>,
+              <Button key="close" onClick={() => setViewModalVisible(false)}>
+                Close
+              </Button>,
             ]}
             width={800}
           >
@@ -602,21 +667,26 @@ export default function PackagesPage() {
                     />
                   </div>
                 )}
-                {selectedPackage.photos && selectedPackage.photos.length > 0 && (
-                  <div style={{ marginTop: 16 }}>
-                    <h3>Photos ({selectedPackage.photos.length})</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {selectedPackage.photos.map((photo, index) => (
-                        <Image
-                          key={index}
-                          src={photo.url}
-                          alt={`Photo ${index + 1}`}
-                          style={{ width: '100%', height: 200, objectFit: 'cover' }}
-                        />
-                      ))}
+                {selectedPackage.photos &&
+                  selectedPackage.photos.length > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <h3>Photos ({selectedPackage.photos.length})</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {selectedPackage.photos.map((photo, index) => (
+                          <Image
+                            key={index}
+                            src={photo.url}
+                            alt={`Photo ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              height: 200,
+                              objectFit: "cover",
+                            }}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             )}
           </Modal>

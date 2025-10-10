@@ -336,6 +336,7 @@ export default function CustomersPage() {
               loading={isLoading}
               rowKey="id"
               rowSelection={rowSelection}
+              scroll={{ x: true }}
               pagination={{
                 current: currentPage,
                 pageSize,

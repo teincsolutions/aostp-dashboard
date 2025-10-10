@@ -442,6 +442,7 @@ export default function ContainersPage() {
               dataSource={containers?.data || []}
               loading={isLoading}
               rowKey="id"
+              scroll={{ x: true }}
               pagination={{
                 current: currentPage,
                 pageSize,

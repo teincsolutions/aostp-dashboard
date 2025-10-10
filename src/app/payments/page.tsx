@@ -291,6 +291,7 @@ export default function PaymentsPage() {
               dataSource={currentInvoices}
               loading={isSearching}
               rowKey="id"
+              scroll={{ x: true }}
               pagination={{
                 pageSize: 10,
                 showTotal: (total, range) =>

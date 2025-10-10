@@ -371,7 +371,7 @@ export default function PackingListsPage() {
               icon={<PlusOutlined />}
               href="/packing-lists/create"
               block
-              className="md:w-auto"
+              className="max-w-xs"
             >
               Create Packing List
             </Button>
@@ -491,6 +491,7 @@ export default function PackingListsPage() {
               dataSource={packingLists?.data || []}
               loading={isLoading}
               rowKey="id"
+              scroll={{ x: true }}
               pagination={{
                 current: currentPage,
                 pageSize,

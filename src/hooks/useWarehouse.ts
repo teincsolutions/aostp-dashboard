@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getWarehousePackages,
-  getWarehouseAgingSummary,
-  updatePackageWarehouseLocation,
   updatePackageStatus,
   getWarehouses,
   createWarehouse,
@@ -12,30 +10,12 @@ import {
   updateWarehouseDays,
   GetWarehousePackagesParams,
 } from "@/services/warehouseService";
-import { WarehousePackage, WarehouseAgingSummary, WarehouseCreatePayload, WarehouseUpdatePayload, Warehouse } from "@/types/warehouse";
+import {WarehouseCreatePayload, WarehouseUpdatePayload } from "@/types/warehouse";
 
 export const useWarehousePackages = (params: GetWarehousePackagesParams) => {
   return useQuery({
     queryKey: ["warehousePackages", params],
     queryFn: () => getWarehousePackages(params),
-  });
-};
-
-export const useWarehouseAgingSummary = (params?: { location?: string }) => {
-  return useQuery({
-    queryKey: ["warehouseAgingSummary", params],
-    queryFn: () => getWarehouseAgingSummary(params),
-  });
-};
-
-export const useUpdatePackageWarehouseLocation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, warehouseLocation }: { id: string; warehouseLocation: string }) =>
-      updatePackageWarehouseLocation(id, warehouseLocation),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["warehousePackages"] });
-    },
   });
 };
 

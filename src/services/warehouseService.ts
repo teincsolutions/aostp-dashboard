@@ -7,10 +7,9 @@ export interface GetWarehousePackagesParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-  warehouseLocation?: string;
+  warehouseId?: string;
   status?: string;
-  daysInWarehouseFrom?: number;
-  daysInWarehouseTo?: number;
+  daysThreshold: number;
   dateFrom?: string;
   dateTo?: string;
   search?: string;

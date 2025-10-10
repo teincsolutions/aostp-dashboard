@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { Table, Empty, Result, notification, Button, DatePicker, Select, Input, Space, Card, Modal, Form, message, Tabs, Popconfirm, Row, Col, Statistic } from "antd";
+import { Table, Empty, Result, Button, DatePicker, Select, Input, Space, Modal, Form, message, Tabs, Popconfirm, Row, Col } from "antd";
 import type {
   TablePaginationConfig,
   FilterValue,
@@ -9,12 +9,13 @@ import type {
   TableCurrentDataSource,
 } from "antd/es/table/interface";
 import { columns } from "@/app/warehouse/columns";
-import { useWarehousePackages, useWarehouses, useWarehouseMutations, useWarehouseAgingSummary } from "@/hooks/useWarehouse";
+import { useWarehousePackages, useWarehouses, useWarehouseMutations } from "@/hooks/useWarehouse";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useAuthStore } from "@/store/authStore";
 import { WarehousePackage, WarehouseCreatePayload, WarehouseUpdatePayload, Warehouse } from "@/types/warehouse";
-import { PlusOutlined, ReloadOutlined, WarningOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { GetWarehousePackagesParams } from "@/services/warehouseService";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -27,23 +28,10 @@ export default function WarehousePage() {
   const [activeTab, setActiveTab] = useState("1");
 
   // Warehouse packages filters
-  const [packageFilters, setPackageFilters] = useState<{
-    warehouseLocation?: string;
-    status?: string;
-    daysInWarehouseFrom?: number;
-    daysInWarehouseTo?: number;
-    dateFrom?: string;
-    dateTo?: string;
-    search: string;
-    page: number;
-    limit: number;
-    sortBy: string;
-    sortOrder: "desc" | "asc" | undefined;
-  }>({
-    warehouseLocation: undefined,
+  const [packageFilters, setPackageFilters] = useState<GetWarehousePackagesParams>({
+    warehouseId: undefined,
     status: undefined,
-    daysInWarehouseFrom: undefined,
-    daysInWarehouseTo: undefined,
+    daysThreshold: 0,
     dateFrom: undefined,
     dateTo: undefined,
     search: "",
@@ -67,8 +55,7 @@ export default function WarehousePage() {
   // React Query hooks
   const { data: packagesData, isLoading: packagesLoading, isError: packagesError, error: packagesErrorMsg } = useWarehousePackages(packageFilters);
   const { data: warehousesData, isLoading: warehousesLoading } = useWarehouses({ page: warehousesPage, limit: warehousesLimit });
-  const { data: agingSummary } = useWarehouseAgingSummary();
-
+ 
   const {
     createWarehouse,
     updateWarehouse,
@@ -274,34 +261,28 @@ export default function WarehousePage() {
             </div>
           </div>
 
-          {/* Aging Summary */}
-          {agingSummary?.data && (
-            <Card className="mb-6">
-              <h3 className="text-lg font-semibold mb-4">Aging Summary</h3>
-              <Row gutter={16}>
-                {agingSummary.data.map((summary) => (
-                  <Col key={summary.location} span={6}>
-                    <Card size="small">
-                      <Statistic
-                        title={`Location ${summary.location}`}
-                        value={summary.totalPackages}
-                        prefix={<WarningOutlined />}
-                      />
-                      <div className="mt-2 space-y-1">
-                        <div className="text-xs">0-7 days: {summary.agingBuckets['0-7']}</div>
-                        <div className="text-xs">8-14 days: {summary.agingBuckets['8-14']}</div>
-                        <div className="text-xs">15-30 days: {summary.agingBuckets['15-30']}</div>
-                        <div className="text-xs">31+ days: {summary.agingBuckets['31+']}</div>
-                      </div>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            </Card>
-          )}
-
           <Tabs activeKey={activeTab} onChange={setActiveTab}>
-            <TabPane tab="Packages in Warehouse" key="1">
+          
+            <TabPane tab="Warehouse Locations" key="1">
+              <Table
+                columns={warehouseColumns}
+                dataSource={warehousesData?.data || []}
+                rowKey="id"
+                loading={warehousesLoading}
+                pagination={{
+                  current: warehousesPage,
+                  pageSize: warehousesLimit,
+                  total: warehousesData?.meta?.totalItems || 0,
+                  showSizeChanger: true,
+                  onChange: (page, size) => {
+                    setWarehousesPage(page);
+                  },
+                }}
+                locale={{ emptyText: <Empty description="No warehouses found" /> }}
+                scroll={{ x: true }}
+              />
+            </TabPane>
+              <TabPane tab="Packages in Warehouse" key="2">
               <Space wrap className="mb-4">
                 <Input.Search
                   placeholder="Search Tracking # / Customer"
@@ -310,10 +291,10 @@ export default function WarehousePage() {
                   style={{ width: 220 }}
                 />
                 <Select
-                  placeholder="Location"
+                  placeholder="Warehouse"
                   allowClear
                   style={{ width: 140 }}
-                  onChange={(v) => setPackageFilters(prev => ({ ...prev, warehouseLocation: v, page: 1 }))}
+                  onChange={(v) => setPackageFilters(prev => ({ ...prev, warehouseId: v, page: 1 }))}
                 >
                   {warehousesData?.data?.map(w => (
                     <Option key={w.id} value={w.warehouseId}>{w.name} ({w.warehouseId})</Option>
@@ -383,25 +364,6 @@ export default function WarehousePage() {
               )}
             </TabPane>
 
-            <TabPane tab="Warehouse Locations" key="2">
-              <Table
-                columns={warehouseColumns}
-                dataSource={warehousesData?.data || []}
-                rowKey="id"
-                loading={warehousesLoading}
-                pagination={{
-                  current: warehousesPage,
-                  pageSize: warehousesLimit,
-                  total: warehousesData?.meta?.totalItems || 0,
-                  showSizeChanger: true,
-                  onChange: (page, size) => {
-                    setWarehousesPage(page);
-                  },
-                }}
-                locale={{ emptyText: <Empty description="No warehouses found" /> }}
-                scroll={{ x: true }}
-              />
-            </TabPane>
           </Tabs>
 
           {/* Create Warehouse Modal */}
