@@ -87,11 +87,17 @@ export const menuItems: Array<MenuItem> = [
     roles: ["SUPER_ADMIN"],
   },
   
-  // Group: Payments, Exchange Rate
+  // Group: Payments, Invoices, Exchange Rate
   {
     key: "/payments",
     icon: <FileTextOutlined />,
     label: "Payments",
+    roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "PAYMENT_CLERK"],
+  },
+  {
+    key: "/invoices",
+    icon: <FileTextOutlined />,
+    label: "Invoices",
     roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "PAYMENT_CLERK"],
   },
   {

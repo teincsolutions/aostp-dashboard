@@ -7,10 +7,12 @@ import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { exchangeRateColumns } from "./columns";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { ExchangeRateCreatePayload, ShippingMode, AirShippingType } from "@/types/exchangeRate";
+import { ExchangeRateCreatePayload, ShippingMode, AirShippingType, ExchangeRate, ShippingRate } from "@/types/exchangeRate";
 import { useShippingRates } from "@/hooks/useShippingRates";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dayjs from "dayjs";
+import { message } from "antd";
+import { getServerValidationErrors } from "@/utils/forms/errorUtils";
 
 const ROLES_ALLOWED = ["FINANCE_MANAGER", "SUPER_ADMIN"];
 
@@ -62,6 +64,69 @@ export default function RateManagementPage() {
   const [exchangeLimit, setExchangeLimit] = useState(10);
   const [shippingPage, setShippingPage] = useState(1);
   const [shippingLimit, setShippingLimit] = useState(10);
+
+  // Date overlap validation state
+  const [allExchangeRates, setAllExchangeRates] = useState<ExchangeRate[]>([]);
+  const [allShippingRates, setAllShippingRates] = useState<ShippingRate[]>([]);
+
+  // Get complete rate datasets for validation
+  const allExchangeRatesQuery = useRateHistory({ page: 1, limit: 1000 });
+  const allShippingRatesQuery = useShippingRateHistory({ page: 1, limit: 1000 });
+
+  // Update validation state when full datasets are loaded
+  useEffect(() => {
+    if (allExchangeRatesQuery.data?.data) {
+      setAllExchangeRates(allExchangeRatesQuery.data.data);
+    }
+  }, [allExchangeRatesQuery.data]);
+
+  useEffect(() => {
+    if (allShippingRatesQuery.data?.data) {
+      setAllShippingRates(allShippingRatesQuery.data.data);
+    }
+  }, [allShippingRatesQuery.data]);
+
+  // Date overlap validation functions
+  const validateExchangeRateDateOverlap = (effectiveFrom: dayjs.Dayjs): { isValid: boolean; message?: string } => {
+    const activeRates = allExchangeRates.filter(rate => rate.isActive);
+    const selectedDate = effectiveFrom.toISOString();
+
+    // Check if there's an active rate that would conflict
+    for (const rate of activeRates) {
+      if (rate.effectiveFrom <= selectedDate) {
+        return {
+          isValid: false,
+          message: `Date overlaps with existing active rate effective from ${dayjs(rate.effectiveFrom).format("YYYY-MM-DD HH:mm")}`
+        };
+      }
+    }
+
+    return { isValid: true };
+  };
+
+  const validateShippingRateDateOverlap = (effectiveFrom: dayjs.Dayjs, shippingMode: ShippingMode, airShippingType?: AirShippingType): { isValid: boolean; message?: string } => {
+    const selectedDate = effectiveFrom.toISOString();
+
+    // Filter rates for the same mode/type combination
+    const relevantRates = allShippingRates.filter(rate => {
+      if (rate.shippingMode !== shippingMode) return false;
+      if (shippingMode === ShippingMode.AIR && rate.airShippingType !== airShippingType) return false;
+      return !rate.effectiveTo || rate.effectiveTo > selectedDate; // Active or future rates
+    });
+
+    // Check for overlaps
+    for (const rate of relevantRates) {
+      if (rate.effectiveFrom <= selectedDate && (!rate.effectiveTo || rate.effectiveTo > selectedDate)) {
+        const conflictType = rate.airShippingType ? `AIR - ${rate.airShippingType.replace("_", " ")}` : "SEA";
+        return {
+          isValid: false,
+          message: `Date overlaps with existing ${conflictType} rate effective from ${dayjs(rate.effectiveFrom).format("YYYY-MM-DD HH:mm")}`
+        };
+      }
+    }
+
+    return { isValid: true };
+  };
 
   // Table data
   const {
@@ -199,15 +264,34 @@ export default function RateManagementPage() {
                       effectiveFrom: "",
                     }}
                     validationSchema={exchangeRateValidationSchema}
-                    onSubmit={(values, { resetForm }) => {
-                      const payload: ExchangeRateCreatePayload = {
-                        rate: Number(values.rate),
-                        effectiveFrom: dayjs(values.effectiveFrom).toISOString(),
-                        fromCurrency: "USD",
-                        toCurrency: "GHS",
-                      };
-                      setActiveRate(payload);
-                      resetForm();
+                    onSubmit={async (values, { setErrors, resetForm }) => {
+                      try {
+                        // Validate date overlap before submission
+                        const effectiveFrom = dayjs(values.effectiveFrom);
+                        const overlapValidation = validateExchangeRateDateOverlap(effectiveFrom);
+
+                        if (!overlapValidation.isValid) {
+                          message.error(overlapValidation.message);
+                          return;
+                        }
+
+                        const payload: ExchangeRateCreatePayload = {
+                          rate: Number(values.rate),
+                          effectiveFrom: dayjs(values.effectiveFrom).toISOString(),
+                          fromCurrency: "USD",
+                          toCurrency: "GHS",
+                        };
+                        await setActiveRate(payload);
+                        message.success("Exchange rate set successfully");
+                        resetForm();
+                      } catch (error: any) {
+                        const fieldErrors = getServerValidationErrors(error);
+                        if (fieldErrors) {
+                          setErrors(fieldErrors);
+                        } else {
+                          message.error(error.response?.data?.message || "Failed to set exchange rate");
+                        }
+                      }
                     }}
                   >
                     {({ errors, touched, setFieldValue, isSubmitting }) => (
@@ -318,15 +402,38 @@ export default function RateManagementPage() {
                       effectiveFrom: "",
                     }}
                     validationSchema={shippingRateValidationSchema}
-                    onSubmit={(values, { resetForm }) => {
-                      const payload = {
-                        shippingMode: values.shippingMode,
-                        airShippingType: values.airShippingType,
-                        rate: Number(values.rate),
-                        effectiveFrom: dayjs(values.effectiveFrom).toISOString(),
-                      };
-                      setShippingRate(payload);
-                      resetForm();
+                    onSubmit={async (values, { setErrors, resetForm }) => {
+                      try {
+                        // Validate date overlap before submission
+                        const effectiveFrom = dayjs(values.effectiveFrom);
+                        const overlapValidation = validateShippingRateDateOverlap(
+                          effectiveFrom,
+                          values.shippingMode,
+                          values.airShippingType
+                        );
+
+                        if (!overlapValidation.isValid) {
+                          message.error(overlapValidation.message);
+                          return;
+                        }
+
+                        const payload = {
+                          shippingMode: values.shippingMode,
+                          airShippingType: values.airShippingType,
+                          rate: Number(values.rate),
+                          effectiveFrom: dayjs(values.effectiveFrom).toISOString(),
+                        };
+                        await setShippingRate(payload);
+                        message.success("Shipping rate set successfully");
+                        resetForm();
+                      } catch (error: any) {
+                        const fieldErrors = getServerValidationErrors(error);
+                        if (fieldErrors) {
+                          setErrors(fieldErrors);
+                        } else {
+                          message.error(error.response?.data?.message || "Failed to set shipping rate");
+                        }
+                      }
                     }}
                   >
                     {({ errors, touched, setFieldValue, values, isSubmitting }) => (

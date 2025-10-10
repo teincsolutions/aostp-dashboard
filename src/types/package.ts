@@ -133,6 +133,7 @@ export interface Package {
   photos: PackagePhoto[];
   packingList?: any;
   invoice?: any;
+  warehouse: Warehouse;
   items?: PackageItem[];
   createdBy?: { id: string; firstName: string; lastName: string; email?: string };
   correlationId?: string;

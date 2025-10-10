@@ -288,20 +288,18 @@ export default function CustomersPage() {
 
           {/* Filters */}
           <Card className="mb-6">
-            <div className="flex gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               <Input
                 placeholder="Search customers..."
                 prefix={<SearchOutlined />}
                 value={searchText}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-2/5"
                 allowClear
               />
               <Select
                 placeholder="Filter by status"
                 value={statusFilter}
                 onChange={handleStatusFilter}
-                className="w-1/5"
                 allowClear
               >
                 <Option value="active">Active</Option>
@@ -311,7 +309,6 @@ export default function CustomersPage() {
                 placeholder="Filter by ID Type"
                 value={idTypeFilter}
                 onChange={handleIdTypeFilter}
-                className="w-1/5"
                 allowClear
               >
                 {idTypeOptions.map(opt => (
@@ -322,7 +319,6 @@ export default function CustomersPage() {
                 placeholder="Filter by Channel"
                 value={channelFilter}
                 onChange={handleChannelFilter}
-                className="w-1/5"
                 allowClear
               >
                 {preferredChannelOptions.map(opt => (

@@ -61,11 +61,15 @@ export default function InvoicesPage() {
   };
 
   const handleViewInvoice = (invoiceId: string) => {
-    message.info(`View invoice ${invoiceId} - this would open a modal or navigate to detail page`);
+    message.info(
+      `View invoice ${invoiceId} - this would open a modal or navigate to detail page`
+    );
   };
 
   const handleDownloadInvoice = (invoiceId: string) => {
-    message.info(`Download invoice ${invoiceId} - this would trigger file download`);
+    message.info(
+      `Download invoice ${invoiceId} - this would trigger file download`
+    );
   };
 
   // Table columns
@@ -175,23 +179,27 @@ export default function InvoicesPage() {
 
   // Statistics
   const totalInvoices = invoices?.total || 0;
-  const paidInvoices = invoices?.data?.filter(
-    (inv: Invoice) => inv.status === InvoiceStatus.PAID
-  ).length || 0;
-  const unpaidInvoices = invoices?.data?.filter(
-    (inv: Invoice) => inv.status === InvoiceStatus.UNPAID
-  ).length || 0;
-  const partialInvoices = invoices?.data?.filter(
-    (inv: Invoice) => inv.status === InvoiceStatus.PARTIALLY_PAID
-  ).length || 0;
+  const paidInvoices =
+    invoices?.data?.filter((inv: Invoice) => inv.status === InvoiceStatus.PAID)
+      .length || 0;
+  const unpaidInvoices =
+    invoices?.data?.filter(
+      (inv: Invoice) => inv.status === InvoiceStatus.UNPAID
+    ).length || 0;
+  const partialInvoices =
+    invoices?.data?.filter(
+      (inv: Invoice) => inv.status === InvoiceStatus.PARTIALLY_PAID
+    ).length || 0;
 
-  const totalUSD = invoices?.data
-    ?.filter((inv: Invoice) => inv.currency === "USD")
-    .reduce((sum: number, inv: Invoice) => sum + inv.totalAmount, 0) || 0;
+  const totalUSD =
+    invoices?.data
+      ?.filter((inv: Invoice) => inv.currency === "USD")
+      .reduce((sum: number, inv: Invoice) => sum + inv.totalAmount, 0) || 0;
 
-  const totalGHS = invoices?.data
-    ?.filter((inv: Invoice) => inv.currency === "GHS")
-    .reduce((sum: number, inv: Invoice) => sum + inv.totalAmount, 0) || 0;
+  const totalGHS =
+    invoices?.data
+      ?.filter((inv: Invoice) => inv.currency === "GHS")
+      .reduce((sum: number, inv: Invoice) => sum + inv.totalAmount, 0) || 0;
 
   return (
     <AuthGuard>
@@ -278,7 +286,9 @@ export default function InvoicesPage() {
               >
                 <Option value={InvoiceStatus.PAID}>Paid</Option>
                 <Option value={InvoiceStatus.UNPAID}>Unpaid</Option>
-                <Option value={InvoiceStatus.PARTIALLY_PAID}>Partially Paid</Option>
+                <Option value={InvoiceStatus.PARTIALLY_PAID}>
+                  Partially Paid
+                </Option>
               </Select>
               <Input
                 placeholder="Customer ID"

@@ -16,7 +16,7 @@ export const packageIntakeColumns: ColumnsType<Package & { onViewReceipt: (id: s
     title: "Warehouse",
     key: "warehouse",
     width: 120,
-    render: (_, record) => record.warehouseId,
+    render: (_, record) => record?.warehouse?.name,
   },
   {
     title: "Customer",

@@ -1,15 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/services/api';
-
-export interface Invoice {
-  id: string;
-  invoiceNumber: string;
-  customerId: string;
-  totalAmount: number;
-  status: string;
-  createdAt: string;
-  dueDate: string;
-}
+import { Invoice } from '@/types/invoice';
 
 export const useCustomerInvoices = (customerId: string, limit: number = 5) => {
   return useQuery({

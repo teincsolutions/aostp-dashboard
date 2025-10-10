@@ -192,19 +192,19 @@ export default function PaymentsPage() {
 
           {/* Search Section */}
           <Card className="mb-6">
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-col gap-4 md:flex-row md:gap-4 mb-4">
               <Input
                 placeholder="Search by customer name, phone, or package tracking ID..."
                 prefix={<SearchOutlined />}
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="flex-1"
+                className="w-full md:flex-1"
                 allowClear
               />
               {searchResults?.data && searchResults.data.length > 0 && (
                 <Select
                   placeholder="Select customer"
-                  className="w-1/3"
+                  className="w-full md:w-1/3"
                   onChange={handleCustomerSelect}
                   allowClear
                   showSearch
@@ -222,8 +222,8 @@ export default function PaymentsPage() {
 
           {/* Statistics Cards */}
           {selectedCustomerId && (
-            <Row gutter={16} className="mb-6">
-              <Col span={6}>
+            <Row gutter={[16, 16]} className="mb-6">
+              <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
                     title="Total Outstanding"
@@ -234,7 +234,7 @@ export default function PaymentsPage() {
                   />
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
                     title="Invoice Count"
@@ -243,7 +243,7 @@ export default function PaymentsPage() {
                   />
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
                     title="Selected Amount"
@@ -254,7 +254,7 @@ export default function PaymentsPage() {
                   />
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
                     title="Unpaid Invoices"
@@ -421,7 +421,8 @@ export default function PaymentsPage() {
               paymentForm.resetFields();
             }}
             footer={null}
-            width={600}
+            width="95%"
+            style={{ maxWidth: 600, margin: '16px auto' }}
           >
             <Form
               form={paymentForm}

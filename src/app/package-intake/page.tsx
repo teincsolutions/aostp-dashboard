@@ -40,6 +40,7 @@ import type { RcFile, UploadFile } from "antd/es/upload/interface";
 import { CustomerCreatePayload, CustomerUpdatePayload } from "@/types/customer";
 import { UploadProps } from "antd/lib";
 import { toast } from "sonner";
+import { InvoiceStatus } from "@/types/invoice";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -389,9 +390,9 @@ export default function PackageIntakePage() {
                                   </div>
                                   <div
                                     className={`text-sm px-2 py-1 rounded ${
-                                      invoice.status === "PAID"
+                                      invoice.status === InvoiceStatus.PAID
                                         ? "bg-green-100 text-green-800"
-                                        : invoice.status === "OVERDUE"
+                                        : invoice.status === InvoiceStatus.UNPAID
                                         ? "bg-red-100 text-red-800"
                                         : "bg-yellow-100 text-yellow-800"
                                     }`}
