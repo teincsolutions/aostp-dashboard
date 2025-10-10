@@ -186,7 +186,7 @@ export default function PaymentsPage() {
               onClick={() => setIsPaymentModalVisible(true)}
               disabled={selectedInvoices.length === 0}
               block
-              className="md:w-auto"
+              className="max-w-xs"
             >
               Process Payment ({selectedInvoices.length} selected)
             </Button>
@@ -200,7 +200,7 @@ export default function PaymentsPage() {
                 prefix={<SearchOutlined />}
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full md:flex-1"
+                className="max-w-md"
                 allowClear
               />
               {searchResults?.data && searchResults.data.length > 0 && (

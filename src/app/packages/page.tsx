@@ -58,6 +58,7 @@ import { Form } from "antd";
 import { toast } from "sonner";
 import { usePackageReceipt } from "@/hooks/usePackages";
 import { ReceiptModal } from "@/components/ReceiptModal";
+import { Warehouse } from "@/types/warehouse";
 
 const { Search } = Input;
 const { useForm } = Form;
@@ -234,11 +235,11 @@ export default function PackagesPage() {
       width: 180,
     },
     {
-      title: "Shipping Mode",
+      title: "Ship. Mode",
       dataIndex: "shippingMode",
       key: "shippingMode",
       ellipsis: true,
-      width: 200,
+      width: 60,
       render: (mode: string) => (
         <Tag color={modeColorMap[mode] || "default"}>{mode}</Tag>
       ),
@@ -254,17 +255,17 @@ export default function PackagesPage() {
           : `${record.cbm ? `${record.cbm} cbm` : "N/A"}`,
     },
     {
-      title: "Quantity",
+      title: "Qty",
       dataIndex: "quantity",
       key: "quantity",
       sorter: true,
-      width: 100,
+      width: 50,
     },
     {
-      title: "Consolidated",
+      title: "Cons.d",
       dataIndex: "isConsolidated",
       key: "isConsolidated",
-      width: 120,
+      width: 80,
       render: (value: boolean) =>
         value ? <Tag color="green">Yes</Tag> : <Tag>No</Tag>,
     },
@@ -272,7 +273,7 @@ export default function PackagesPage() {
       title: "Payment Status",
       dataIndex: "paymentStatus",
       key: "paymentStatus",
-      width: 140,
+      width: 100,
       render: (status: string) => {
         const colorMap: { [key: string]: string } = {
           PENDING: "orange",
@@ -287,16 +288,15 @@ export default function PackagesPage() {
       dataIndex: "daysInWarehouse",
       key: "daysInWarehouse",
       sorter: true,
-      width: 150,
+      width: 80,
       render: (value: number) => `${value} days`,
     },
     {
-      title: "Received Date",
-      dataIndex: "receivedDate",
-      key: "receivedDate",
+      title: "Warehouse",
+      key: "warehouse",
       sorter: true,
       width: 180,
-      render: (date: string) => new Date(date).toLocaleString(),
+      render: (record: DisplayPackage) => record.warehouse?.name || "N/A",
     },
     {
       title: "Status",
@@ -306,7 +306,7 @@ export default function PackagesPage() {
         text: status.replace("_", " "),
         value: status,
       })),
-      width: 140,
+      width: 100,
       render: (status: PackageStatusPackages) => {
         const colorMap = {
           [PackageStatusPackages.IN_WAREHOUSE]: "gold",
@@ -321,6 +321,12 @@ export default function PackagesPage() {
           </Tag>
         );
       },
+    },
+    {
+      title: "Received Date",
+      dataIndex: "receivedDate",
+      key: "receivedDate",
+      render: (date: string) => new Date(date).toLocaleString(),
     },
     {
       title: "Actions",
