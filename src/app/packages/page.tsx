@@ -17,6 +17,7 @@ import {
   Collapse,
   Space,
   Badge,
+  Image,
 } from "antd";
 import {
   ExclamationCircleOutlined,
@@ -34,6 +35,7 @@ import {
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import {
   PackageStatusPackages,
   ShipmentType,
@@ -100,6 +102,9 @@ export default function PackagesPage() {
 
   // Receipt modal state
   const [receiptModalPackageId, setReceiptModalPackageId] = useState<string | null>(null);
+
+  // Table selection state
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   const params = {
     page,
@@ -182,6 +187,16 @@ export default function PackagesPage() {
   const handleExportPdf = (record: DisplayPackage) => {
     // Placeholder for PDF export
     console.log("Export to PDF:", record.id);
+  };
+
+  const handleExportExcelAll = (ids: React.Key[] | null) => {
+    const toExport = ids ? displayPackages.filter(pkg => ids.includes(pkg.id)) : displayPackages;
+    console.log("Export Excel for:", toExport.map(p => p.trackingCode));
+  };
+
+  const handleExportPdfAll = (ids: React.Key[] | null) => {
+    const toExport = ids ? displayPackages.filter(pkg => ids.includes(pkg.id)) : displayPackages;
+    console.log("Export PDF for:", toExport.map(p => p.trackingCode));
   };
 
   // Create columns with action handlers - new column structure for DisplayPackage
@@ -375,24 +390,6 @@ export default function PackagesPage() {
               onClick={() => setReceiptModalPackageId(record.id)}
             />
           </Tooltip>
-
-          {/* Export Excel Button */}
-          <Tooltip title="Export Excel">
-            <Button
-              icon={<FileExcelOutlined />}
-              size="small"
-              onClick={() => handleExportExcel(record)}
-            />
-          </Tooltip>
-
-          {/* Export PDF Button */}
-          <Tooltip title="Export PDF">
-            <Button
-              icon={<FilePdfOutlined />}
-              size="small"
-              onClick={() => handleExportPdf(record)}
-            />
-          </Tooltip>
         </div>
       ),
     },
@@ -434,12 +431,24 @@ export default function PackagesPage() {
               />
             </div>
           </div>
+          <div className="flex gap-2 mb-4">
+            <Button icon={<FileExcelOutlined />} onClick={() => handleExportExcelAll(selectedRowKeys.length > 0 ? selectedRowKeys : null)}>
+              Export Excel {selectedRowKeys.length > 0 ? `(${selectedRowKeys.length})` : '(All)'}
+            </Button>
+            <Button icon={<FilePdfOutlined />} onClick={() => handleExportPdfAll(selectedRowKeys.length > 0 ? selectedRowKeys : null)}>
+              Export PDF {selectedRowKeys.length > 0 ? `(${selectedRowKeys.length})` : '(All)'}
+            </Button>
+          </div>
           <div>
             <Table
               columns={columnsWithActions}
               dataSource={displayPackages}
               rowKey="id"
               loading={packagesLoading}
+              rowSelection={{
+                selectedRowKeys,
+                onChange: setSelectedRowKeys,
+              }}
               pagination={{
                 current: page,
                 pageSize,
@@ -469,9 +478,14 @@ export default function PackagesPage() {
               setSelectedPackage(null);
             }}
             footer={[
-              <Button key="close" onClick={() => setViewModalVisible(false)}>
-                Close
-              </Button>,
+              <Button key="edit" onClick={() => { setViewModalVisible(false); handleEdit(selectedPackage!); }}>Edit</Button>,
+              <Button key="upload" onClick={() => { setViewModalVisible(false); handleUploadPhoto(selectedPackage!); }}>Upload Photo</Button>,
+              <Button key="status" onClick={() => { setViewModalVisible(false); handleUpdateStatus(selectedPackage!); }}>Update Status</Button>,
+              <Button key="delete" danger onClick={() => { setViewModalVisible(false); handleDelete(selectedPackage!); }}>Delete</Button>,
+              <Button key="receipt" onClick={() => setReceiptModalPackageId(selectedPackage!.id)}>View Receipt</Button>,
+              <Button key="excel" onClick={() => handleExportExcel(selectedPackage!)}>Export Excel</Button>,
+              <Button key="pdf" onClick={() => handleExportPdf(selectedPackage!)}>Export PDF</Button>,
+              <Button key="close" onClick={() => setViewModalVisible(false)}>Close</Button>,
             ]}
             width={800}
           >
@@ -588,6 +602,21 @@ export default function PackagesPage() {
                     />
                   </div>
                 )}
+                {selectedPackage.photos && selectedPackage.photos.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <h3>Photos ({selectedPackage.photos.length})</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {selectedPackage.photos.map((photo, index) => (
+                        <Image
+                          key={index}
+                          src={photo.url}
+                          alt={`Photo ${index + 1}`}
+                          style={{ width: '100%', height: 200, objectFit: 'cover' }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </Modal>
@@ -636,17 +665,12 @@ export default function PackagesPage() {
             <div style={{ marginBottom: 16 }}>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Select
-                    placeholder="Select Customer"
-                    style={{ width: "100%" }}
+                  <CustomerSearchSelect
                     value={consCustomer}
                     onChange={setConsCustomer}
-                    allowClear
-                  >
-                    {/* Assume dynamic options from customers hook or static */}
-                    <Select.Option value="customer1">Cust 1</Select.Option>
-                    <Select.Option value="customer2">Cust 2</Select.Option>
-                  </Select>
+                    placeholder="Select Customer"
+                    showAddNew={false}
+                  />
                 </Col>
                 <Col span={12}>
                   <Select

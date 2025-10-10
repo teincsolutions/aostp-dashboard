@@ -12,7 +12,7 @@ import {
   generateReceipt,
 } from "@/services/packageService";
 import {
-  PackageIntakePayload,
+  CreatePackagePayload,
 } from "@/types/package";
 
 export function useGetPackage(id: string) {
@@ -44,7 +44,7 @@ export function usePackageIntake() {
     status: createPackageStatus,
     error: createPackageError,
   } = useMutation({
-    mutationFn: (payload: PackageIntakePayload) => createPackage(payload),
+    mutationFn: (payload: CreatePackagePayload) => createPackage(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recentIntakes"] });
     },
@@ -83,7 +83,7 @@ export function usePackageIntake() {
     status: updatePackageStatus,
     error: updatePackageError,
   } = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: PackageIntakePayload }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: CreatePackagePayload }) =>
       updatePackageIntake(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recentIntakes"] });

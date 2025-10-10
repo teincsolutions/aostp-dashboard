@@ -21,7 +21,7 @@ import { CustomerModal } from "@/components/CustomerModal";
 import { Form as AntdForm } from "antd";
 import { useGetPackage, usePackageIntake } from "@/hooks/usePackageIntake";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
-import { PackageIntakePayload } from "@/types/package";
+import { CreatePackagePayload } from "@/types/package";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
@@ -229,7 +229,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
         weight: packageData.weight,
         cbm: packageData.cbm,
         quantity: packageData.quantity,
-        value: packageData.value,
+        value: 0, // Default since not in package data
         shippingMode: packageData.shippingMode,
         airShippingType: packageData.airShippingType || "",
         warehouseId: packageData.warehouseId,
@@ -240,7 +240,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
     }
   }, [packageData, form]);
 
-  const onFinish = async (values: PackageIntakePayload) => {
+  const onFinish = async (values: CreatePackagePayload) => {
     try {
       // Prepare uploaded photos for payload (include both existing and new uploaded photos)
       const uploadedPhotos = photoList.map((photo) => ({
@@ -249,7 +249,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
       }));
 
       // Create payload
-      const payload: PackageIntakePayload = {
+      const payload: CreatePackagePayload = {
         trackingCode: values.trackingCode,
         customerId: values.customerId,
         description: values.description,

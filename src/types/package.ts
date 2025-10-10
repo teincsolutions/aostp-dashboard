@@ -32,7 +32,7 @@ export interface Customer {
   updatedAt: string;
 }
 
-export interface PackageIntakePayload {
+export interface CreatePackagePayload {
   customerId: string;
   trackingCode: string; // Required for package operations
   description?: string;
@@ -47,37 +47,7 @@ export interface PackageIntakePayload {
   photos?: PackagePhotoInput[];
 }
 
-export interface PackageIntake {
-  id: string;
-  trackingCode: string;
-  customerId: string;
-  customer: Customer;
-  description?: string;
-  weight: number;
-  cbm: number;
-  quantity: number;
-  shippingMode: "SEA" | "AIR";
-  airShippingType?: string | null;
-  status: string;
-  receivedDate?: string;
-  warehouseId: string;
-  warehouse?: Warehouse;
-  value?: number;
-  daysInWarehouse: number;
-  notes?: string;
-  packingListId?: string | null;
-  invoiceId?: string | null;
-  paymentStatus: string;
-  createdById: string;
-  updatedById?: string | null;
-  photos: PackagePhoto[];
-  packingList?: any | null;
-  invoice?: any | null;
-  createdAt: string;
-  updatedAt: string;
-  correlationId?: string;
-  onViewReceipt?: (id: string) => void;
-}
+
 
 export interface Receipt {
   id: string;

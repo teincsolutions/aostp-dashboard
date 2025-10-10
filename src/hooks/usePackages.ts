@@ -2,14 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createPackage, uploadPackagePhoto, getPackageReceipt } from '../services/packageService';
-import { PackageIntakePayload } from '../types/package';
+import { CreatePackagePayload } from '../types/package';
 
 export const usePackages = () => {
   const queryClient = useQueryClient();
 
   // Mutation: Create package
   const createMutation = useMutation({
-    mutationFn: (payload: PackageIntakePayload) => createPackage(payload),
+    mutationFn: (payload: CreatePackagePayload) => createPackage(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['packages'] });
     },

@@ -22,6 +22,7 @@ import {
   QrcodeOutlined,
 } from "@ant-design/icons";
 import { CustomerModal } from "@/components/CustomerModal";
+import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import { Form as AntdForm } from "antd";
 import { packageIntakeColumns } from "@/app/package-intake/columns";
 import { usePackageIntake } from "@/hooks/usePackageIntake";
@@ -30,7 +31,7 @@ import { useCustomerInvoices } from "@/hooks/useInvoices";
 import { useWarehouses } from "@/hooks/useWarehouse";
 import { useAuthStore } from "@/store/authStore";
 import { useWarehouseStore } from "@/store/warehouseStore";
-import { PackageIntakePayload } from "@/types/package";
+import { CreatePackagePayload } from "@/types/package";
 import { ReceiptModal } from "@/components/ReceiptModal";
 import { Warehouse } from "@/types/warehouse";
 import { AppLayout } from "@/components/AppLayout";
@@ -247,7 +248,7 @@ export default function PackageIntakePage() {
       }));
 
       // Create payload with all required fields
-      const payload: PackageIntakePayload = {
+      const payload: CreatePackagePayload = {
         trackingCode: values.trackingCode.trim() || "",
         customerId: values.customerId,
         description: values.description,
@@ -337,32 +338,17 @@ export default function PackageIntakePage() {
                     name="customerId"
                     rules={[{ required: true }]}
                   >
-                    <Select
-                      showSearch
+                    <CustomerSearchSelect
                       placeholder="Select customer"
-                      loading={customersLoading}
-                      options={[
-                        ...(Array.isArray(customers?.data)
-                          ? customers.data.map((customer) => ({
-                              value: customer.id,
-                              label: `${customer.customerCode} - ${customer.firstName} ${customer.lastName}`,
-                            }))
-                          : []),
-                        { value: "__add_new__", label: "+ Add New Customer" },
-                      ]}
-                      filterOption={(input, option) =>
-                        (option?.label ?? "")
-                          .toLowerCase()
-                          .includes(input.toLowerCase())
-                      }
-                      className="w-full"
+                      showAddNew={true}
+                      onAddNew={handleAddCustomerClick}
                       onSelect={(value) => {
                         if (value === "__add_new__") {
                           handleAddCustomerClick();
                           form.setFieldsValue({ customerId: "" });
-                          setSelectedCustomerId(""); // Clear invoices for new customer
+                          setSelectedCustomerId("");
                         } else {
-                          setSelectedCustomerId(value); // Set customer for invoice fetching
+                          setSelectedCustomerId(value);
                         }
                       }}
                     />

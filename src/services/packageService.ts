@@ -2,8 +2,7 @@
 
 import { apiService } from "@/services/api";
 import {
-  PackageIntakePayload,
-  PackageIntake,
+  CreatePackagePayload,
   PackagePhoto,
   Receipt,
   Package,
@@ -11,7 +10,7 @@ import {
 } from "@/types/package";
 
 export const createPackage = async (
-  payload: PackageIntakePayload
+  payload: CreatePackagePayload
 ): Promise<Package> => {
   const res = await apiService.post<Package>("/packages", payload);
   return res.data;
@@ -53,7 +52,7 @@ export const getRecentIntakes = async (params: {
   limit?: number;
   sortBy?: string;
   sortOrder?: string;
-}): Promise<{ data: PackageIntake[]; total: number }> => {
+}): Promise<{ data: Package[]; total: number }> => {
   const res = await apiService.get("/packages", {
     params: {
       ...params,
@@ -63,15 +62,15 @@ export const getRecentIntakes = async (params: {
   return { data: res.data.data, total: res.data.meta.total };
 };
 
-export const getPackage = async (id: string): Promise<PackageIntake> => {
+export const getPackage = async (id: string): Promise<Package> => {
   const res = await apiService.get(`/packages/${id}`);
   return res.data;
 };
 
 export const updatePackageIntake = async (
   id: string,
-  payload: PackageIntakePayload
-): Promise<PackageIntake> => {
+  payload: CreatePackagePayload
+): Promise<Package> => {
   const res = await apiService.patch(`/packages/${id}`, payload);
   return res.data;
 };
@@ -174,7 +173,7 @@ export const updatePackageItem = async (
 export const updatePackageStatus = async (
   id: string,
   status: string
-): Promise<PackageIntake> => {
+): Promise<Package> => {
   const res = await apiService.patch(`/packages/${id}/status`, null, {
     params: { status },
   });
