@@ -361,7 +361,7 @@ export default function PackingListsPage() {
   );
 
   return (
-    <AuthGuard requiredRoles={[Role.OPERATIONS_CLERK, Role.FINANCE_MANAGER, Role.SUPER_ADMIN]}>
+    <AuthGuard requiredRoles={[Role.SUPER_ADMIN, Role.OPERATIONS_CLERK, Role.FINANCE_MANAGER]}>
       <AppLayout>
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">

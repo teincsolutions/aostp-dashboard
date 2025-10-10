@@ -30,6 +30,14 @@ export const paymentService = {
     return response.data;
   },
 
+  // Get payments by customer ID
+  async getPaymentsByCustomer(customerId: string, params: PaymentHistoryParams = {}): Promise<PaymentsResponse> {
+    const response = await apiService.get<PaymentsResponse>(`/payments/customer/${customerId}`, {
+      params,
+    });
+    return response.data;
+  },
+
   // Get invoices by package tracking ID
   async getInvoicesByPackage(trackingId: string, params: PaymentSearchParams = {}): Promise<InvoicesResponse> {
     const response = await apiService.get<InvoicesResponse>(`/payments/package/${trackingId}/invoices`, {

@@ -13,9 +13,9 @@ import {
   Row,
   Col,
   Statistic,
-  Drawer,
 } from "antd";
 import { CustomerModal } from "@/components/CustomerModal";
+import { CustomerDetailsModal } from "@/components/CustomerDetailsModal";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -41,9 +41,9 @@ export default function CustomersPage() {
   const [channelFilter, setChannelFilter] = useState<string>("");
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [isStatsDrawerVisible, setIsStatsDrawerVisible] = useState(false);
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [statsCustomer, setStatsCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -75,7 +75,7 @@ export default function CustomersPage() {
     isTogglingStatus,
   } = useCustomerMutations();
 
-  const { data: customerStats } = useCustomerStats(statsCustomer?.id || "");
+  const { data: customerStats } = useCustomerStats(selectedCustomer?.id || "");
 
   // Handlers
   const handleSearch = (value: string) => {
@@ -149,9 +149,9 @@ export default function CustomersPage() {
     }
   };
 
-  const handleViewStats = (customer: Customer) => {
-    setStatsCustomer(customer);
-    setIsStatsDrawerVisible(true);
+  const handleViewCustomerDetails = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDetailsModalVisible(true);
   };
 
   // Export handler for selected customers
@@ -180,7 +180,7 @@ export default function CustomersPage() {
   const columns = getCustomerColumns({
     onEdit: handleEditCustomer,
     onToggleStatus: (id: string, isActive: boolean) => handleToggleCustomerStatus(id, isActive),
-    onViewStats: handleViewStats,
+    onViewStats: handleViewCustomerDetails,
     onExport: async (id: string) => {
       setExportLoading(true);
       try {
@@ -378,60 +378,15 @@ export default function CustomersPage() {
             initialValues={editingCustomer || undefined}
           />
 
-          {/* Customer Stats Drawer */}
-          <Drawer
-            title={`Customer Statistics - ${statsCustomer?.firstName} ${statsCustomer?.lastName}`}
-            open={isStatsDrawerVisible}
-            onClose={() => {
-              setIsStatsDrawerVisible(false);
-              setStatsCustomer(null);
+          {/* Customer Details Modal */}
+          <CustomerDetailsModal
+            visible={isDetailsModalVisible}
+            onCancel={() => {
+              setIsDetailsModalVisible(false);
+              setSelectedCustomer(null);
             }}
-            width={500}
-          >
-            {customerStats ? (
-              <div>
-                <Row gutter={16} className="mb-6">
-                  <Col span={12}>
-                    <Card>
-                      <Statistic
-                        title="Total Packages"
-                        value={customerStats.totalPackages}
-                        prefix={<BarChartOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col span={12}>
-                    <Card>
-                      <Statistic
-                        title="Total Invoices"
-                        value={customerStats.totalInvoices}
-                      />
-                    </Card>
-                  </Col>
-                </Row>
-                <Row gutter={16} className="mb-6">
-                  <Col span={12}>
-                    <Card>
-                      <Statistic
-                        title="Total Payments"
-                        value={customerStats.totalPayments}
-                      />
-                    </Card>
-                  </Col>
-                  <Col span={12}>
-                    <Card>
-                      {/* Pending Invoices not available in API spec */}
-                    </Card>
-                  </Col>
-                </Row>
-                <Card>
-                  {/* Overdue Invoices not available in API spec */}
-                </Card>
-              </div>
-            ) : (
-              <div className="text-center">Loading statistics...</div>
-            )}
-          </Drawer>
+            customer={selectedCustomer}
+          />
         </div>
       </AppLayout>
     </AuthGuard>

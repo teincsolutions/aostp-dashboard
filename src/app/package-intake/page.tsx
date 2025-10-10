@@ -44,7 +44,7 @@ import { toast } from "sonner";
 const { Option } = Select;
 const { Title } = Typography;
 
-const rolesAllowed = ["OPERATIONS_CLERK", "SUPER_ADMIN"];
+const rolesAllowed = ["SUPER_ADMIN", "OPERATIONS_CLERK"];
 
 const validateMessages = {
   required: "${label} is required",

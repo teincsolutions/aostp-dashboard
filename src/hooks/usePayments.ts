@@ -47,6 +47,18 @@ export const useCustomerInvoices = (customerId: string, params: PaymentSearchPar
   });
 };
 
+// Hook for fetching customer payments
+export const useCustomerPayments = (customerId: string, params: PaymentHistoryParams = {}) => {
+  return useQuery({
+    queryKey: paymentKeys.history({ ...params, customerId }),
+    queryFn: async () => {
+      return await paymentService.getPaymentsByCustomer(customerId, params);
+    },
+    enabled: !!customerId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
 // Hook for fetching package invoices
 export const usePackageInvoices = (trackingId: string, params: PaymentSearchParams = {}) => {
   return useQuery({
