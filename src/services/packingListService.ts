@@ -9,7 +9,7 @@ import {
   PackingListQueryParams,
   ExportFormat,
 } from "@/types/packingList";
-import { PackageIntake } from "@/types/package";
+import { Package } from "@/types/package";
 
 // Packing List service functions
 export const packingListService = {
@@ -81,7 +81,7 @@ export const packingListService = {
   },
 
   // Get unassigned packages (for package selection)
-  async getUnassignedPackages(params: { search?: string; page?: number; limit?: number } = {}): Promise<{data: PackageIntake[], meta: any}> {
+  async getUnassignedPackages(params: { search?: string; page?: number; limit?: number } = {}): Promise<{data: Package[], meta: any}> {
     const response = await apiService.get("/packages", {
       params: {
         ...params,

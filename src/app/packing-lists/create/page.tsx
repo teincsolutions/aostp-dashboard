@@ -41,7 +41,7 @@ import {
   PackingListCreatePayload,
   PackageAssignment,
 } from "@/types/packingList";
-import { PackageIntake, ShipmentType } from "@/types/package";
+import { Package, ShipmentType } from "@/types/package";
 import { ContainerCreatePayload } from "@/types/container";
 import { useRouter } from "next/navigation";
 import { ShippingMode } from "@/types/exchangeRate";
@@ -108,7 +108,7 @@ const PackingListCreatePage: React.FC = () => {
   } = usePackingListMutations();
 
   // Filter unassigned packages
-  const availablePackages: PackageIntake[] = unassignedPackages?.data?.filter(pkg =>
+  const availablePackages: Package[] = unassignedPackages?.data?.filter(pkg =>
     !selectedPackageIds.includes(pkg.id)
   ) || [];
 
@@ -297,7 +297,7 @@ const PackingListCreatePage: React.FC = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: PackageIntake) => (
+      render: (_: any, record: Package) => (
         <Button
           type="link"
           icon={<PlusOutlined />}

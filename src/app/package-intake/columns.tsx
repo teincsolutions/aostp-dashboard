@@ -1,11 +1,11 @@
 // src/app/package-intake/columns.tsx
 
 import { ColumnsType } from "antd/es/table";
-import { PackageIntake, Receipt } from "@/types/package";
+import { Package, Receipt } from "@/types/package";
 import { Button, Tag } from "antd";
 import dayjs from "dayjs";
 
-export const packageIntakeColumns: ColumnsType<PackageIntake> = [
+export const packageIntakeColumns: ColumnsType<Package & { onViewReceipt: (id: string) => void }> = [
   {
     title: "Tracking Code",
     dataIndex: "trackingCode",
@@ -16,8 +16,7 @@ export const packageIntakeColumns: ColumnsType<PackageIntake> = [
     title: "Warehouse",
     key: "warehouse",
     width: 120,
-    render: (_, record) =>
-      record.warehouse?.name ? `${record.warehouse.warehouseId} - ${record.warehouse.name}` : "Not Assigned",
+    render: (_, record) => record.warehouseId,
   },
   {
     title: "Customer",

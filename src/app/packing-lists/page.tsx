@@ -56,7 +56,7 @@ import {
   PackageAssignment,
 } from "@/types/packingList";
 import { getPackingListColumns } from "./columns";
-import { ShipmentType, PackageIntake } from "@/types/package";
+import { ShipmentType, Package } from "@/types/package";
 import type { Dayjs } from "dayjs";
 import type { RangePickerProps } from "antd/es/date-picker";
 import { Role } from "@/types/user";
@@ -81,8 +81,8 @@ const getPackageColumns = () => [
     title: "Customer",
     dataIndex: ["customer", "firstName"],
     key: "customer",
-    render: (_: any, record: PackageIntake) =>
-      `${record.customer.firstName} ${record.customer.lastName}`,
+    render: (_: any, record: Package) =>
+      record.customer ? `${record.customer.firstName} ${record.customer.lastName}` : 'N/A',
   },
   {
     title: "Weight (kg)",
@@ -98,7 +98,7 @@ const getPackageColumns = () => [
     title: "Value",
     dataIndex: "value",
     key: "value",
-    render: (value: number) => `$${value.toFixed(2)}`,
+    render: (value: number | undefined) => value ? `$${value.toFixed(2)}` : '$0.00',
   },
   {
     title: "Mode",
@@ -184,7 +184,6 @@ export default function PackingListsPage() {
   ) || [];
   const totalSelectedWeight = selectedPackages.reduce((sum, pkg) => sum + pkg.weight, 0);
   const totalSelectedCbm = selectedPackages.reduce((sum, pkg) => sum + pkg.cbm, 0);
-  const totalSelectedValue = selectedPackages.reduce((sum, pkg) => sum + (pkg.value || 0), 0);
 
   // Use all active containers
   const filteredContainers = activeContainers;
@@ -763,9 +762,6 @@ export default function PackingListsPage() {
                       <div>
                         <Text strong>Total CBM:</Text> {totalSelectedCbm.toFixed(2)}
                       </div>
-                      <div>
-                        <Text strong>Total Value:</Text> ${totalSelectedValue.toFixed(2)}
-                      </div>
                     </div>
                   }
                   type="info"
@@ -865,11 +861,6 @@ export default function PackingListsPage() {
                                 <p className="text-sm text-gray-600">
                                   {group.packageCount} packages •{" "}
                                   {group.totalWeight}kg • {group.totalCbm}m³
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-medium">
-                                  ${group.totalValue}
                                 </p>
                               </div>
                             </div>
