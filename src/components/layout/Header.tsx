@@ -9,17 +9,6 @@ import { useWarehouseStore } from "@/store/warehouseStore";
 import { useRouter } from "next/navigation";
 import { ReactNode, useEffect } from "react";
 
-const userMenuItems = [
-  {
-    key: "profile",
-    label: "Profile",
-  },
-  {
-    key: "logout",
-    label: "Logout",
-  },
-];
-
 export function Header({
   onHamburgerClick,
   title,
@@ -43,12 +32,50 @@ export function Header({
     }
   }, [warehouses, selectedWarehouseId, setSelectedWarehouseId]);
 
-  const selectedWarehouse = warehouses?.data?.find(w => w.id === selectedWarehouseId);
+  const selectedWarehouse = warehouses?.data?.find(
+    (w) => w.id === selectedWarehouseId
+  );
 
   const handleUserMenuClick = (e: any) => {
     if (e.key === "logout") logout();
     if (e.key === "profile") router.push("/profile");
+    if (e.key.startsWith("warehouse-")) {
+      const warehouseId = e.key.replace("warehouse-", "");
+      setSelectedWarehouseId(warehouseId);
+    }
   };
+
+  // User menu items for desktop
+  const userMenuItems = [
+    {
+      key: "profile",
+      label: "Profile",
+    },
+    {
+      key: "logout",
+      label: "Logout",
+    },
+  ];
+
+  // User menu items for mobile (includes warehouse selection)
+  const mobileUserMenuItems = [
+    {
+      key: "profile",
+      label: "Profile",
+    },
+    {
+      key: "warehouse-selector",
+      label: `Warehouse: ${selectedWarehouse?.warehouseId || "Select"}`,
+      children: warehouses?.data?.map((warehouse) => ({
+        key: `warehouse-${warehouse.id}`,
+        label: `${warehouse.warehouseId} - ${warehouse.name}`,
+      })),
+    },
+    {
+      key: "logout",
+      label: "Logout",
+    },
+  ];
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b flex items-center justify-between gap-3 px-4 md:px-6 lg:px-8 h-14">
@@ -61,8 +88,8 @@ export function Header({
       />
       <div className="flex-1 font-semibold text-lg">{title}</div>
 
-      {/* Warehouse Selector */}
-      <div className="flex items-center gap-4">
+      {/* Desktop: Warehouse Selector & User Menu */}
+      <div className="hidden md:flex items-center gap-4">
         <span className="text-sm text-gray-600">Warehouse:</span>
         <Select
           value={selectedWarehouseId || undefined}
@@ -80,7 +107,36 @@ export function Header({
         </Select>
       </div>
 
-      {actions}
+      {/* Mobile: Only User Avatar (warehouse moved to dropdown) */}
+      <div className="md:hidden">
+        <Dropdown
+          menu={{ items: mobileUserMenuItems, onClick: handleUserMenuClick }}
+          placement="bottomRight"
+        >
+          <Avatar
+            style={{ backgroundColor: "#1890ff", cursor: "pointer" }}
+            size="default"
+          >
+            {user?.firstName?.charAt(0)?.toUpperCase() || "U"}
+          </Avatar>
+        </Dropdown>
+      </div>
+
+      {/* Desktop User Menu */}
+      <div className="hidden md:block">
+        <Dropdown
+          rootClassName="w-48"
+          menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
+          placement="bottomRight"
+        >
+          <Avatar
+            style={{ backgroundColor: "#1890ff", cursor: "pointer" }}
+            size="default"
+          >
+            {user?.firstName?.charAt(0)?.toUpperCase() || "U"}
+          </Avatar>
+        </Dropdown>
+      </div>
     </header>
   );
 }

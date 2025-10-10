@@ -268,20 +268,18 @@ export default function InvoicesPage() {
 
           {/* Filters */}
           <Card className="mb-6">
-            <div className="flex gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
               <Input
                 placeholder="Search invoices..."
                 prefix={<SearchOutlined />}
                 value={searchText}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-1/3"
                 allowClear
               />
               <Select
                 placeholder="Filter by status"
                 value={statusFilter}
                 onChange={handleStatusFilter}
-                className="w-1/4"
                 allowClear
               >
                 <Option value={InvoiceStatus.PAID}>Paid</Option>
@@ -294,7 +292,6 @@ export default function InvoicesPage() {
                 placeholder="Customer ID"
                 value={customerId}
                 onChange={(e) => handleCustomerFilter(e.target.value)}
-                className="w-1/4"
                 allowClear
               />
             </div>

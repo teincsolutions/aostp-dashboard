@@ -306,20 +306,22 @@ export default function ContainersPage() {
     <AuthGuard>
       <AppLayout>
         <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
             <h1 className="text-2xl font-bold">Container Management</h1>
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => setIsCreateModalVisible(true)}
+              block
+              className="md:w-auto"
             >
               Add Container
             </Button>
           </div>
 
           {/* Statistics Cards */}
-          <Row gutter={16} className="mb-6">
-            <Col span={4}>
+          <Row gutter={[16, 16]} className="mb-6">
+            <Col xs={24} sm={12} md={8} lg={4}>
               <Card>
                 <Statistic
                   title="Total Containers"
@@ -328,7 +330,7 @@ export default function ContainersPage() {
                 />
               </Card>
             </Col>
-            <Col span={4}>
+            <Col xs={24} sm={12} md={8} lg={4}>
               <Card>
                 <Statistic
                   title="Active Containers"
@@ -338,7 +340,7 @@ export default function ContainersPage() {
                 />
               </Card>
             </Col>
-            <Col span={4}>
+            <Col xs={24} sm={12} md={8} lg={4}>
               <Card>
                 <Statistic
                   title="Planned"
@@ -348,7 +350,7 @@ export default function ContainersPage() {
                 />
               </Card>
             </Col>
-            <Col span={4}>
+            <Col xs={24} sm={12} md={8} lg={4}>
               <Card>
                 <Statistic
                   title="Shipped"
@@ -358,7 +360,7 @@ export default function ContainersPage() {
                 />
               </Card>
             </Col>
-            <Col span={4}>
+            <Col xs={24} sm={12} md={8} lg={4}>
               <Card>
                 <Statistic
                   title="Completed"
@@ -368,7 +370,7 @@ export default function ContainersPage() {
                 />
               </Card>
             </Col>
-            <Col span={4}>
+            <Col xs={24} sm={12} md={8} lg={4}>
               <Card>
                 <Statistic
                   title="Success Rate"
@@ -389,20 +391,18 @@ export default function ContainersPage() {
 
           {/* Filters */}
           <Card className="mb-6">
-            <div className="flex flex-wrap gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
               <Input
                 placeholder="Search containers..."
                 prefix={<SearchOutlined />}
                 value={searchText}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-64"
                 allowClear
               />
               <Select
                 placeholder="Filter by status"
                 value={statusFilter}
                 onChange={handleFilterChange(setStatusFilter)}
-                className="w-40"
                 allowClear
               >
                 {statusOptions.map((option) => (
@@ -417,7 +417,6 @@ export default function ContainersPage() {
                 onChange={(e) =>
                   handleFilterChange(setDepartureCityFilter)(e.target.value)
                 }
-                className="w-40"
                 allowClear
               />
               <Input
@@ -426,14 +425,12 @@ export default function ContainersPage() {
                 onChange={(e) =>
                   handleFilterChange(setDestinationCityFilter)(e.target.value)
                 }
-                className="w-40"
                 allowClear
               />
               <RangePicker
                 placeholder={["From date", "To date"]}
                 value={dateRange}
                 onChange={setDateRange}
-                className="w-64"
               />
             </div>
           </Card>

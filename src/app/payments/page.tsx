@@ -178,13 +178,15 @@ export default function PaymentsPage() {
     <AuthGuard>
       <AppLayout>
         <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
             <h1 className="text-2xl font-bold">Payment Processing</h1>
             <Button
               type="primary"
               icon={<CalculatorOutlined />}
               onClick={() => setIsPaymentModalVisible(true)}
               disabled={selectedInvoices.length === 0}
+              block
+              className="md:w-auto"
             >
               Process Payment ({selectedInvoices.length} selected)
             </Button>

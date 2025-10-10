@@ -364,20 +364,22 @@ export default function PackingListsPage() {
     <AuthGuard requiredRoles={[Role.SUPER_ADMIN, Role.OPERATIONS_CLERK, Role.FINANCE_MANAGER]}>
       <AppLayout>
         <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
             <Title level={2}>Packing List Management</Title>
             <Button
               type="primary"
               icon={<PlusOutlined />}
               href="/packing-lists/create"
+              block
+              className="md:w-auto"
             >
               Create Packing List
             </Button>
           </div>
 
           {/* Statistics Cards */}
-          <Row gutter={16} className="mb-6">
-            <Col span={6}>
+          <Row gutter={[16, 16]} className="mb-6">
+            <Col xs={24} sm={12} md={8} lg={6}>
               <Card>
                 <Statistic
                   title="Total Packing Lists"
@@ -386,7 +388,7 @@ export default function PackingListsPage() {
                 />
               </Card>
             </Col>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={8} lg={6}>
               <Card>
                 <Statistic
                   title="Active Lists"
@@ -396,7 +398,7 @@ export default function PackingListsPage() {
                 />
               </Card>
             </Col>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={8} lg={6}>
               <Card>
                 <Statistic
                   title="Completed"
@@ -406,7 +408,7 @@ export default function PackingListsPage() {
                 />
               </Card>
             </Col>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={8} lg={6}>
               <Card>
                 <Statistic
                   title="Total Packages"
@@ -420,81 +422,66 @@ export default function PackingListsPage() {
 
           {/* Filters */}
           <Card className="mb-6">
-            <Row gutter={16} className="mb-4">
-              <Col span={6}>
-                <Input
-                  placeholder="Search packing lists..."
-                  prefix={<SearchOutlined />}
-                  value={searchText}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  allowClear
-                />
-              </Col>
-              <Col span={4}>
-                <Select
-                  placeholder="Filter by status"
-                  value={statusFilter}
-                  onChange={handleStatusFilter}
-                  className="w-full"
-                  allowClear
-                >
-                  {statusOptions.map((option) => (
-                    <Option key={option.value} value={option.value}>
-                      {option.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Col>
-              <Col span={4}>
-                <Input
-                  placeholder="Loading city"
-                  value={loadingCityFilter}
-                  onChange={(e) => handleLoadingCityFilter(e.target.value)}
-                  allowClear
-                />
-              </Col>
-              <Col span={4}>
-                <Select
-                  placeholder="Shipment Mode"
-                  value={shipmentModeFilter}
-                  onChange={handleShipmentModeFilter}
-                  className="w-full"
-                  allowClear
-                >
-                  {shipmentModeOptions.map((option) => (
-                    <Option key={option.value} value={option.value}>
-                      {option.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Col>
-              <Col span={6}>
-                <RangePicker
-                  placeholder={["From date", "To date"]}
-                  value={dateRange}
-                  onChange={handleDateRangeChange}
-                  className="w-full"
-                  allowClear
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col span={24}>
-                <Button
-                  icon={<FilterOutlined />}
-                  onClick={() => {
-                    setSearchText("");
-                    setStatusFilter("");
-                    setLoadingCityFilter("");
-                    setShipmentModeFilter("");
-                    setDateRange(null);
-                    setCurrentPage(1);
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              </Col>
-            </Row>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+              <Input
+                placeholder="Search packing lists..."
+                prefix={<SearchOutlined />}
+                value={searchText}
+                onChange={(e) => handleSearch(e.target.value)}
+                allowClear
+              />
+              <Select
+                placeholder="Filter by status"
+                value={statusFilter}
+                onChange={handleStatusFilter}
+                allowClear
+              >
+                {statusOptions.map((option) => (
+                  <Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+              <Input
+                placeholder="Loading city"
+                value={loadingCityFilter}
+                onChange={(e) => handleLoadingCityFilter(e.target.value)}
+                allowClear
+              />
+              <Select
+                placeholder="Shipment Mode"
+                value={shipmentModeFilter}
+                onChange={handleShipmentModeFilter}
+                allowClear
+              >
+                {shipmentModeOptions.map((option) => (
+                  <Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+              <RangePicker
+                placeholder={["From date", "To date"]}
+                value={dateRange}
+                onChange={handleDateRangeChange}
+                allowClear
+              />
+            </div>
+            <div className="flex justify-start">
+              <Button
+                icon={<FilterOutlined />}
+                onClick={() => {
+                  setSearchText("");
+                  setStatusFilter("");
+                  setLoadingCityFilter("");
+                  setShipmentModeFilter("");
+                  setDateRange(null);
+                  setCurrentPage(1);
+                }}
+              >
+                Clear Filters
+              </Button>
+            </div>
           </Card>
 
           {/* Packing Lists Table */}

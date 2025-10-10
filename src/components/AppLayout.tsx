@@ -147,7 +147,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <Header
         onHamburgerClick={() => setDrawerOpen(true)}
         title="Admin Dashboard"
-        actions={<UserMenu />}
       />
 
       {/* Sidebar (desktop) */}

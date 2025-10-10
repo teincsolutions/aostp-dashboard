@@ -250,13 +250,15 @@ export default function WarehousePage() {
     <AppLayout>
       <AuthGuard>
         <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
             <h1 className="text-2xl font-bold">Warehouse Management</h1>
-            <Space>
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => setIsCreateModalVisible(true)}
+                block
+                className="sm:w-auto"
               >
                 Add Warehouse
               </Button>
@@ -264,10 +266,12 @@ export default function WarehousePage() {
                 icon={<ReloadOutlined />}
                 onClick={handleUpdateWarehouseDays}
                 loading={isUpdatingDays}
+                block
+                className="sm:w-auto"
               >
                 Update Days
               </Button>
-            </Space>
+            </div>
           </div>
 
           {/* Aging Summary */}
