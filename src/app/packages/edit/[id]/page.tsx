@@ -45,20 +45,6 @@ const validateMessages = {
   },
 };
 
-const initialValues = {
-  customerId: "",
-  description: "",
-  weight: 0,
-  cbm: 0,
-  quantity: 1,
-  value: 0,
-  shippingMode: "SEA",
-  airShippingType: "",
-  warehouseId: "W1",
-  notes: "",
-  photos: [],
-};
-
 interface PackageEditPageProps {
   params: {
     id: string;
