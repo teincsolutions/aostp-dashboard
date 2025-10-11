@@ -10,6 +10,7 @@ import {
   ContainerManifestResponse,
   ContainerExportResponse,
   ExportFormat,
+  Container,
 } from "@/types/container";
 
 // Container-specific API service functions
@@ -25,8 +26,8 @@ export const containerService = {
   },
 
   // Get active containers (not closed)
-  async getActiveContainers(): Promise<ContainersResponse> {
-    const response = await apiService.get<ContainersResponse>("/containers/active");
+  async getActiveContainers(): Promise<Container[]> {
+    const response = await apiService.get<Container[]>("/containers/active");
     return response.data;
   },
 
@@ -35,33 +36,48 @@ export const containerService = {
     startDate: string,
     endDate: string
   ): Promise<ContainersResponse> {
-    const response = await apiService.get<ContainersResponse>("/containers/date-range", {
-      params: { startDate, endDate },
-    });
+    const response = await apiService.get<ContainersResponse>(
+      "/containers/date-range",
+      {
+        params: { startDate, endDate },
+      }
+    );
     return response.data;
   },
 
   // Get container by ID
   async getContainerById(id: string): Promise<ContainerResponse> {
-    const response = await apiService.get<ContainerResponse>(`/containers/${id}`);
+    const response = await apiService.get<ContainerResponse>(
+      `/containers/${id}`
+    );
     return response.data;
   },
 
   // Get container by container number
-  async getContainerByNumber(containerNumber: string): Promise<ContainerResponse> {
-    const response = await apiService.get<ContainerResponse>(`/containers/number/${containerNumber}`);
+  async getContainerByNumber(
+    containerNumber: string
+  ): Promise<ContainerResponse> {
+    const response = await apiService.get<ContainerResponse>(
+      `/containers/number/${containerNumber}`
+    );
     return response.data;
   },
 
   // Get container statistics
-  async getContainerStatistics(id: string): Promise<ContainerStatisticsResponse> {
-    const response = await apiService.get<ContainerStatisticsResponse>(`/containers/${id}/statistics`);
+  async getContainerStatistics(
+    id: string
+  ): Promise<ContainerStatisticsResponse> {
+    const response = await apiService.get<ContainerStatisticsResponse>(
+      `/containers/${id}/statistics`
+    );
     return response.data;
   },
 
   // Get container manifest for export
   async getContainerManifest(id: string): Promise<ContainerManifestResponse> {
-    const response = await apiService.get<ContainerManifestResponse>(`/containers/${id}/manifest`);
+    const response = await apiService.get<ContainerManifestResponse>(
+      `/containers/${id}/manifest`
+    );
     return response.data;
   },
 
@@ -70,15 +86,24 @@ export const containerService = {
     id: string,
     format: ExportFormat
   ): Promise<ContainerExportResponse> {
-    const response = await apiService.post<ContainerExportResponse>(`/containers/${id}/export`, null, {
-      params: { format },
-    });
+    const response = await apiService.post<ContainerExportResponse>(
+      `/containers/${id}/export`,
+      null,
+      {
+        params: { format },
+      }
+    );
     return response.data;
   },
 
   // Create new container
-  async createContainer(containerData: ContainerCreatePayload): Promise<ContainerResponse> {
-    const response = await apiService.post<ContainerResponse>("/containers", containerData);
+  async createContainer(
+    containerData: ContainerCreatePayload
+  ): Promise<ContainerResponse> {
+    const response = await apiService.post<ContainerResponse>(
+      "/containers",
+      containerData
+    );
     return response.data;
   },
 
@@ -87,13 +112,18 @@ export const containerService = {
     id: string,
     containerData: ContainerUpdatePayload
   ): Promise<ContainerResponse> {
-    const response = await apiService.patch<ContainerResponse>(`/containers/${id}`, containerData);
+    const response = await apiService.patch<ContainerResponse>(
+      `/containers/${id}`,
+      containerData
+    );
     return response.data;
   },
 
   // Delete container (with status validation)
   async deleteContainer(id: string): Promise<ApiResponse<null>> {
-    const response = await apiService.delete<ApiResponse<null>>(`/containers/${id}`);
+    const response = await apiService.delete<ApiResponse<null>>(
+      `/containers/${id}`
+    );
     return response.data;
   },
 
@@ -102,9 +132,13 @@ export const containerService = {
     id: string,
     status: string
   ): Promise<ContainerResponse> {
-    const response = await apiService.patch<ContainerResponse>(`/containers/${id}/status`, null, {
-      params: { status },
-    });
+    const response = await apiService.patch<ContainerResponse>(
+      `/containers/${id}/status`,
+      null,
+      {
+        params: { status },
+      }
+    );
     return response.data;
   },
 };

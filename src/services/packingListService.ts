@@ -8,6 +8,7 @@ import {
   PackingListUpdatePayload,
   PackingListQueryParams,
   ExportFormat,
+  PackingList,
 } from "@/types/packingList";
 import { Package } from "@/types/package";
 
@@ -22,8 +23,8 @@ export const packingListService = {
   },
 
   // Get packing list by ID
-  async getPackingListById(id: string): Promise<PackingListResponse> {
-    const response = await apiService.get<PackingListResponse>(`/packing-lists/${id}`);
+  async getPackingListById(id: string): Promise<PackingList> {
+    const response = await apiService.get<PackingList>(`/packing-lists/${id}`);
     return response.data;
   },
 
@@ -34,8 +35,8 @@ export const packingListService = {
   },
 
   // Create a new packing list
-  async createPackingList(payload: PackingListCreatePayload): Promise<PackingListResponse> {
-    const response = await apiService.post<PackingListResponse>("/packing-lists", payload);
+  async createPackingList(payload: PackingListCreatePayload): Promise<PackingList> {
+    const response = await apiService.post<PackingList>("/packing-lists", payload);
     return response.data;
   },
 

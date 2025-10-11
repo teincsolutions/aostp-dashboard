@@ -9,7 +9,6 @@ import {
   Space,
   Modal,
   Form,
-  message,
   Card,
   Row,
   Col,
@@ -19,10 +18,8 @@ import {
   Divider,
   Descriptions,
   Tag,
-  Transfer,
   Typography,
   Alert,
-  Badge,
   Table as AntTable,
 } from "antd";
 import { toast } from "sonner";
@@ -33,8 +30,6 @@ import {
   FileTextOutlined,
   BoxPlotOutlined,
   BarChartOutlined,
-  CheckOutlined,
-  TruckOutlined,
   BoxPlotOutlined as PackageIcon,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
@@ -54,13 +49,13 @@ import {
   PackingList,
   PackingListSummary,
   ExportFormat,
-  PackageAssignment,
 } from "@/types/packingList";
 import { getPackingListColumns } from "./columns";
-import { ShipmentType, Package } from "@/types/package";
+import { Package } from "@/types/package";
 import type { Dayjs } from "dayjs";
 import type { RangePickerProps } from "antd/es/date-picker";
 import { Role } from "@/types/user";
+import dayjs from "dayjs";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -83,7 +78,9 @@ const getPackageColumns = () => [
     dataIndex: ["customer", "firstName"],
     key: "customer",
     render: (_: any, record: Package) =>
-      record.customer ? `${record.customer.firstName} ${record.customer.lastName}` : 'N/A',
+      record.customer
+        ? `${record.customer.firstName} ${record.customer.lastName}`
+        : "N/A",
   },
   {
     title: "Weight (kg)",
@@ -99,7 +96,8 @@ const getPackageColumns = () => [
     title: "Value",
     dataIndex: "value",
     key: "value",
-    render: (value: number | undefined) => value ? `$${value.toFixed(2)}` : '$0.00',
+    render: (value: number | undefined) =>
+      value ? `$${value.toFixed(2)}` : "$0.00",
   },
   {
     title: "Mode",
@@ -122,12 +120,14 @@ export default function PackingListsPage() {
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isDetailsDrawerVisible, setIsDetailsDrawerVisible] = useState(false);
-  const [isPackageAssignmentModalVisible, setIsPackageAssignmentModalVisible] = useState(false);
+  const [isPackageAssignmentModalVisible, setIsPackageAssignmentModalVisible] =
+    useState(false);
   const [editingPackingList, setEditingPackingList] =
     useState<PackingList | null>(null);
   const [detailsPackingList, setDetailsPackingList] =
     useState<PackingList | null>(null);
-  const [assignmentPackingList, setAssignmentPackingList] = useState<PackingList | null>(null);
+  const [assignmentPackingList, setAssignmentPackingList] =
+    useState<PackingList | null>(null);
   const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -155,13 +155,11 @@ export default function PackingListsPage() {
     updatePackingList,
     deletePackingList,
     addPackagesToPackingList,
-    removePackagesToPackingList,
     exportPackingList,
     isCreating,
     isUpdating,
     isDeleting,
     isAddingPackages,
-    isRemovingPackages,
     isExporting,
   } = usePackingListMutations();
 
@@ -178,11 +176,18 @@ export default function PackingListsPage() {
   });
 
   // Calculated values
-  const selectedPackages = unassignedPackages?.data?.filter(pkg =>
-    selectedPackageIds.includes(pkg.id)
-  ) || [];
-  const totalSelectedWeight = selectedPackages.reduce((sum, pkg) => sum + pkg.weight, 0);
-  const totalSelectedCbm = selectedPackages.reduce((sum, pkg) => sum + pkg.cbm, 0);
+  const selectedPackages =
+    unassignedPackages?.data?.filter((pkg) =>
+      selectedPackageIds.includes(pkg.id)
+    ) || [];
+  const totalSelectedWeight = selectedPackages.reduce(
+    (sum, pkg) => sum + pkg.weight,
+    0
+  );
+  const totalSelectedCbm = selectedPackages.reduce(
+    (sum, pkg) => sum + pkg.cbm,
+    0
+  );
 
   // Use all active containers
   const filteredContainers = activeContainers;
@@ -227,7 +232,7 @@ export default function PackingListsPage() {
       loadingDate: packingList.loadingDate
         ? new Date(packingList.loadingDate)
         : null,
-      loadingCity: packingList.loadingCity,
+      destinationCity: packingList.destinationCity,
       eta: packingList.eta ? new Date(packingList.eta) : null,
       notes: packingList.notes,
     });
@@ -271,15 +276,15 @@ export default function PackingListsPage() {
     setIsDetailsDrawerVisible(true);
   };
 
-  const handleExportPackingList = async (
-    id: string,
-    format: ExportFormat
-  ) => {
+  const handleExportPackingList = async (id: string, format: ExportFormat) => {
     try {
       await exportPackingList.mutateAsync({ id, format });
       toast.success(`Packing list exported as ${format} successfully`);
     } catch (error: any) {
-      toast.error(`Failed to export packing list as ${format}`, error.response.data.message);
+      toast.error(
+        `Failed to export packing list as ${format}`,
+        error.response.data.message
+      );
     }
   };
 
@@ -302,7 +307,10 @@ export default function PackingListsPage() {
       setIsPackageAssignmentModalVisible(false);
       setAssignmentPackingList(null);
     } catch (error: any) {
-      toast.error("Failed to add packages to packing list", error.response.data.message);
+      toast.error(
+        "Failed to add packages to packing list",
+        error.response.data.message
+      );
     }
   };
 
@@ -355,7 +363,13 @@ export default function PackingListsPage() {
   );
 
   return (
-    <AuthGuard requiredRoles={[Role.SUPER_ADMIN, Role.OPERATIONS_CLERK, Role.FINANCE_MANAGER]}>
+    <AuthGuard
+      requiredRoles={[
+        Role.SUPER_ADMIN,
+        Role.OPERATIONS_CLERK,
+        Role.FINANCE_MANAGER,
+      ]}
+    >
       <AppLayout>
         <div className="p-6">
           <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
@@ -541,13 +555,16 @@ export default function PackingListsPage() {
                       showSearch
                       placeholder="Search and select container"
                       filterOption={(input, option) =>
-                        (option?.children?.toString() ?? "").toLowerCase().includes(input.toLowerCase())
+                        (option?.children?.toString() ?? "")
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
                       }
                       loading={!activeContainers}
                     >
                       {filteredContainers?.map((container) => (
                         <Option key={container.id} value={container.id}>
-                          {container.containerNumber} - {container.destinationCity} ({container.status})
+                          {container.containerNumber} -{" "}
+                          {container.destinationCity} ({container.status})
                         </Option>
                       ))}
                     </Select>
@@ -634,13 +651,16 @@ export default function PackingListsPage() {
                       showSearch
                       placeholder="Search and select container"
                       filterOption={(input, option) =>
-                        (option?.children?.toString() ?? "").toLowerCase().includes(input.toLowerCase())
+                        (option?.children?.toString() ?? "")
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
                       }
                       loading={!activeContainers}
                     >
                       {filteredContainers?.map((container) => (
                         <Option key={container.id} value={container.id}>
-                          {container.containerNumber} - {container.destinationCity} ({container.status})
+                          {container.containerNumber} -{" "}
+                          {container.destinationCity} ({container.status})
                         </Option>
                       ))}
                     </Select>
@@ -655,8 +675,8 @@ export default function PackingListsPage() {
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="loadingCity" label="Loading City">
-                    <Input />
+                  <Form.Item name="destinationCity" label="Destination City">
+                    <Input/>
                   </Form.Item>
                 </Col>
               </Row>
@@ -732,10 +752,12 @@ export default function PackingListsPage() {
                   description={
                     <div className="grid grid-cols-3 gap-4 mt-2">
                       <div>
-                        <Text strong>Total Weight:</Text> {totalSelectedWeight.toFixed(2)} kg
+                        <Text strong>Total Weight:</Text>{" "}
+                        {totalSelectedWeight.toFixed(2)} kg
                       </div>
                       <div>
-                        <Text strong>Total CBM:</Text> {totalSelectedCbm.toFixed(2)}
+                        <Text strong>Total CBM:</Text>{" "}
+                        {totalSelectedCbm.toFixed(2)}
                       </div>
                     </div>
                   }
@@ -780,8 +802,8 @@ export default function PackingListsPage() {
                   <Descriptions.Item label="Container ID">
                     {packingListDetails.containerId || "N/A"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Loading City">
-                    {packingListDetails.loadingCity || "N/A"}
+                  <Descriptions.Item label="Destination City">
+                    {packingListDetails.destinationCity || "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Loading Date">
                     {packingListDetails.loadingDate

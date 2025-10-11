@@ -1,52 +1,46 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Form,
   Input,
   Button,
   Card,
   Steps,
-  message,
   Table,
   Space,
   Select,
   DatePicker,
   Modal,
-  InputNumber,
   Row,
   Col,
   Typography,
   Alert,
-  Spin,
   Popconfirm,
 } from "antd";
 import { toast } from "sonner";
 import {
   LeftOutlined,
   RightOutlined,
-  CheckOutlined,
   PlusOutlined,
   MinusOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import {
-  usePackingListMutations,
-  usePackingList,
-} from "@/hooks/usePackingLists";
-import { useActiveContainers, useContainers } from "@/hooks/useContainers";
+import { usePackingListMutations } from "@/hooks/usePackingLists";
+import { useActiveContainers } from "@/hooks/useContainers";
 import { useUnassignedPackages } from "@/hooks/usePackingLists";
 import { useShippingRates } from "@/hooks/useShippingRates";
 import {
   PackingListCreatePayload,
   PackageAssignment,
+  PackingList,
 } from "@/types/packingList";
-import { Package, ShipmentType } from "@/types/package";
+import { Package } from "@/types/package";
 import { ContainerCreatePayload } from "@/types/container";
 import { useRouter } from "next/navigation";
 import { ShippingMode } from "@/types/exchangeRate";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { ContainerType } from "@/types/container";
 import { Role } from "@/types/user";
 
@@ -64,9 +58,13 @@ type PackageAssignmentWithCalc = PackageAssignment & {
 const PackingListCreatePage: React.FC = () => {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
-  const [packingListData, setPackingListData] = useState<Partial<PackingListCreatePayload>>({});
+  const [packingListData, setPackingListData] = useState<Partial<PackingList>>(
+    {}
+  );
   const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
-  const [packageAssignments, setPackageAssignments] = useState<PackageAssignmentWithCalc[]>([]);
+  const [packageAssignments, setPackageAssignments] = useState<
+    PackageAssignmentWithCalc[]
+  >([]);
   const [containerModalVisible, setContainerModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -77,89 +75,79 @@ const PackingListCreatePage: React.FC = () => {
   // React Query hooks
   const { data: activeContainers = [] } = useActiveContainers();
 
-  // Determine container type based on selected packages shipping mode
-  const selectedShippingModes = packageAssignments.map(pkg =>
-    unassignedPackages?.data?.find(p => p.id === pkg.packageId)?.shippingMode
-  ).filter(Boolean);
-
-  const containerType = selectedShippingModes.length > 0
-    ? (selectedShippingModes.every(mode => mode === "SEA") ? "CONTAINER"
-       : selectedShippingModes.every(mode => mode === "AIR") ? "BAG"
-       : undefined) // Mixed modes - show all containers
-    : undefined; // No packages selected
-
-  // Filter containers based on selected packages
-  const filteredContainers = activeContainers.filter(container => {
-    if (!containerType) return true; // Show all if no container type determined
-    return container.containerType === containerType;
-  });
-  const { data: unassignedPackages, isLoading: packagesLoading } = useUnassignedPackages({
-    page: 1,
-    limit: 100,
-  });
+  // Show all active containers for selection
+  const { data: unassignedPackages, isLoading: packagesLoading } =
+    useUnassignedPackages({
+      page: 1,
+      limit: 100,
+    });
   const { activeRates: shippingRates = [] } = useShippingRates();
 
   const {
     createPackingList,
     finalizePackingList,
     addPackagesToPackingList,
+    removePackagesFromPackingList,
     isCreating,
     isFinalizing,
   } = usePackingListMutations();
 
   // Filter unassigned packages
-  const availablePackages: Package[] = unassignedPackages?.data?.filter(pkg =>
-    !selectedPackageIds.includes(pkg.id)
-  ) || [];
+  const availablePackages: Package[] =
+    unassignedPackages?.data?.filter(
+      (pkg) => !selectedPackageIds.includes(pkg.id)
+    ) || [];
 
   // Calculate package assignments with shipping rates
   useEffect(() => {
     if (selectedPackageIds.length > 0) {
-      const assignments: PackageAssignmentWithCalc[] = selectedPackageIds.map(id => {
-        const pkg = unassignedPackages?.data?.find(p => p.id === id);
-        if (!pkg) return null;
+      const assignments: PackageAssignmentWithCalc[] = selectedPackageIds
+        .map((id) => {
+          const pkg = unassignedPackages?.data?.find((p) => p.id === id);
+          if (!pkg) return null;
 
-        // Find appropriate rate based on shipping mode and type
-        const rate = shippingRates.find(r => {
-          if (pkg.shippingMode === r.shippingMode) {
-            if (r.shippingMode === ShippingMode.AIR) {
-              return r.airShippingType === pkg.airShippingType;
+          // Find appropriate rate based on shipping mode and type
+          const rate = shippingRates.find((r) => {
+            if (pkg.shippingMode === r.shippingMode) {
+              if (r.shippingMode === ShippingMode.AIR) {
+                return r.airShippingType === pkg.airShippingType;
+              }
+              return true; // SEA mode matches all
             }
-            return true; // SEA mode matches all
+            return false;
+          });
+
+          let calculatedAmount = 0;
+          let unitType = "CBM";
+          let rateValue = 0;
+
+          if (rate) {
+            rateValue = rate.rate;
+            if (rate.shippingMode === ShippingMode.SEA) {
+              // SEA: CBM × Rate
+              calculatedAmount = pkg.cbm * rate.rate;
+            } else {
+              // AIR: Weight × Rate
+              calculatedAmount = pkg.weight * rate.rate;
+              unitType = "KG";
+            }
           }
-          return false;
-        });
 
-        let calculatedAmount = 0;
-        let unitType = 'CBM';
-        let rateValue = 0;
-
-        if (rate) {
-          rateValue = rate.rate;
-          if (rate.shippingMode === ShippingMode.SEA) {
-            // SEA: CBM × Rate
-            calculatedAmount = pkg.cbm * rate.rate;
-          } else {
-            // AIR: Weight × Rate
-            calculatedAmount = pkg.weight * rate.rate;
-            unitType = 'KG';
-          }
-        }
-
-        return {
-          packageId: pkg.id,
-          trackingCode: pkg.trackingCode,
-          description: pkg.description || '',
-          weight: pkg.weight,
-          cbm: pkg.cbm,
-          customerId: pkg.customerId,
-          customerName: `${pkg.customer?.firstName} ${pkg.customer?.lastName}`,
-          rate: rateValue,
-          calculatedAmount,
-          currency: rate?.currency || 'USD',
-          unitType,
-        };
-      }).filter(Boolean) as PackageAssignmentWithCalc[];
+          return {
+            packageId: pkg.id,
+            trackingCode: pkg.trackingCode,
+            description: pkg.description || "",
+            weight: pkg.weight,
+            cbm: pkg.cbm,
+            customerId: pkg.customerId,
+            customerName: `${pkg.customer?.firstName} ${pkg.customer?.lastName}`,
+            rate: rateValue,
+            calculatedAmount,
+            currency: rate?.currency || "USD",
+            unitType,
+          };
+        })
+        .filter(Boolean) as PackageAssignmentWithCalc[];
 
       setPackageAssignments(assignments);
     } else {
@@ -170,8 +158,10 @@ const PackingListCreatePage: React.FC = () => {
   // Totals calculation
   const totals = packageAssignments.reduce(
     (acc, pkg) => ({
-      usdTotal: acc.usdTotal + (pkg.currency === 'USD' ? pkg.calculatedAmount || 0 : 0),
-      ghsTotal: acc.ghsTotal + (pkg.currency === 'GHS' ? pkg.calculatedAmount || 0 : 0),
+      usdTotal:
+        acc.usdTotal + (pkg.currency === "USD" ? pkg.calculatedAmount || 0 : 0),
+      ghsTotal:
+        acc.ghsTotal + (pkg.currency === "GHS" ? pkg.calculatedAmount || 0 : 0),
       weightTotal: acc.weightTotal + pkg.weight,
       cbmTotal: acc.cbmTotal + pkg.cbm,
     }),
@@ -179,56 +169,118 @@ const PackingListCreatePage: React.FC = () => {
   );
 
   // Step handlers
-  const handleNext = async () => {
-    if (currentStep === 0) {
-      // Validate basic info
-      try {
-        const values = await basicInfoForm.validateFields();
-        setPackingListData(prev => ({ ...prev, ...values }));
-        setCurrentStep(1);
-      } catch (error) {
+  const handleNext = useCallback(async () => {
+    setCurrentStep(currentStep + 1);
+  }, [currentStep]);
+
+  const handlePrev = useCallback(() => {
+    setCurrentStep(currentStep - 1);
+  }, [currentStep]);
+
+  const handleStepClick = async (step: number) => {
+    // if packing list not created, prevent going to step 1 or 2
+    if (step === 1) {
+      if (!packingListData) {
+        toast.error("Please create a packing list first");
         return;
       }
-    } else if (currentStep === 1) {
-      // Validate package assignment
+    }
+    // if no packages selected, prevent going to step 2
+    if (step === 2) {
       if (selectedPackageIds.length === 0) {
         toast.error("Please select at least one package");
         return;
       }
-      setCurrentStep(2);
-    } else if (currentStep === 2) {
-      // Container selection is optional, proceed to finalize
-      setCurrentStep(3);
     }
-  };
-
-  const handlePrev = () => {
-    setCurrentStep(currentStep - 1);
-  };
-
-  const handleStepClick = (step: number) => {
-    // Allow going back to previous steps
-    if (step < currentStep) {
-      setCurrentStep(step);
-    }
+    setCurrentStep(step);
   };
 
   // Package selection handlers
-  const handleAddPackage = (packageId: string) => {
+  const handleAddPackage = async (packageId: string) => {
     if (!selectedPackageIds.includes(packageId)) {
-      setSelectedPackageIds(prev => [...prev, packageId]);
+      if (packingListData) {
+        // Add package to packing list via API
+        try {
+          await addPackagesToPackingList.mutateAsync({
+            id: packingListData.id!,
+            packageIds: [packageId],
+          });
+          toast.success("Package added to packing list");
+        } catch (error) {
+          toast.error("Failed to add package to packing list");
+          return;
+        }
+      }
+      setSelectedPackageIds((prev) => [...prev, packageId]);
     }
   };
 
-  const handleRemovePackage = (packageId: string) => {
-    setSelectedPackageIds(prev => prev.filter(id => id !== packageId));
+  useEffect(() => {
+    if (createPackingList.data && createPackingList.data) {
+      toast.success("Packing list created successfully");
+      setPackingListData(createPackingList.data);
+      setCurrentStep(1);
+    }
+  }, [createPackingList.data]);
+
+  const handleRemovePackage = async (packageId: string) => {
+    if (packingListData) {
+      // Remove package from packing list via API
+      try {
+        await removePackagesFromPackingList.mutateAsync({
+          id: packingListData.id!,
+          packageIds: [packageId],
+        });
+        toast.success("Package removed from packing list");
+      } catch (error) {
+        toast.error("Failed to remove package from packing list");
+        return;
+      }
+    }
+    setSelectedPackageIds((prev) => prev.filter((id) => id !== packageId));
   };
 
-  // Container creation - TODO: Implement when container creation API is available
+  // Create packing list after container selection
+  const handleCreatePackingList = async () => {
+    if (!packingListData) return;
+
+    try {
+      const values = await basicInfoForm.validateFields();
+      setPackingListData((prev) => ({ ...prev, ...values }));
+
+      const createPayload: PackingListCreatePayload = {
+        ...values,
+        loadingDate: dayjs(values.loadingDate).format("YYYY-MM-DD"),
+        eta: values.eta ? dayjs(values.eta).format("YYYY-MM-DD") : undefined,
+      } as PackingListCreatePayload;
+      await createPackingList.mutateAsync(createPayload);
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to create packing list"
+      );
+    }
+  };
+
   const handleCreateContainer = async (values: ContainerCreatePayload) => {
-    message.info("Container creation is not yet implemented");
     setContainerModalVisible(false);
     containerForm.resetFields();
+  };
+
+  // Finalize packing list
+  const handleFinalizePackingList = async () => {
+    if (!packingListData) return;
+
+    try {
+      await finalizePackingList.mutateAsync(packingListData.id!);
+      toast.success(
+        "Packing list finalized and invoices generated successfully"
+      );
+      router.push("/packing-lists");
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to finalize packing list"
+      );
+    }
   };
 
   // Finalize packing list creation
@@ -239,22 +291,24 @@ const PackingListCreatePage: React.FC = () => {
       // Create the packing list first
       const createPayload: PackingListCreatePayload = {
         ...packingListData,
-        loadingDate: dayjs(packingListData.loadingDate).format('YYYY-MM-DD'),
-        eta: packingListData.eta ? dayjs(packingListData.eta).format('YYYY-MM-DD') : undefined,
+        loadingDate: dayjs(packingListData.loadingDate).format("YYYY-MM-DD"),
+        eta: packingListData.eta
+          ? dayjs(packingListData.eta).format("YYYY-MM-DD")
+          : undefined,
         packageIds: selectedPackageIds,
       } as PackingListCreatePayload;
 
-      const result = await createPackingList.mutateAsync(createPayload);
-      const packingListId = result.data.id;
-
-      // Finalize packing list (generates invoices without FX conversion per UC12)
-      await finalizePackingList.mutateAsync(packingListId);
-
-      toast.success("Packing list created and invoices generated successfully");
-      router.push('/packing-lists');
-
+      createPackingList.mutate(createPayload);
+      if (!createPackingList.data || !createPackingList.data.id) {
+        toast.success(
+          "Packing list created and invoices generated successfully"
+        );
+        router.push("/packing-lists");
+      }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to finalize packing list");
+      toast.error(
+        error.response?.data?.message || "Failed to finalize packing list"
+      );
     } finally {
       setLoading(false);
     }
@@ -326,13 +380,13 @@ const PackingListCreatePage: React.FC = () => {
       title: "Weight (kg)",
       dataIndex: "weight",
       key: "weight",
-      render: (weight: number) => weight.toFixed(2),
+      render: (weight: number) => weight ? weight.toFixed(2) : "N/A",
     },
     {
       title: "CBM",
       dataIndex: "cbm",
       key: "cbm",
-      render: (cbm: number) => cbm.toFixed(3),
+      render: (cbm: number) => cbm ? cbm.toFixed(3) : "N/A",
     },
     {
       title: "Unit Type",
@@ -369,74 +423,75 @@ const PackingListCreatePage: React.FC = () => {
     },
   ];
 
-  const containerColumns = [
-    {
-      title: "Container Number",
-      dataIndex: "containerNumber",
-      key: "containerNumber",
-    },
-    {
-      title: "Destination City",
-      dataIndex: "destinationCity",
-      key: "destinationCity",
-    },
-    {
-      title: "Loading Date",
-      dataIndex: "loadingDate",
-      key: "loadingDate",
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-    },
-  ];
-
   return (
-    <AuthGuard requiredRoles={[Role.SUPER_ADMIN, Role.OPERATIONS_CLERK, Role.FINANCE_MANAGER]}>
+    <AuthGuard
+      requiredRoles={[
+        Role.SUPER_ADMIN,
+        Role.OPERATIONS_CLERK,
+        Role.FINANCE_MANAGER,
+      ]}
+    >
       <AppLayout>
         <div className="p-4 md:p-6 max-w-full md:max-w-6xl mx-auto">
           <div className="mb-6">
             <Title level={2}>Create New Packing List</Title>
-            <Text type="secondary">Complete the steps below to create a new packing list</Text>
+            <Text type="secondary">
+              Complete the steps below to create a new packing list
+            </Text>
           </div>
 
           <Card className="mb-6">
             <Steps current={currentStep} onChange={handleStepClick}>
-              <Step title="Basic Information" description="Packing list details" />
-              <Step title="Package Assignment" description="Select and assign packages" />
-              <Step title="Container Selection" description="Choose container (optional)" />
-              <Step title="Finalize" description="Review and generate invoices" />
+              <Step
+                title="Create Packing List"
+                description="Basic info & container selection"
+              />
+              <Step
+                title="Package Assignment"
+                description="Add/remove packages"
+              />
+              <Step title="Finalize" description="Complete packing list" />
             </Steps>
           </Card>
 
           {/* Step Content */}
           <Card>
             {currentStep === 0 && (
-              // Step 1: Basic Information
+              // Step 1: Create Packing List (Basic Info + Container)
               <Form
                 form={basicInfoForm}
                 layout="vertical"
                 initialValues={{
                   loadingDate: dayjs(),
+                  eta: dayjs().add(40, "days"),
                 }}
               >
+                <Title level={4}>Basic Information</Title>
                 <Row gutter={16}>
                   <Col xs={24} lg={12}>
                     <Form.Item
                       name="name"
                       label="Packing List Name"
-                      rules={[{ required: true, message: "Please enter packing list name" }]}
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please enter packing list name",
+                        },
+                      ]}
                     >
                       <Input placeholder="e.g., PL-2025-001" />
                     </Form.Item>
                   </Col>
                   <Col xs={24} lg={12}>
                     <Form.Item
-                      name="loadingCity"
-                      label="Loading City"
-                      rules={[{ required: true, message: "Please enter loading city" }]}
+                      name="destinationCity"
+                      label="Destination City"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please enter destination city",
+                        },
+                      ]}
                     >
                       <Input placeholder="e.g., Accra, Tema" />
                     </Form.Item>
@@ -444,24 +499,99 @@ const PackingListCreatePage: React.FC = () => {
                 </Row>
 
                 <Row gutter={16}>
-                  <Col xs={24} sm={12} md={8}>
+                  <Col xs={24} lg={12}>
                     <Form.Item
                       name="loadingDate"
                       label="Loading Date"
-                      rules={[{ required: true, message: "Please select loading date" }]}
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please select loading date",
+                        },
+                      ]}
                     >
                       <DatePicker className="w-full" />
                     </Form.Item>
                   </Col>
-                  <Col xs={24} sm={12} md={8}>
-                    <Form.Item name="eta" label="Estimated Time of Arrival">
+                  <Col xs={24} lg={12}>
+                    <Form.Item
+                      name="eta"
+                      label="Estimated Time of Arrival"
+                      rules={[
+                        {
+                          validator: async (_, value) => {
+                            if (value) {
+                              const selectedDate = dayjs(value);
+                              const maxDate = dayjs().add(45, "days");
+                              if (selectedDate.isAfter(maxDate)) {
+                                throw new Error(
+                                  "ETA cannot exceed 45 days from today"
+                                );
+                              }
+                            }
+                          },
+                        },
+                      ]}
+                    >
                       <DatePicker className="w-full" />
                     </Form.Item>
                   </Col>
-                  <Col xs={24} md={8}>
+                  <Col xs={24} lg={12}>
                     <Form.Item name="notes" label="Notes">
-                      <Input.TextArea rows={1} />
+                      <Input.TextArea rows={2} />
                     </Form.Item>
+                  </Col>
+                </Row>
+
+                <Title level={4} style={{ marginTop: 24 }}>
+                  Container Selection
+                </Title>
+                <Row gutter={16}>
+                  <Col xs={18} lg={8}>
+                    <Form.Item
+                      name="containerId"
+                      label="Select Container"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please select a container",
+                        },
+                      ]}
+                    >
+                      <Select
+                        placeholder="Choose a container"
+                        showSearch
+                        filterOption={(input, option) =>
+                          (option?.children?.toString() ?? "")
+                            .toLowerCase()
+                            .includes(input.toLowerCase())
+                        }
+                        notFoundContent={
+                          activeContainers.length === 0
+                            ? "No containers available"
+                            : null
+                        }
+                      >
+                        {activeContainers.map((container) => (
+                          <Option key={container.id} value={container.id}>
+                            {container.containerNumber} -{" "}
+                            {container.destinationCity} (
+                            {container.containerType})
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                  <Col xs={4} lg={4}>
+                    <Button
+                      type="default"
+                      icon={<PlusOutlined />}
+                      onClick={() => setContainerModalVisible(true)}
+                      style={{ marginTop: 30 }}
+                      block
+                    >
+                      Create New
+                    </Button>
                   </Col>
                 </Row>
               </Form>
@@ -470,142 +600,86 @@ const PackingListCreatePage: React.FC = () => {
             {currentStep === 1 && (
               // Step 2: Package Assignment
               <div className="space-y-4">
-                {/* Package Selection with Search/Filter */}
-                <div>
-                  <Title level={4}>Available Packages</Title>
-                  <Table
-                    columns={packageColumns}
-                    dataSource={availablePackages}
-                    loading={packagesLoading}
-                    rowKey="id"
-                    pagination={{ pageSize: 10 }}
-                    size="small"
-                    scroll={{ x: true }}
-                  />
-                </div>
-
-                {/* Selected Packages */}
-                <div>
-                  <Title level={4}>Selected Packages ({packageAssignments.length})</Title>
-                  <Table
-                    columns={selectedPackageColumns}
-                    dataSource={packageAssignments}
-                    rowKey="packageId"
-                    pagination={false}
-                    size="small"
-                    scroll={{ x: true }}
-                    summary={() => (
-                      <Table.Summary.Row>
-                        <Table.Summary.Cell index={0} colSpan={3}>
-                          <Text strong>Totals</Text>
-                        </Table.Summary.Cell>
-                        <Table.Summary.Cell index={1}>
-                          <Text strong>{totals.weightTotal.toFixed(2)} kg</Text>
-                        </Table.Summary.Cell>
-                        <Table.Summary.Cell index={2}>
-                          <Text strong>{totals.cbmTotal.toFixed(3)}</Text>
-                        </Table.Summary.Cell>
-                        <Table.Summary.Cell index={3} colSpan={4}>
-                          <Space>
-                            <Text strong>USD: ${totals.usdTotal.toFixed(2)}</Text>
-                            <Text strong>GHS: ₵{totals.ghsTotal.toFixed(2)}</Text>
-                          </Space>
-                        </Table.Summary.Cell>
-                      </Table.Summary.Row>
-                    )}
-                  />
-                </div>
-
-                {packageAssignments.some(p => !p.rate) && (
+                {!packingListData ? (
                   <Alert
-                    message="Warning"
-                    description="Some packages don't have matching shipping rates. Please check shipping rates configuration."
+                    message="Packing list not created"
+                    description="Please create the packing list in the previous step first."
                     type="warning"
                     showIcon
                   />
+                ) : (
+                  <>
+                    {/* Package Selection with Search/Filter */}
+                    <div>
+                      <Title level={4}>Available Packages</Title>
+                      <Table
+                        columns={packageColumns}
+                        dataSource={availablePackages}
+                        loading={packagesLoading}
+                        rowKey="id"
+                        pagination={{ pageSize: 10 }}
+                        size="small"
+                        scroll={{ x: true }}
+                      />
+                    </div>
+
+                    {/* Assigned Packages */}
+                    <div>
+                      <Title level={4}>
+                        Assigned Packages ({packageAssignments.length})
+                      </Title>
+                      <Table
+                        columns={selectedPackageColumns}
+                        dataSource={packageAssignments}
+                        rowKey="packageId"
+                        pagination={false}
+                        size="small"
+                        scroll={{ x: true }}
+                        summary={() => (
+                          <Table.Summary.Row>
+                            <Table.Summary.Cell index={0} colSpan={3}>
+                              <Text strong>Totals</Text>
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell index={1}>
+                              <Text strong>
+                                {totals.weightTotal.toFixed(2)} kg
+                              </Text>
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell index={2}>
+                              <Text strong>{totals.cbmTotal.toFixed(3)}</Text>
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell index={3} colSpan={4}>
+                              <Space>
+                                <Text strong>
+                                  USD: ${totals.usdTotal.toFixed(2)}
+                                </Text>
+                                <Text strong>
+                                  GHS: ₵{totals.ghsTotal.toFixed(2)}
+                                </Text>
+                              </Space>
+                            </Table.Summary.Cell>
+                          </Table.Summary.Row>
+                        )}
+                      />
+                    </div>
+
+                    {packageAssignments.some((p) => !p.rate) && (
+                      <Alert
+                        message="Warning"
+                        description="Some packages don't have matching shipping rates. Please check shipping rates configuration."
+                        type="warning"
+                        showIcon
+                      />
+                    )}
+                  </>
                 )}
               </div>
             )}
 
             {currentStep === 2 && (
-              // Step 3: Container Selection
+              // Step 3: Finalize
               <div className="space-y-4">
-                <Title level={4}>Container Selection</Title>
-
-                {containerType && (
-                  <Alert
-                    message={`Showing ${containerType === 'CONTAINER' ? 'Sea freight containers' : 'Air freight bags'} only`}
-                    description={`Based on selected packages (${selectedShippingModes.length} ${selectedShippingModes.length === 1 ? 'package uses' : 'packages use'} ${containerType === 'CONTAINER' ? 'sea freight' : 'air freight'})`}
-                    type="info"
-                    showIcon
-                    className="mb-4"
-                  />
-                )}
-
-                {!containerType && selectedPackageIds.length > 0 && (
-                  <Alert
-                    message="Mixed shipping modes detected"
-                    description="Packages with different shipping modes selected. All containers are shown."
-                    type="warning"
-                    showIcon
-                    className="mb-4"
-                  />
-                )}
-
-                <Form
-                  layout="vertical"
-                  onFinish={(values) => {
-                    setPackingListData(prev => ({ ...prev, containerId: values.containerId }));
-                    toast.success("Container selected");
-                  }}
-                >
-                  <Row gutter={16}>
-                    <Col xs={24} lg={18}>
-                      <Form.Item name="containerId" label={`Select Container ${filteredContainers.length === 0 ? '(No containers available)' : `(${filteredContainers.length} available)`}`}>
-                        <Select
-                          placeholder="Choose a container"
-                          allowClear
-                          showSearch
-                          disabled={filteredContainers.length === 0}
-                          filterOption={(input, option) =>
-                            (option?.children?.toString() ?? "").toLowerCase().includes(input.toLowerCase())
-                          }
-                        >
-                          {filteredContainers.map((container) => (
-                            <Option key={container.id} value={container.id}>
-                              {container.containerNumber} - {container.destinationCity} ({container.containerType})
-                            </Option>
-                          ))}
-                        </Select>
-                      </Form.Item>
-                    </Col>
-                    <Col xs={24} lg={6}>
-                      <Button
-                        type="default"
-                        icon={<PlusOutlined />}
-                        onClick={() => setContainerModalVisible(true)}
-                        className="mt-8"
-                        block
-                      >
-                        Create New
-                      </Button>
-                    </Col>
-                  </Row>
-                  <Button type="primary" htmlType="submit">
-                    Save Container Selection
-                  </Button>
-                </Form>
-
-                <Text type="secondary" className="block mt-4">
-                  Note: Container selection is optional. You can proceed without selecting a container.
-                </Text>
-              </div>
-            )}
-
-            {currentStep === 3 && (
-              // Step 4: Finalize
-              <div className="space-y-4">
-                <Title level={4}>Review & Finalize</Title>
+                <Title level={4}>Review & Finalize Packing List</Title>
 
                 <Card size="small" title="Basic Information">
                   <Row gutter={16}>
@@ -613,14 +687,17 @@ const PackingListCreatePage: React.FC = () => {
                       <Text strong>Name:</Text> {packingListData.name}
                     </Col>
                     <Col xs={24} sm={12}>
-                      <Text strong>Loading City:</Text> {packingListData.loadingCity}
+                      <Text strong>Destination City:</Text>{" "}
+                      {packingListData.destinationCity}
                     </Col>
                   </Row>
                   <Row gutter={16} className="mt-2">
                     <Col xs={24} sm={12}>
                       <Text strong>Loading Date:</Text>{" "}
                       {packingListData.loadingDate
-                        ? dayjs(packingListData.loadingDate).format("DD/MM/YYYY")
+                        ? dayjs(packingListData.loadingDate).format(
+                            "DD/MM/YYYY"
+                          )
                         : "N/A"}
                     </Col>
                     <Col xs={24} sm={12}>
@@ -638,20 +715,23 @@ const PackingListCreatePage: React.FC = () => {
                       <Text strong>Packages:</Text> {packageAssignments.length}
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                      <Text strong>Total Weight:</Text> {totals.weightTotal.toFixed(2)} kg
+                      <Text strong>Total Weight:</Text>{" "}
+                      {totals.weightTotal.toFixed(2)} kg
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                      <Text strong>Total CBM:</Text> {totals.cbmTotal.toFixed(3)}
+                      <Text strong>Total CBM:</Text>{" "}
+                      {totals.cbmTotal.toFixed(3)}
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                      <Text strong>Total Value:</Text> ${totals.usdTotal.toFixed(2)}
+                      <Text strong>Total Value:</Text> $
+                      {totals.usdTotal.toFixed(2)}
                     </Col>
                   </Row>
                 </Card>
 
                 <Alert
                   message="Important"
-                  description="Finalizing will create the packing list and generate invoices for all selected packages without currency conversion (per UC12)."
+                  description="Finalizing will generate invoices for all assigned packages without currency conversion (per UC12)."
                   type="info"
                   showIcon
                 />
@@ -660,16 +740,18 @@ const PackingListCreatePage: React.FC = () => {
                   <Space>
                     <Popconfirm
                       title="Are you sure you want to finalize this packing list?"
-                      description="This will create the packing list and generate invoices."
-                      onConfirm={handleFinalize}
+                      description="This will generate invoices and complete the packing list."
+                      onConfirm={handleFinalizePackingList}
                       okText="Yes, Finalize"
                       cancelText="Cancel"
                     >
                       <Button
                         type="primary"
                         size="large"
-                        loading={loading}
-                        disabled={selectedPackageIds.length === 0}
+                        loading={isFinalizing}
+                        disabled={
+                          !packingListData || selectedPackageIds.length === 0
+                        }
                       >
                         Finalize Packing List
                       </Button>
@@ -690,17 +772,22 @@ const PackingListCreatePage: React.FC = () => {
               Previous
             </Button>
 
-            {currentStep < 3 ? (
+            {currentStep < 2 ? (
               <Button
                 type="primary"
-                onClick={handleNext}
-                disabled={
-                  currentStep === 1 && selectedPackageIds.length === 0
-                }
+                onClick={() => {
+                  if (currentStep === 0) {
+                    handleCreatePackingList();
+                  } else {
+                    handleNext();
+                  }
+                }}
+                loading={loading || isCreating}
+                disabled={isCreating || isFinalizing}
                 icon={<RightOutlined />}
                 iconPosition="end"
               >
-                Next
+                {currentStep === 0 && "Save &"} Next
               </Button>
             ) : null}
           </div>
@@ -711,15 +798,15 @@ const PackingListCreatePage: React.FC = () => {
             open={containerModalVisible}
             onCancel={() => setContainerModalVisible(false)}
             footer={null}
-            width={{ xs: '95%', sm: '90%', md: 600 }}
+            width={{ xs: "95%", sm: "90%", md: 600 }}
           >
             <Form
               form={containerForm}
               layout="vertical"
               onFinish={handleCreateContainer}
               initialValues={{
-                containerType: containerType || ContainerType.CONTAINER,
-                status: 'PLANNED',
+                containerType: ContainerType.CONTAINER,
+                status: "PLANNED",
               }}
             >
               <Row gutter={16}>
@@ -739,8 +826,12 @@ const PackingListCreatePage: React.FC = () => {
                     rules={[{ required: true }]}
                   >
                     <Select>
-                      <Option value={ContainerType.CONTAINER}>Container (Sea Freight)</Option>
-                      <Option value={ContainerType.BAG}>Bag (Air Freight)</Option>
+                      <Option value={ContainerType.CONTAINER}>
+                        Container (Sea Freight)
+                      </Option>
+                      <Option value={ContainerType.BAG}>
+                        Bag (Air Freight)
+                      </Option>
                     </Select>
                   </Form.Item>
                 </Col>

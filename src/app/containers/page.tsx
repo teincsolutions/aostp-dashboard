@@ -314,7 +314,7 @@ export default function ContainersPage() {
               icon={<PlusOutlined />}
               onClick={() => setIsCreateModalVisible(true)}
               block
-              className="md:w-auto"
+              className="max-md:w-full md:max-w-xs"
             >
               Add Container
             </Button>

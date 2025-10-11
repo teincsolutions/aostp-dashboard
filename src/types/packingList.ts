@@ -26,7 +26,7 @@ export interface PackingList {
     eta: string;
     status: string;
   };
-  loadingCity: string;
+  destinationCity: string;
   loadingDate: string;
   eta?: string;
   packageCount?: number;
@@ -44,7 +44,7 @@ export interface PackingList {
 export interface PackingListCreatePayload {
   name: string;
   containerId?: string;
-  loadingCity: string;
+  destinationCity: string;
   loadingDate: string;
   eta?: string;
   notes?: string;
@@ -55,7 +55,7 @@ export interface PackingListCreatePayload {
 export interface PackingListUpdatePayload {
   name?: string;
   containerId?: string;
-  loadingCity?: string;
+  destinationCity?: string;
   loadingDate?: string;
   eta?: string;
   notes?: string;
@@ -66,7 +66,7 @@ export interface PackingListUpdatePayload {
 export interface PackingListFilters {
   status?: PackingListStatus;
   containerId?: string;
-  loadingCity?: string;
+  destinationCity?: string;
   dateFrom?: string;
   dateTo?: string;
   search?: string;

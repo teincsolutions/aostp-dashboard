@@ -33,8 +33,7 @@ export const useActiveContainers = () => {
   return useQuery({
     queryKey: containerKeys.active(),
     queryFn: async () => {
-      const response = await containerService.getActiveContainers();
-      return response.data;
+      return await containerService.getActiveContainers();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

@@ -11,12 +11,18 @@ import {
 export const packingListKeys = {
   all: ["packing-lists"] as const,
   lists: () => [...packingListKeys.all, "list"] as const,
-  list: (params: PackingListQueryParams) => [...packingListKeys.lists(), params] as const,
+  list: (params: PackingListQueryParams) =>
+    [...packingListKeys.lists(), params] as const,
   details: () => [...packingListKeys.all, "detail"] as const,
   detail: (id: string) => [...packingListKeys.details(), id] as const,
   summary: (id: string) => [...packingListKeys.all, "summary", id] as const,
-  unassignedPackages: (params: { search?: string; page?: number; limit?: number }) => [...packingListKeys.all, "unassigned-packages", params] as const,
-  activeContainers: () => [...packingListKeys.all, "active-containers"] as const,
+  unassignedPackages: (params: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => [...packingListKeys.all, "unassigned-packages", params] as const,
+  activeContainers: () =>
+    [...packingListKeys.all, "active-containers"] as const,
 };
 
 // Hook for fetching packing lists with pagination and filters
@@ -32,7 +38,8 @@ export const usePackingLists = (params: PackingListQueryParams = {}) => {
 export const usePackingList = (id: string) => {
   return useQuery({
     queryKey: packingListKeys.detail(id),
-    queryFn: async () => await packingListService.getPackingListById(id).then(res => res.data),
+    queryFn: async () =>
+      await packingListService.getPackingListById(id),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -49,7 +56,9 @@ export const usePackingListSummary = (id: string) => {
 };
 
 // Hook for fetching unassigned packages
-export const useUnassignedPackages = (params: { search?: string; page?: number; limit?: number } = {}) => {
+export const useUnassignedPackages = (
+  params: { search?: string; page?: number; limit?: number } = {}
+) => {
   return useQuery({
     queryKey: packingListKeys.unassignedPackages(params),
     queryFn: () => packingListService.getUnassignedPackages(params),
@@ -60,7 +69,9 @@ export const useUnassignedPackages = (params: { search?: string; page?: number; 
 // Hook for fetching active containers (optionally filtered by container type)
 export const useActiveContainers = (containerType?: string) => {
   return useQuery({
-    queryKey: [...packingListKeys.activeContainers(), containerType].filter(Boolean),
+    queryKey: [...packingListKeys.activeContainers(), containerType].filter(
+      Boolean
+    ),
     queryFn: () => packingListService.getActiveContainers(containerType),
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -77,20 +88,29 @@ export const usePackingListMutations = () => {
     onSuccess: () => {
       // Invalidate and refetch packing lists
       queryClient.invalidateQueries({ queryKey: packingListKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: packingListKeys.activeContainers() });
+      queryClient.invalidateQueries({
+        queryKey: packingListKeys.activeContainers(),
+      });
     },
   });
 
   // Update packing list mutation
   const updatePackingList = useMutation({
-    mutationFn: ({ id, packingListData }: { id: string; packingListData: PackingListUpdatePayload }) =>
-      packingListService.updatePackingList(id, packingListData),
+    mutationFn: ({
+      id,
+      packingListData,
+    }: {
+      id: string;
+      packingListData: PackingListUpdatePayload;
+    }) => packingListService.updatePackingList(id, packingListData),
     onSuccess: (data, variables) => {
       // Update the specific packing list in cache
       queryClient.setQueryData(packingListKeys.detail(variables.id), data);
       // Invalidate lists to refresh with updated data
       queryClient.invalidateQueries({ queryKey: packingListKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: packingListKeys.summary(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: packingListKeys.summary(variables.id),
+      });
     },
   });
 
@@ -111,8 +131,12 @@ export const usePackingListMutations = () => {
       // Update the specific packing list
       queryClient.setQueryData(packingListKeys.detail(variables.id), data);
       queryClient.invalidateQueries({ queryKey: packingListKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: packingListKeys.summary(variables.id) });
-      queryClient.invalidateQueries({ queryKey: packingListKeys.unassignedPackages({}) });
+      queryClient.invalidateQueries({
+        queryKey: packingListKeys.summary(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: packingListKeys.unassignedPackages({}),
+      });
     },
   });
 
@@ -124,8 +148,12 @@ export const usePackingListMutations = () => {
       // Update the specific packing list
       queryClient.setQueryData(packingListKeys.detail(variables.id), data);
       queryClient.invalidateQueries({ queryKey: packingListKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: packingListKeys.summary(variables.id) });
-      queryClient.invalidateQueries({ queryKey: packingListKeys.unassignedPackages({}) });
+      queryClient.invalidateQueries({
+        queryKey: packingListKeys.summary(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: packingListKeys.unassignedPackages({}),
+      });
     },
   });
 
@@ -136,9 +164,11 @@ export const usePackingListMutations = () => {
     onSuccess: (data, variables) => {
       // Handle file download
       if (data.data?.url) {
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = data.data.url;
-        link.download = data.data.filename || `packing-list-${variables.id}.${variables.format.toLowerCase()}`;
+        link.download =
+          data.data.filename ||
+          `packing-list-${variables.id}.${variables.format.toLowerCase()}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -148,8 +178,7 @@ export const usePackingListMutations = () => {
 
   // Finalize packing list mutation (generates invoices without FX conversion per UC12)
   const finalizePackingList = useMutation({
-    mutationFn: (id: string) =>
-      packingListService.finalizePackingList(id),
+    mutationFn: (id: string) => packingListService.finalizePackingList(id),
     onSuccess: () => {
       // Invalidate packing lists to refresh data
       queryClient.invalidateQueries({ queryKey: packingListKeys.lists() });
@@ -161,7 +190,7 @@ export const usePackingListMutations = () => {
     updatePackingList,
     deletePackingList,
     addPackagesToPackingList,
-    removePackagesToPackingList: removePackagesFromPackingList,
+    removePackagesFromPackingList,
     exportPackingList,
     finalizePackingList,
     // Loading states

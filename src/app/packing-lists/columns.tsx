@@ -30,9 +30,9 @@ export const getPackingListColumns = (
     render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
   },
   {
-    title: "Loading City",
-    dataIndex: "loadingCity",
-    key: "loadingCity",
+    title: "Destination City",
+    dataIndex: "destinationCity",
+    key: "destinationCity",
     render: (city: string) => <span>{city || "N/A"}</span>,
   },
   {
@@ -71,7 +71,7 @@ export const getPackingListColumns = (
         [PackingListStatus.CANCELLED]: "red",
       };
 
-      return <Tag color={statusColors[status]}>{status.replace("_", " ")}</Tag>;
+      return <Tag color={statusColors[status]}>{status?.replace("_", " ")}</Tag>;
     },
     filters: [
       { text: "Draft", value: PackingListStatus.DRAFT },
