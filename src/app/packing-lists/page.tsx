@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   Button,
@@ -19,8 +19,6 @@ import {
   Descriptions,
   Tag,
   Typography,
-  Alert,
-  Table as AntTable,
 } from "antd";
 import { toast } from "sonner";
 import {
@@ -32,6 +30,7 @@ import {
   BarChartOutlined,
   BoxPlotOutlined as PackageIcon,
 } from "@ant-design/icons";
+import { PackageAssignmentModal } from "@/components/PackageAssignmentModal";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import {
@@ -42,6 +41,7 @@ import {
   useUnassignedPackages,
 } from "@/hooks/usePackingLists";
 import { useActiveContainers } from "@/hooks/useContainers";
+import { useShippingRates } from "@/hooks/useShippingRates";
 import {
   PackingListCreatePayload,
   PackingListUpdatePayload,
@@ -60,54 +60,6 @@ import dayjs from "dayjs";
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
-
-// Package table columns for assignment modal
-const getPackageColumns = () => [
-  {
-    title: "Tracking Code",
-    dataIndex: "trackingCode",
-    key: "trackingCode",
-  },
-  {
-    title: "Description",
-    dataIndex: "description",
-    key: "description",
-  },
-  {
-    title: "Customer",
-    dataIndex: ["customer", "firstName"],
-    key: "customer",
-    render: (_: any, record: Package) =>
-      record.customer
-        ? `${record.customer.firstName} ${record.customer.lastName}`
-        : "N/A",
-  },
-  {
-    title: "Weight (kg)",
-    dataIndex: "weight",
-    key: "weight",
-  },
-  {
-    title: "CBM",
-    dataIndex: "cbm",
-    key: "cbm",
-  },
-  {
-    title: "Value",
-    dataIndex: "value",
-    key: "value",
-    render: (value: number | undefined) =>
-      value ? `$${value.toFixed(2)}` : "$0.00",
-  },
-  {
-    title: "Mode",
-    dataIndex: "shippingMode",
-    key: "shippingMode",
-    render: (mode: string) => (
-      <Tag color={mode === "AIR" ? "blue" : "green"}>{mode}</Tag>
-    ),
-  },
-];
 
 export default function PackingListsPage() {
   // State for UI
@@ -128,7 +80,6 @@ export default function PackingListsPage() {
     useState<PackingList | null>(null);
   const [assignmentPackingList, setAssignmentPackingList] =
     useState<PackingList | null>(null);
-  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -169,25 +120,21 @@ export default function PackingListsPage() {
   const { data: packingListSummary } = usePackingListSummary(
     detailsPackingList?.id || ""
   );
-  const { data: unassignedPackages } = useUnassignedPackages({
-    search: "",
+  const { data: assignedPackagesSummary } = usePackingListSummary(
+    assignmentPackingList?.id || ""
+  );
+  const { data: unassignedPackagesForModal } = useUnassignedPackages({
     page: 1,
-    limit: 100,
+    limit: 1000,
   });
+  const { activeRates: shippingRatesForModal = [] } = useShippingRates();
 
-  // Calculated values
-  const selectedPackages =
-    unassignedPackages?.data?.filter((pkg) =>
-      selectedPackageIds.includes(pkg.id)
+  // Get assigned package IDs to filter them out from available packages
+  const assignedPackageIds = useMemo(() => {
+    return assignedPackagesSummary?.data?.customerSummaries?.flatMap(
+      (summary) => summary.packages.map((pkg) => pkg.id)
     ) || [];
-  const totalSelectedWeight = selectedPackages.reduce(
-    (sum, pkg) => sum + pkg.weight,
-    0
-  );
-  const totalSelectedCbm = selectedPackages.reduce(
-    (sum, pkg) => sum + pkg.cbm,
-    0
-  );
+  }, [assignedPackagesSummary?.data?.customerSummaries]);
 
   // Use all active containers
   const filteredContainers = activeContainers;
@@ -290,20 +237,18 @@ export default function PackingListsPage() {
 
   const handleManagePackages = (packingList: PackingList) => {
     setAssignmentPackingList(packingList);
-    setSelectedPackageIds([]);
     setIsPackageAssignmentModalVisible(true);
   };
 
-  const handleAddPackages = async () => {
-    if (!assignmentPackingList || selectedPackageIds.length === 0) return;
+  const handlePackageAssignmentConfirm = async (packageIds: string[]) => {
+    if (!assignmentPackingList) return;
 
     try {
       await addPackagesToPackingList.mutateAsync({
         id: assignmentPackingList.id,
-        packageIds: selectedPackageIds,
+        packageIds,
       });
-      toast.success(`${selectedPackageIds.length} packages added successfully`);
-      setSelectedPackageIds([]);
+      toast.success(`${packageIds.length} packages added successfully`);
       setIsPackageAssignmentModalVisible(false);
       setAssignmentPackingList(null);
     } catch (error: any) {
@@ -714,74 +659,19 @@ export default function PackingListsPage() {
           </Modal>
 
           {/* Package Assignment Modal */}
-          <Modal
-            title={`Manage Packages - ${assignmentPackingList?.name}`}
-            open={isPackageAssignmentModalVisible}
+          <PackageAssignmentModal
+            visible={isPackageAssignmentModalVisible}
             onCancel={() => {
               setIsPackageAssignmentModalVisible(false);
               setAssignmentPackingList(null);
-              setSelectedPackageIds([]);
             }}
-            width={1200}
-            footer={[
-              <Button
-                key="cancel"
-                onClick={() => {
-                  setIsPackageAssignmentModalVisible(false);
-                  setAssignmentPackingList(null);
-                  setSelectedPackageIds([]);
-                }}
-              >
-                Cancel
-              </Button>,
-              <Button
-                key="add"
-                type="primary"
-                onClick={handleAddPackages}
-                loading={isAddingPackages}
-                disabled={selectedPackageIds.length === 0}
-              >
-                Add Selected Packages ({selectedPackageIds.length})
-              </Button>,
-            ]}
-          >
-            <div className="space-y-4">
-              {selectedPackageIds.length > 0 && (
-                <Alert
-                  message="Selected Packages Summary"
-                  description={
-                    <div className="grid grid-cols-3 gap-4 mt-2">
-                      <div>
-                        <Text strong>Total Weight:</Text>{" "}
-                        {totalSelectedWeight.toFixed(2)} kg
-                      </div>
-                      <div>
-                        <Text strong>Total CBM:</Text>{" "}
-                        {totalSelectedCbm.toFixed(2)}
-                      </div>
-                    </div>
-                  }
-                  type="info"
-                  showIcon
-                />
-              )}
-
-              <AntTable
-                columns={getPackageColumns()}
-                dataSource={unassignedPackages?.data || []}
-                rowKey="id"
-                rowSelection={{
-                  selectedRowKeys: selectedPackageIds,
-                  onChange: (selectedRowKeys) => {
-                    setSelectedPackageIds(selectedRowKeys as string[]);
-                  },
-                }}
-                pagination={false}
-                scroll={{ y: 400 }}
-                size="small"
-              />
-            </div>
-          </Modal>
+            onConfirm={handlePackageAssignmentConfirm}
+            title={`Manage Packages - ${assignmentPackingList?.name}`}
+            loading={isAddingPackages}
+            assignedPackageIds={assignedPackageIds}
+            unassignedPackages={unassignedPackagesForModal}
+            shippingRates={shippingRatesForModal}
+          />
 
           {/* Packing List Details Drawer */}
           <Drawer
