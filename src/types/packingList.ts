@@ -76,13 +76,25 @@ export interface PackingListFilters {
 export interface PackingListSummary {
   id: string;
   name: string;
-  customerGroups: Array<{
-    customerId: string;
-    customerName: string;
-    packageCount: number;
-    totalWeight: number;
-    totalCbm: number;
-    totalValue: number;
+  customerSummaries: Array<{
+    customer: {
+      id: string;
+      name: string;
+    };
+    packages: Array<{
+      id: string;
+      trackingCode: string;
+      description: string;
+      weight: number;
+      cbm: number;
+      value: number;
+    }>;
+    totals: {
+      packageCount: number;
+      totalWeight: number;
+      totalCbm: number;
+      totalValue: number;
+    };
   }>;
   totals: {
     packageCount: number;

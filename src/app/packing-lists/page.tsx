@@ -230,10 +230,10 @@ export default function PackingListsPage() {
       name: packingList.name,
       containerId: packingList.containerId,
       loadingDate: packingList.loadingDate
-        ? new Date(packingList.loadingDate)
+        ? dayjs(packingList.loadingDate)
         : null,
       destinationCity: packingList.destinationCity,
-      eta: packingList.eta ? new Date(packingList.eta) : null,
+      eta: packingList.eta ? dayjs(packingList.eta) : null,
       notes: packingList.notes,
     });
     setIsEditModalVisible(true);
@@ -847,23 +847,69 @@ export default function PackingListsPage() {
                   <>
                     <Divider>Summary by Customer</Divider>
                     <div className="space-y-4">
-                      {packingListSummary.data.customerGroups.map(
-                        (group: PackingListSummary["customerGroups"][0]) => (
-                          <Card key={group.customerId} size="small">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <h4 className="font-medium">
-                                  {group.customerName}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  {group.packageCount} packages •{" "}
-                                  {group.totalWeight}kg • {group.totalCbm}m³
-                                </p>
+                      {packingListSummary.data.customerSummaries.map(
+                        (summary: PackingListSummary["customerSummaries"][0]) => (
+                          <Card key={summary.customer.id} size="small">
+                            <div>
+                              <h4 className="font-medium mb-2">
+                                {summary.customer.name}
+                              </h4>
+                              <p className="text-sm text-gray-600 mb-2">
+                                {summary.totals.packageCount} packages •{" "}
+                                {summary.totals.totalWeight}kg • {summary.totals.totalCbm}m³
+                              </p>
+                              <div className="text-xs text-gray-500">
+                                Total Value: ${summary.totals.totalValue?.toFixed(2) || "0.00"}
+                              </div>
+                              <div className="mt-2">
+                                <Text strong className="text-xs">Packages:</Text>
+                                <div className="mt-1 max-h-20 overflow-y-auto">
+                                  {summary.packages.map((pkg) => (
+                                    <div key={pkg.id} className="text-xs text-gray-600 border-b pb-1 mb-1 last:border-b-0">
+                                      {pkg.trackingCode} - {pkg.description} ({pkg.weight}kg, {pkg.cbm}m³)
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </Card>
                         )
                       )}
+
+                      {/* Overall Totals */}
+                      <Divider>Overall Totals</Divider>
+                      <Card size="small">
+                        <Row gutter={16}>
+                          <Col span={6}>
+                            <Statistic
+                              title="Total Packages"
+                              value={packingListSummary.data.totals.packageCount}
+                              valueStyle={{ color: '#722ed1' }}
+                            />
+                          </Col>
+                          <Col span={6}>
+                            <Statistic
+                              title="Total Weight (kg)"
+                              value={packingListSummary.data.totals.totalWeight.toFixed(2)}
+                              valueStyle={{ color: '#1890ff' }}
+                            />
+                          </Col>
+                          <Col span={6}>
+                            <Statistic
+                              title="Total CBM"
+                              value={packingListSummary.data.totals.totalCbm.toFixed(2)}
+                              valueStyle={{ color: '#52c41a' }}
+                            />
+                          </Col>
+                          <Col span={6}>
+                            <Statistic
+                              title="Total Value"
+                              value={`$${packingListSummary.data.totals.totalValue?.toFixed(2) || "0.00"}`}
+                              valueStyle={{ color: '#faad14' }}
+                            />
+                          </Col>
+                        </Row>
+                      </Card>
                     </div>
                   </>
                 )}

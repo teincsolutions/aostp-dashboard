@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Typography,
@@ -9,23 +9,27 @@ import {
   Modal,
   Form,
   Input,
-  message,
   QRCode,
   Alert,
   Divider,
   Switch,
-  Descriptions
-} from 'antd';
+  Descriptions,
+} from "antd";
+import { toast } from "sonner";
 import {
   QrcodeOutlined,
   MobileOutlined,
   KeyOutlined,
   SafetyOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined
-} from '@ant-design/icons';
-import { TwoFactorSetup as TwoFactorSetupType, TwoFactorVerifyRequest, TwoFactorDisableRequest } from '@/types/common';
-import { AuthService } from '@/services/authService';
+  CloseCircleOutlined,
+} from "@ant-design/icons";
+import {
+  TwoFactorSetup as TwoFactorSetupType,
+  TwoFactorVerifyRequest,
+  TwoFactorDisableRequest,
+} from "@/types/common";
+import { AuthService } from "@/services/authService";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -36,14 +40,14 @@ interface TwoFactorSetupProps {
 
 export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
   isEnabled,
-  onStatusChange
+  onStatusChange,
 }) => {
   const [loading, setLoading] = useState(false);
   const [setupData, setSetupData] = useState<TwoFactorSetupType | null>(null);
   const [showSetupModal, setShowSetupModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
-  const [verificationToken, setVerificationToken] = useState('');
-  const [disableToken, setDisableToken] = useState('');
+  const [verificationToken, setVerificationToken] = useState("");
+  const [disableToken, setDisableToken] = useState("");
 
   // Handle enabling 2FA
   const handleEnable2FA = async () => {
@@ -55,10 +59,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
         setSetupData(setupData);
         setShowSetupModal(true);
       } else {
-        toast.error('Failed to enable 2FA');
+        toast.error("Failed to enable 2FA");
       }
     } catch (error) {
-      toast.error('Failed to enable 2FA');
+      toast.error("Failed to enable 2FA");
     } finally {
       setLoading(false);
     }
@@ -67,7 +71,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
   // Handle verifying 2FA setup
   const handleVerifySetup = async () => {
     if (!verificationToken.trim()) {
-      toast.error('Please enter the verification token');
+      toast.error("Please enter the verification token");
       return;
     }
 
@@ -75,13 +79,13 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
       setLoading(true);
       await AuthService.verifyTwoFactor({ token: verificationToken });
 
-      toast.success('Two-factor authentication enabled successfully');
+      toast.success("Two-factor authentication enabled successfully");
       setShowSetupModal(false);
       setSetupData(null);
-      setVerificationToken('');
+      setVerificationToken("");
       onStatusChange?.(true);
     } catch (error) {
-      toast.error('Verification failed');
+      toast.error("Verification failed");
     } finally {
       setLoading(false);
     }
@@ -90,7 +94,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
   // Handle disabling 2FA
   const handleDisable2FA = async () => {
     if (!disableToken.trim()) {
-      toast.error('Please enter the verification token');
+      toast.error("Please enter the verification token");
       return;
     }
 
@@ -98,12 +102,12 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
       setLoading(true);
       await AuthService.disableTwoFactor({ token: disableToken });
 
-      toast.success('Two-factor authentication disabled successfully');
+      toast.success("Two-factor authentication disabled successfully");
       setShowDisableModal(false);
-      setDisableToken('');
+      setDisableToken("");
       onStatusChange?.(false);
     } catch (error) {
-      toast.error('Failed to disable 2FA');
+      toast.error("Failed to disable 2FA");
     } finally {
       setLoading(false);
     }
@@ -117,23 +121,24 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
       if (response.code) {
         Modal.info({
-          title: 'Backup Code',
+          title: "Backup Code",
           content: (
             <div>
               <Paragraph>
-                Save this backup code in a secure place. You can use it to access your account if you lose your authenticator device.
+                Save this backup code in a secure place. You can use it to
+                access your account if you lose your authenticator device.
               </Paragraph>
-              <Text strong style={{ fontSize: 18, fontFamily: 'monospace' }}>
+              <Text strong style={{ fontSize: 18, fontFamily: "monospace" }}>
                 {response.code}
               </Text>
             </div>
           ),
         });
       } else {
-        toast.error('Failed to request backup code');
+        toast.error("Failed to request backup code");
       }
     } catch (error) {
-      toast.error('Failed to request backup code');
+      toast.error("Failed to request backup code");
     } finally {
       setLoading(false);
     }
@@ -141,8 +146,14 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
   return (
     <Card>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <div>
             <Title level={4} style={{ margin: 0 }}>
               <SafetyOutlined style={{ marginRight: 8 }} />
@@ -152,14 +163,14 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
               Add an extra layer of security to your account
             </Text>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {isEnabled ? (
-              <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 20 }} />
+              <CheckCircleOutlined style={{ color: "#52c41a", fontSize: 20 }} />
             ) : (
-              <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: 20 }} />
+              <CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 20 }} />
             )}
-            <Text strong style={{ color: isEnabled ? '#52c41a' : '#ff4d4f' }}>
-              {isEnabled ? 'Enabled' : 'Disabled'}
+            <Text strong style={{ color: isEnabled ? "#52c41a" : "#ff4d4f" }}>
+              {isEnabled ? "Enabled" : "Disabled"}
             </Text>
           </div>
         </div>
@@ -213,12 +224,12 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
         onCancel={() => {
           setShowSetupModal(false);
           setSetupData(null);
-          setVerificationToken('');
+          setVerificationToken("");
         }}
         footer={null}
         width={600}
       >
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Alert
             message="Setup Instructions"
             description="1. Download an authenticator app (Google Authenticator, Authy, etc.)
@@ -230,7 +241,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
           {setupData && (
             <>
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: "center" }}>
                 <QRCode value={setupData.qrCodeUrl} size={200} />
               </div>
 
@@ -241,7 +252,9 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                 <Descriptions.Item label="Backup Codes">
                   <Space direction="vertical">
                     {setupData.backupCodes.map((code, index) => (
-                      <Text key={index} code>{code}</Text>
+                      <Text key={index} code>
+                        {code}
+                      </Text>
                     ))}
                   </Space>
                 </Descriptions.Item>
@@ -258,8 +271,11 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                 <Form.Item
                   label="Verification Code"
                   rules={[
-                    { required: true, message: 'Please enter verification code' },
-                    { len: 6, message: 'Code must be 6 digits' },
+                    {
+                      required: true,
+                      message: "Please enter verification code",
+                    },
+                    { len: 6, message: "Code must be 6 digits" },
                   ]}
                 >
                   <Input
@@ -267,11 +283,15 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                     value={verificationToken}
                     onChange={(e) => setVerificationToken(e.target.value)}
                     maxLength={6}
-                    style={{ textAlign: 'center', fontSize: 18, letterSpacing: 2 }}
+                    style={{
+                      textAlign: "center",
+                      fontSize: 18,
+                      letterSpacing: 2,
+                    }}
                   />
                 </Form.Item>
 
-                <Space style={{ width: '100%', justifyContent: 'end' }}>
+                <Space style={{ width: "100%", justifyContent: "end" }}>
                   <Button onClick={() => setShowSetupModal(false)}>
                     Cancel
                   </Button>
@@ -295,11 +315,11 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
         open={showDisableModal}
         onCancel={() => {
           setShowDisableModal(false);
-          setDisableToken('');
+          setDisableToken("");
         }}
         footer={null}
       >
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Alert
             message="Warning"
             description="Disabling 2FA will make your account less secure. Make sure you have your backup codes saved."
@@ -311,8 +331,8 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
             <Form.Item
               label="Verification Code"
               rules={[
-                { required: true, message: 'Please enter verification code' },
-                { len: 6, message: 'Code must be 6 digits' },
+                { required: true, message: "Please enter verification code" },
+                { len: 6, message: "Code must be 6 digits" },
               ]}
             >
               <Input
@@ -320,19 +340,13 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                 value={disableToken}
                 onChange={(e) => setDisableToken(e.target.value)}
                 maxLength={6}
-                style={{ textAlign: 'center', fontSize: 18, letterSpacing: 2 }}
+                style={{ textAlign: "center", fontSize: 18, letterSpacing: 2 }}
               />
             </Form.Item>
 
-            <Space style={{ width: '100%', justifyContent: 'end' }}>
-              <Button onClick={() => setShowDisableModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                danger
-                onClick={handleDisable2FA}
-                loading={loading}
-              >
+            <Space style={{ width: "100%", justifyContent: "end" }}>
+              <Button onClick={() => setShowDisableModal(false)}>Cancel</Button>
+              <Button danger onClick={handleDisable2FA} loading={loading}>
                 Disable 2FA
               </Button>
             </Space>
