@@ -3,10 +3,25 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Button, Input, Select, DatePicker, Empty, Modal, Space, message } from "antd";
-import type { TablePaginationConfig, FilterValue, SorterResult } from "antd/es/table/interface";
+import {
+  Table,
+  Button,
+  Input,
+  Select,
+  DatePicker,
+  Empty,
+  Modal,
+  Space,
+  message,
+} from "antd";
+import type {
+  TablePaginationConfig,
+  FilterValue,
+  SorterResult,
+} from "antd/es/table/interface";
 import { auditLogColumns } from "./columns";
 import { useAuditLogs, useExportAuditLogs } from "@/hooks/useAuditLogs";
+import { useUsers } from "@/hooks/useUsers";
 import { AuditAction, AuditEntityType, AuditLog } from "@/types/audit";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -25,7 +40,10 @@ const actionOptions = Object.values(AuditAction).map((action) => ({
   value: action,
 }));
 
-function prettyDiff(before: Record<string, unknown> | null, after: Record<string, unknown> | null) {
+function prettyDiff(
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null
+) {
   // Simple JSON diff: highlight changed keys
   if (!before && !after) return <Empty description="No Data" />;
   const beforeStr = JSON.stringify(before, null, 2);
@@ -49,7 +67,7 @@ export default function AuditLogsPage() {
   const [filters, setFilters] = useState({
     entityType: undefined as AuditEntityType | undefined,
     action: undefined as AuditAction | undefined,
-    actor: "",
+    actor: undefined as string | undefined,
     dateRange: null as [dayjs.Dayjs | null, dayjs.Dayjs | null] | null,
     search: "",
   });
@@ -60,13 +78,21 @@ export default function AuditLogsPage() {
   const { data, isLoading } = useAuditLogs({
     page: pagination.page,
     limit: pagination.limit,
-    entityType: filters.entityType,
+    entity: filters.entityType,
     action: filters.action,
-    actor: filters.actor,
-    dateFrom: filters.dateRange && filters.dateRange[0] ? filters.dateRange[0].toISOString() : undefined,
-    dateTo: filters.dateRange && filters.dateRange[1] ? filters.dateRange[1].toISOString() : undefined,
+    userId: filters.actor,
+    dateFrom:
+      filters.dateRange && filters.dateRange[0]
+        ? filters.dateRange[0].toISOString()
+        : undefined,
+    dateTo:
+      filters.dateRange && filters.dateRange[1]
+        ? filters.dateRange[1].toISOString()
+        : undefined,
     search: filters.search,
   });
+
+  const { data: users, isLoading: usersLoading } = useUsers({ limit: 100 });
 
   const exportMutation = useExportAuditLogs();
 
@@ -88,11 +114,15 @@ export default function AuditLogsPage() {
       page: pagination.current ?? 1,
       limit: pagination.pageSize ?? 20,
     });
-    
+
     setFilters((prev) => ({
       ...prev,
-      entityType: Array.isArray(filtersTable.entityType) ? (filtersTable.entityType[0] as AuditEntityType) : undefined,
-      action: Array.isArray(filtersTable.action) ? (filtersTable.action[0] as AuditAction) : undefined,
+      entityType: Array.isArray(filtersTable.entityType)
+        ? (filtersTable.entityType[0] as AuditEntityType)
+        : undefined,
+      action: Array.isArray(filtersTable.action)
+        ? (filtersTable.action[0] as AuditAction)
+        : undefined,
     }));
   };
 
@@ -100,9 +130,20 @@ export default function AuditLogsPage() {
     setExporting(true);
     try {
       const params = {
-        ...filters,
         page: pagination.page,
         limit: pagination.limit,
+        entity: filters.entityType,
+        action: filters.action,
+        userId: filters.actor,
+        dateFrom:
+          filters.dateRange && filters.dateRange[0]
+            ? filters.dateRange[0].toISOString()
+            : undefined,
+        dateTo:
+          filters.dateRange && filters.dateRange[1]
+            ? filters.dateRange[1].toISOString()
+            : undefined,
+        search: filters.search,
         format,
       };
       const blob = await exportMutation.mutateAsync(params);
@@ -124,14 +165,13 @@ export default function AuditLogsPage() {
     <AppLayout>
       <AuthGuard>
         <div className="p-4 space-y-4">
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
             <Select
               allowClear
               placeholder="Entity Type"
               options={entityTypeOptions}
               value={filters.entityType}
               onChange={(v) => setFilters((f) => ({ ...f, entityType: v }))}
-              style={{ width: 150 }}
               size="middle"
             />
             <Select
@@ -140,32 +180,45 @@ export default function AuditLogsPage() {
               options={actionOptions}
               value={filters.action}
               onChange={(v) => setFilters((f) => ({ ...f, action: v }))}
-              style={{ width: 150 }}
               size="middle"
             />
-            <Input
+            <Select
               allowClear
+              showSearch
+              loading={usersLoading}
               placeholder="Actor"
+              options={users?.data?.map((u) => ({
+                label: `${u.name} (${u.email})`,
+                value: u.id,
+              }))}
               value={filters.actor}
-              onChange={(e) => setFilters((f) => ({ ...f, actor: e.target.value }))}
-              style={{ width: 140 }}
+              onChange={(v) => setFilters((f) => ({ ...f, actor: v }))}
               size="middle"
+              filterOption={(input, option) =>
+                option?.label?.toLowerCase().includes(input.toLowerCase()) ??
+                false
+              }
             />
             <RangePicker
               value={filters.dateRange}
-              onChange={(dates) => setFilters((f) => ({ ...f, dateRange: dates ?? null }))}
-              style={{ width: 240 }}
+              onChange={(dates) =>
+                setFilters((f) => ({ ...f, dateRange: dates ?? null }))
+              }
               size="middle"
             />
             <Input.Search
               allowClear
               placeholder="Search Entity ID / Text"
               value={filters.search}
-              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-              style={{ width: 220 }}
+              className="md:col-span-2"
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, search: e.target.value }))
+              }
               size="middle"
               onSearch={(v) => setFilters((f) => ({ ...f, search: v }))}
             />
+          </div>
+          <div className="flex justify-end space-x-2">
             <Button
               type="primary"
               loading={exporting}
@@ -223,7 +276,9 @@ export default function AuditLogsPage() {
                 {prettyDiff(selectedLog.before, selectedLog.after)}
                 <div className="mt-4">
                   <b>Metadata:</b>
-                  <pre className="bg-gray-100 p-2 rounded text-xs">{JSON.stringify(selectedLog.metadata, null, 2)}</pre>
+                  <pre className="bg-gray-100 p-2 rounded text-xs">
+                    {JSON.stringify(selectedLog.metadata, null, 2)}
+                  </pre>
                 </div>
               </>
             ) : null}

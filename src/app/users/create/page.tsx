@@ -15,7 +15,6 @@ import {
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useCreateUser } from "@/hooks/useUsers";
-import { useWarehouses } from "@/hooks/useWarehouse";
 import { Role } from "@/types/user";
 import { userCreateSchema } from "@/utils/forms/userSchemas";
 import { getServerValidationErrors } from "@/utils/forms/errorUtils";
@@ -31,7 +30,6 @@ const roleOptions = [
 export default function CreateUserPage() {
   const router = useRouter();
   const createUserMutation = useCreateUser();
-  const { data: warehouses, isLoading: warehousesLoading } = useWarehouses();
 
   const handleSubmit = async (values: any, { setSubmitting, setErrors }: any) => {
     try {
@@ -64,15 +62,14 @@ export default function CreateUserPage() {
           <Card>
             <Formik
               initialValues={{
-                fullName: "",
+                firstName: "",
+                lastName: "",
                 username: "",
                 email: "",
-                phone: "",
                 password: "",
                 role: Role.OPERATIONS_CLERK,
-                warehouseId: "",
                 isActive: true,
-                force2FA: false,
+                twoFactorEnabled: false,
               }}
               validationSchema={userCreateSchema}
               onSubmit={handleSubmit}
@@ -87,17 +84,32 @@ export default function CreateUserPage() {
                 submitForm,
               }) => (
                 <Form layout="vertical" onFinish={submitForm}>
+
                   <Form.Item
-                    label="Full Name"
+                    label="First Name"
                     required
-                    validateStatus={errors.fullName && touched.fullName ? "error" : ""}
-                    help={errors.fullName && touched.fullName ? errors.fullName : ""}
+                    validateStatus={errors.firstName && touched.firstName ? "error" : ""}
+                    help={errors.firstName && touched.firstName ? errors.firstName : ""}
                   >
                     <Input
-                      name="fullName"
-                      value={values.fullName}
+                      name="firstName"
+                      value={values.firstName}
                       onChange={handleChange}
-                      placeholder="Enter full name"
+                      placeholder="Enter first name"
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label="Last Name"
+                    required
+                    validateStatus={errors.lastName && touched.lastName ? "error" : ""}
+                    help={errors.lastName && touched.lastName ? errors.lastName : ""}
+                  >
+                    <Input
+                      name="lastName"
+                      value={values.lastName}
+                      onChange={handleChange}
+                      placeholder="Enter last name"
                     />
                   </Form.Item>
 
@@ -127,19 +139,6 @@ export default function CreateUserPage() {
                       onChange={handleChange}
                       placeholder="Enter email address"
                       type="email"
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    label="Phone"
-                    validateStatus={errors.phone && touched.phone ? "error" : ""}
-                    help={errors.phone && touched.phone ? errors.phone : ""}
-                  >
-                    <Input
-                      name="phone"
-                      value={values.phone}
-                      onChange={handleChange}
-                      placeholder="Enter phone number"
                     />
                   </Form.Item>
 
@@ -175,29 +174,6 @@ export default function CreateUserPage() {
                     </Select>
                   </Form.Item>
 
-                  <Form.Item
-                    label="Warehouse"
-                    validateStatus={errors.warehouseId && touched.warehouseId ? "error" : ""}
-                    help={errors.warehouseId && touched.warehouseId ? errors.warehouseId : ""}
-                  >
-                    <Select
-                      loading={warehousesLoading}
-                      value={values.warehouseId || undefined}
-                      onChange={(value) => setFieldValue("warehouseId", value)}
-                      placeholder="Select warehouse"
-                      showSearch
-                      filterOption={(input, option) =>
-                        (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
-                      }
-                    >
-                      {warehouses?.data?.map((warehouse) => (
-                        <Select.Option key={warehouse.id} value={warehouse.id}>
-                          {warehouse.warehouseId} - {warehouse.name}
-                        </Select.Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-
                   <Form.Item label="Active">
                     <Switch
                       checked={values.isActive}
@@ -205,10 +181,10 @@ export default function CreateUserPage() {
                     />
                   </Form.Item>
 
-                  <Form.Item label="Force 2FA">
+                  <Form.Item label="Two Factor Enabled">
                     <Switch
-                      checked={values.force2FA}
-                      onChange={(checked) => setFieldValue("force2FA", checked)}
+                      checked={values.twoFactorEnabled}
+                      onChange={(checked) => setFieldValue("twoFactorEnabled", checked)}
                     />
                   </Form.Item>
 

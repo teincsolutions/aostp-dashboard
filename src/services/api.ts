@@ -3,6 +3,8 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { useAuthStore } from "@/store/authStore";
+import { AuthService } from "./authService";
+import { jwtDecode } from "jwt-decode";
 // Store the environment variable in a constant at the top level
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -22,6 +24,15 @@ class ApiService {
     this.setupInterceptors();
   }
 
+  private isTokenExpired(token: string): boolean {
+    try {
+      const decoded: any = jwtDecode(token);
+      return Date.now() >= decoded.exp * 1000;
+    } catch {
+      return true;
+    }
+  }
+
   private setupInterceptors(): void {
     // Request interceptor for JWT token
     this.axiosInstance.interceptors.request.use(
@@ -37,6 +48,32 @@ class ApiService {
         return config;
       },
       (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    // Response interceptor for handling 401 and token refresh
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response?.status === 401) {
+          const authStore = useAuthStore.getState();
+          const accessToken = authStore.tokens?.accessToken;
+          if (accessToken && this.isTokenExpired(accessToken)) {
+            const refreshToken = authStore.tokens?.refreshToken;
+            if (refreshToken) {
+              try {
+                const newTokens = await AuthService.refreshToken({ refreshToken });
+                authStore.refreshTokens(newTokens);
+                // Retry the original request with new token
+                error.config.headers.set('Authorization', `Bearer ${newTokens.accessToken}`);
+                return this.axiosInstance.request(error.config);
+              } catch {
+                authStore.logout();
+              }
+            }
+          }
+        }
         return Promise.reject(error);
       }
     );

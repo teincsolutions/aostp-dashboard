@@ -39,7 +39,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import {
   PackageStatusPackages,
-  ShipmentType,
+  ShippingMode,
   Package,
   Customer,
 } from "@/types/package";
@@ -69,15 +69,15 @@ const statusOptions = Object.values(PackageStatusPackages).map((status) => ({
 }));
 
 const shipmentTypeOptions = [
-  { label: "Air", value: ShipmentType.AIR },
-  { label: "Sea", value: ShipmentType.SEA },
+  { label: "Air", value: ShippingMode.AIR },
+  { label: "Sea", value: ShippingMode.SEA },
 ];
 
 export default function PackagesPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string | undefined>();
-  const [shipmentType, setShipmentType] = useState<string | undefined>();
+  const [shipmentType, setShippingMode] = useState<string | undefined>();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -250,7 +250,7 @@ export default function PackagesPage() {
       sorter: true,
       width: 100,
       render: (record: DisplayPackage) =>
-        record.shipmentType === ShipmentType.AIR
+        record.shipmentType === ShippingMode.AIR
           ? `${record.weight ? `${record.weight} kg` : "N/A"}`
           : `${record.cbm ? `${record.cbm} cbm` : "N/A"}`,
     },
@@ -402,7 +402,7 @@ export default function PackagesPage() {
         <div className="py-4 max-w-8xl mx-auto space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
             <h1 className="text-2xl font-bold">Packages</h1>
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-4 items-center flex-wrap">
               <Button
                 type="primary"
                 icon={<SwapOutlined />}
@@ -410,56 +410,59 @@ export default function PackagesPage() {
               >
                 Consolidate Packages
               </Button>
-              <Search
-                placeholder="Search Tracking Number"
-                allowClear
-                onSearch={setSearch}
-                style={{ width: 220 }}
-              />
-              <Select
-                placeholder="Status"
-                allowClear
-                options={statusOptions}
-                onChange={setStatus}
-                style={{ width: 160 }}
-              />
-              <Select
-                placeholder="Shipment Type"
-                allowClear
-                options={shipmentTypeOptions}
-                onChange={setShipmentType}
-                style={{ width: 160 }}
-              />
+              <div className="ml-auto flex gap-2">
+                <Button
+                  icon={<FileExcelOutlined />}
+                  onClick={() =>
+                    handleExportExcelAll(
+                      selectedRowKeys.length > 0 ? selectedRowKeys : null
+                    )
+                  }
+                >
+                  Export Excel{" "}
+                  {selectedRowKeys.length > 0
+                    ? `(${selectedRowKeys.length})`
+                    : "(All)"}
+                </Button>
+                <Button
+                  icon={<FilePdfOutlined />}
+                  onClick={() =>
+                    handleExportPdfAll(
+                      selectedRowKeys.length > 0 ? selectedRowKeys : null
+                    )
+                  }
+                >
+                  Export PDF{" "}
+                  {selectedRowKeys.length > 0
+                    ? `(${selectedRowKeys.length})`
+                    : "(All)"}
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="flex gap-2 mb-4">
-            <Button
-              icon={<FileExcelOutlined />}
-              onClick={() =>
-                handleExportExcelAll(
-                  selectedRowKeys.length > 0 ? selectedRowKeys : null
-                )
-              }
-            >
-              Export Excel{" "}
-              {selectedRowKeys.length > 0
-                ? `(${selectedRowKeys.length})`
-                : "(All)"}
-            </Button>
-            <Button
-              icon={<FilePdfOutlined />}
-              onClick={() =>
-                handleExportPdfAll(
-                  selectedRowKeys.length > 0 ? selectedRowKeys : null
-                )
-              }
-            >
-              Export PDF{" "}
-              {selectedRowKeys.length > 0
-                ? `(${selectedRowKeys.length})`
-                : "(All)"}
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-4 md:max-w-4xl gap-2 flex-grow flex">
+            <Search
+              placeholder="Search Tracking Number"
+              allowClear
+              onSearch={setSearch}
+              className="cols-span-1 md:col-span-2"
+            />
+            <Select
+              placeholder="Status"
+              allowClear
+              options={statusOptions}
+              onChange={setStatus}
+              className="cols-span-1 sm:col-span-1"
+            />
+            <Select
+              placeholder="Shipment Type"
+              allowClear
+              options={shipmentTypeOptions}
+              onChange={setShippingMode}
+              className="cols-span-1 sm:col-span-1"
+            />
           </div>
+
           <div>
             <Table
               columns={columnsWithActions}

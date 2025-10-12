@@ -2,7 +2,12 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { shippingRateService } from "@/services/shippingRateService";
-import { ShippingRate, ShippingRateCreatePayload, ShippingMode, AirShippingType } from "@/types/exchangeRate";
+import {
+  ShippingRate,
+  ShippingRateCreatePayload,
+  ShippingMode,
+  AirShippingType,
+} from "@/types/exchangeRate";
 
 export function useShippingRates() {
   const queryClient = useQueryClient();
@@ -16,6 +21,15 @@ export function useShippingRates() {
     queryKey: ["shippingRates", "active"],
     queryFn: () => shippingRateService.getActiveRates(),
   });
+
+  // Current active shipping rate by mode
+  function useCurrentActiveRates(shippingMode: ShippingMode) {
+    return useQuery<ShippingRate[]>({
+      queryKey: ["shippingRates", "current", shippingMode],
+      queryFn: () => shippingRateService.getCurrentActiveRates(shippingMode),
+      enabled: !!shippingMode,
+    });
+  }
 
   // Rate history (paginated)
   function useRateHistory(params: {
@@ -53,28 +67,33 @@ export function useShippingRates() {
     isSuccess: isUpdateSuccess,
     reset: resetUpdate,
   } = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<ShippingRateCreatePayload> }) =>
-      shippingRateService.updateShippingRate(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Partial<ShippingRateCreatePayload>;
+    }) => shippingRateService.updateShippingRate(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shippingRates"] });
     },
   });
 
   // Deactivate shipping rate
-  const {
-    mutate: deactivateShippingRate,
-    isPending: deactivatePending,
-  } = useMutation({
-    mutationFn: (id: string) => shippingRateService.deactivateShippingRate(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shippingRates"] });
-    },
-  });
+  const { mutate: deactivateShippingRate, isPending: deactivatePending } =
+    useMutation({
+      mutationFn: (id: string) =>
+        shippingRateService.deactivateShippingRate(id),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["shippingRates"] });
+      },
+    });
 
   return {
     activeRates,
     activeRatesLoading,
     refetchActive,
+    useCurrentActiveRates,
     useRateHistory,
     setShippingRate,
     setPending,

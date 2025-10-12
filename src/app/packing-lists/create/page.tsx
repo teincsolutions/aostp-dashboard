@@ -1,5 +1,5 @@
 "use client";
-
+import { ShippingMode } from "@/types/exchangeRate";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Form,
@@ -11,7 +11,6 @@ import {
   Space,
   Select,
   DatePicker,
-  Modal,
   Row,
   Col,
   Typography,
@@ -28,7 +27,10 @@ import {
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { usePackingListMutations } from "@/hooks/usePackingLists";
-import { useActiveContainers } from "@/hooks/useContainers";
+import {
+  useActiveContainers,
+  useContainerMutations,
+} from "@/hooks/useContainers";
 import { useUnassignedPackages } from "@/hooks/usePackingLists";
 import { useShippingRates } from "@/hooks/useShippingRates";
 import {
@@ -39,10 +41,13 @@ import {
 import { Package } from "@/types/package";
 import { ContainerCreatePayload } from "@/types/container";
 import { useRouter } from "next/navigation";
-import { ShippingMode } from "@/types/exchangeRate";
 import dayjs from "dayjs";
-import { ContainerType } from "@/types/container";
+import { ContainerCreateModal } from "@/components/ContainerModals";
 import { Role } from "@/types/user";
+import {
+  getServerValidationErrors,
+  handleError,
+} from "@/utils/forms/errorUtils";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -92,10 +97,13 @@ const PackingListCreatePage: React.FC = () => {
     isFinalizing,
   } = usePackingListMutations();
 
+  const { createContainer, isCreating: isCreatingContainer } =
+    useContainerMutations();
+
   // Filter unassigned packages
   const availablePackages: Package[] =
-    unassignedPackages?.data?.filter(
-      (pkg) => !selectedPackageIds.includes(pkg.id)
+    unassignedPackages?.filter(
+      (pkg: { id: string }) => !selectedPackageIds.includes(pkg.id)
     ) || [];
 
   // Calculate package assignments with shipping rates
@@ -103,7 +111,7 @@ const PackingListCreatePage: React.FC = () => {
     if (selectedPackageIds.length > 0) {
       const assignments: PackageAssignmentWithCalc[] = selectedPackageIds
         .map((id) => {
-          const pkg = unassignedPackages?.data?.find((p) => p.id === id);
+          const pkg = unassignedPackages?.find((p) => p.id === id);
           if (!pkg) return null;
 
           // Find appropriate rate based on shipping mode and type
@@ -122,13 +130,13 @@ const PackingListCreatePage: React.FC = () => {
           let rateValue = 0;
 
           if (rate) {
-            rateValue = rate.rate;
+            rateValue = rate.rate || 0;
             if (rate.shippingMode === ShippingMode.SEA) {
               // SEA: CBM × Rate
-              calculatedAmount = pkg.cbm * rate.rate;
+              calculatedAmount = pkg.cbm * (rate.rate || 0);
             } else {
               // AIR: Weight × Rate
-              calculatedAmount = pkg.weight * rate.rate;
+              calculatedAmount = pkg.weight * (rate.rate || 0);
               unitType = "KG";
             }
           }
@@ -153,7 +161,7 @@ const PackingListCreatePage: React.FC = () => {
     } else {
       setPackageAssignments([]);
     }
-  }, [selectedPackageIds, shippingRates, unassignedPackages?.data]);
+  }, [selectedPackageIds, shippingRates, unassignedPackages]);
 
   // Totals calculation
   const totals = packageAssignments.reduce(
@@ -196,23 +204,8 @@ const PackingListCreatePage: React.FC = () => {
   };
 
   // Package selection handlers
-  const handleAddPackage = async (packageId: string) => {
-    if (!selectedPackageIds.includes(packageId)) {
-      if (packingListData) {
-        // Add package to packing list via API
-        try {
-          await addPackagesToPackingList.mutateAsync({
-            id: packingListData.id!,
-            packageIds: [packageId],
-          });
-          toast.success("Package added to packing list");
-        } catch (error) {
-          toast.error("Failed to add package to packing list");
-          return;
-        }
-      }
-      setSelectedPackageIds((prev) => [...prev, packageId]);
-    }
+  const addPackage = async (packageId: string) => {
+    setSelectedPackageIds((prev) => [...prev, packageId]);
   };
 
   useEffect(() => {
@@ -223,21 +216,28 @@ const PackingListCreatePage: React.FC = () => {
     }
   }, [createPackingList.data]);
 
-  const handleRemovePackage = async (packageId: string) => {
+  const removePackage = async (packageId: string) => {
     if (packingListData) {
-      // Remove package from packing list via API
-      try {
-        await removePackagesFromPackingList.mutateAsync({
-          id: packingListData.id!,
-          packageIds: [packageId],
-        });
-        toast.success("Package removed from packing list");
-      } catch (error) {
-        toast.error("Failed to remove package from packing list");
-        return;
-      }
+        setSelectedPackageIds((prev) => prev.filter((id) => id !== packageId));
+    } else {
+      toast.error("Packing list not created yet");
+      return;
     }
-    setSelectedPackageIds((prev) => prev.filter((id) => id !== packageId));
+  };
+
+  const handleAddPackages = async () => {
+    if (selectedPackageIds.length === 0 && packingListData.id) {
+      try {
+        await addPackagesToPackingList.mutateAsync({
+          id: packingListData.id,
+          packageIds: selectedPackageIds,
+        });
+      } catch (error) {
+        handleError(error);
+      }
+    } else {
+      toast.error("No new packages to add");
+    }
   };
 
   // Create packing list after container selection
@@ -262,8 +262,15 @@ const PackingListCreatePage: React.FC = () => {
   };
 
   const handleCreateContainer = async (values: ContainerCreatePayload) => {
-    setContainerModalVisible(false);
-    containerForm.resetFields();
+    try {
+      const container = await createContainer(values);
+      setContainerModalVisible(false);
+      toast.success("Container created successfully");
+      containerForm.resetFields();
+      basicInfoForm.setFieldValue("containerId", container.id);
+    } catch (error) {
+      handleError(error);
+    }
   };
 
   // Finalize packing list
@@ -355,7 +362,7 @@ const PackingListCreatePage: React.FC = () => {
         <Button
           type="link"
           icon={<PlusOutlined />}
-          onClick={() => handleAddPackage(record.id)}
+          onClick={() => addPackage(record.id)}
           disabled={selectedPackageIds.includes(record.id)}
         >
           Add
@@ -380,13 +387,13 @@ const PackingListCreatePage: React.FC = () => {
       title: "Weight (kg)",
       dataIndex: "weight",
       key: "weight",
-      render: (weight: number) => weight ? weight.toFixed(2) : "N/A",
+      render: (weight: number) => (weight ? weight.toFixed(2) : "N/A"),
     },
     {
       title: "CBM",
       dataIndex: "cbm",
       key: "cbm",
-      render: (cbm: number) => cbm ? cbm.toFixed(3) : "N/A",
+      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "N/A"),
     },
     {
       title: "Unit Type",
@@ -415,7 +422,7 @@ const PackingListCreatePage: React.FC = () => {
           type="link"
           danger
           icon={<MinusOutlined />}
-          onClick={() => handleRemovePackage(record.packageId)}
+          onClick={() => removePackage(record.packageId)}
         >
           Remove
         </Button>
@@ -547,7 +554,7 @@ const PackingListCreatePage: React.FC = () => {
                   Container Selection
                 </Title>
                 <Row gutter={16}>
-                  <Col xs={18} lg={8}>
+                  <Col xs={20} lg={8}>
                     <Form.Item
                       name="containerId"
                       label="Select Container"
@@ -590,7 +597,7 @@ const PackingListCreatePage: React.FC = () => {
                       style={{ marginTop: 30 }}
                       block
                     >
-                      Create New
+                      <span className="hidden lg:block">Create New</span>
                     </Button>
                   </Col>
                 </Row>
@@ -793,125 +800,12 @@ const PackingListCreatePage: React.FC = () => {
           </div>
 
           {/* Container Creation Modal */}
-          <Modal
-            title="Create New Container"
-            open={containerModalVisible}
-            onCancel={() => setContainerModalVisible(false)}
-            footer={null}
-            width={{ xs: "95%", sm: "90%", md: 600 }}
-          >
-            <Form
-              form={containerForm}
-              layout="vertical"
-              onFinish={handleCreateContainer}
-              initialValues={{
-                containerType: ContainerType.CONTAINER,
-                status: "PLANNED",
-              }}
-            >
-              <Row gutter={16}>
-                <Col xs={24} lg={12}>
-                  <Form.Item
-                    name="containerNumber"
-                    label="Container Number"
-                    rules={[{ required: true }]}
-                  >
-                    <Input placeholder="e.g., MSCU123456" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} lg={12}>
-                  <Form.Item
-                    name="containerType"
-                    label="Container Type"
-                    rules={[{ required: true }]}
-                  >
-                    <Select>
-                      <Option value={ContainerType.CONTAINER}>
-                        Container (Sea Freight)
-                      </Option>
-                      <Option value={ContainerType.BAG}>
-                        Bag (Air Freight)
-                      </Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col xs={24} lg={12}>
-                  <Form.Item
-                    name="departureCity"
-                    label="Departure City"
-                    rules={[{ required: true }]}
-                  >
-                    <Input placeholder="e.g., Accra" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} lg={12}>
-                  <Form.Item
-                    name="destinationCity"
-                    label="Destination City"
-                    rules={[{ required: true }]}
-                  >
-                    <Input placeholder="e.g., London" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col xs={24} lg={12}>
-                  <Form.Item
-                    name="loadingDate"
-                    label="Loading Date"
-                    rules={[{ required: true }]}
-                  >
-                    <DatePicker className="w-full" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} lg={12}>
-                  <Form.Item
-                    name="eta"
-                    label="Estimated Time of Arrival"
-                    rules={[{ required: true }]}
-                  >
-                    <DatePicker className="w-full" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col xs={24} lg={12}>
-                  <Form.Item name="vesselFlight" label="Vessel/Flight Number">
-                    <Input placeholder="e.g., MSC ALTA or EK 787" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} lg={12}>
-                  <Form.Item name="status" label="Status">
-                    <Select>
-                      <Option value="PLANNED">Planned</Option>
-                      <Option value="LOADED">Loaded</Option>
-                      <Option value="SHIPPED">Shipped</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="notes" label="Notes">
-                <Input.TextArea rows={2} />
-              </Form.Item>
-
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={isCreating}>
-                    Create Container
-                  </Button>
-                  <Button onClick={() => setContainerModalVisible(false)}>
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </Modal>
+          <ContainerCreateModal
+            isOpen={containerModalVisible}
+            loading={isCreatingContainer}
+            onClose={() => setContainerModalVisible(false)}
+            onSubmit={handleCreateContainer}
+          />
         </div>
       </AppLayout>
     </AuthGuard>

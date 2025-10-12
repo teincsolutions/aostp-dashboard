@@ -2,23 +2,42 @@ import { apiService } from "./api";
 import {
   PackingListsResponse,
   PackingListResponse,
-  PackingListSummaryResponse,
   PackingListExportResponse,
   PackingListCreatePayload,
   PackingListUpdatePayload,
   PackingListQueryParams,
   ExportFormat,
   PackingList,
+  PackingListSummary,
 } from "@/types/packingList";
-import { Package } from "@/types/package";
+import { Package, PackageStatusPackages, ShippingMode } from "@/types/package";
+
+export type GetPackagesParams = {
+  page?: number;
+  limit?: number;
+  status?: PackageStatusPackages;
+  sortBy?: string;
+  orderBy?: string;
+  packingListId?: string;
+  shippingMode?: ShippingMode;
+  search?: string;
+  customerId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
 
 // Packing List service functions
 export const packingListService = {
   // Get all packing lists with pagination and filters
-  async getPackingLists(params: PackingListQueryParams = {}): Promise<PackingListsResponse> {
-    const response = await apiService.get<PackingListsResponse>("/packing-lists", {
-      params,
-    });
+  async getPackingLists(
+    params: PackingListQueryParams = {}
+  ): Promise<PackingListsResponse> {
+    const response = await apiService.get<PackingListsResponse>(
+      "/packing-lists",
+      {
+        params,
+      }
+    );
     return response.data;
   },
 
@@ -29,20 +48,33 @@ export const packingListService = {
   },
 
   // Get packing list summary grouped by customer
-  async getPackingListSummary(id: string): Promise<PackingListSummaryResponse> {
-    const response = await apiService.get<PackingListSummaryResponse>(`/packing-lists/${id}/summary`);
+  async getPackingListSummary(id: string): Promise<PackingListSummary> {
+    const response = await apiService.get<PackingListSummary>(
+      `/packing-lists/${id}/summary`
+    );
     return response.data;
   },
 
   // Create a new packing list
-  async createPackingList(payload: PackingListCreatePayload): Promise<PackingList> {
-    const response = await apiService.post<PackingList>("/packing-lists", payload);
+  async createPackingList(
+    payload: PackingListCreatePayload
+  ): Promise<PackingList> {
+    const response = await apiService.post<PackingList>(
+      "/packing-lists",
+      payload
+    );
     return response.data;
   },
 
   // Update packing list
-  async updatePackingList(id: string, payload: PackingListUpdatePayload): Promise<PackingListResponse> {
-    const response = await apiService.patch<PackingListResponse>(`/packing-lists/${id}`, payload);
+  async updatePackingList(
+    id: string,
+    payload: PackingListUpdatePayload
+  ): Promise<PackingListResponse> {
+    const response = await apiService.patch<PackingListResponse>(
+      `/packing-lists/${id}`,
+      payload
+    );
     return response.data;
   },
 
@@ -53,48 +85,72 @@ export const packingListService = {
 
   // Get packing list by name
   async getPackingListByName(name: string): Promise<PackingListResponse> {
-    const response = await apiService.get<PackingListResponse>(`/packing-lists/by-name/${name}`);
+    const response = await apiService.get<PackingListResponse>(
+      `/packing-lists/by-name/${name}`
+    );
     return response.data;
   },
 
   // Add packages to packing list
-  async addPackagesToPackingList(id: string, packageIds: string[]): Promise<PackingListResponse> {
-    const response = await apiService.post<PackingListResponse>(`/packing-lists/${id}/packages`, {
-      packageIds,
-    });
+  async addPackagesToPackingList(
+    id: string,
+    packageIds: string[]
+  ): Promise<PackingListResponse> {
+    const response = await apiService.post<PackingListResponse>(
+      `/packing-lists/${id}/packages`,
+      {
+        packageIds,
+      }
+    );
     return response.data;
   },
 
   // Remove packages from packing list
-  async removePackagesFromPackingList(id: string, packageIds: string[]): Promise<PackingListResponse> {
-    const response = await apiService.delete<PackingListResponse>(`/packing-lists/${id}/packages`, {
-      data: { packageIds },
-    });
+  async removePackagesFromPackingList(
+    id: string,
+    packageIds: string
+  ): Promise<PackingListResponse> {
+    const response = await apiService.delete<PackingListResponse>(
+      `/packing-lists/${id}/packages`,
+      {
+        params: { packageIds },
+      }
+    );
     return response.data;
   },
 
   // Export packing list
-  async exportPackingList(id: string, format: ExportFormat): Promise<PackingListExportResponse> {
-    const response = await apiService.get<PackingListExportResponse>(`/packing-lists/${id}/export`, {
-      params: { format },
-    });
+  async exportPackingList(
+    id: string,
+    format: ExportFormat
+  ): Promise<PackingListExportResponse> {
+    const response = await apiService.get<PackingListExportResponse>(
+      `/packing-lists/${id}/export`,
+      {
+        params: { format },
+      }
+    );
     return response.data;
   },
 
   // Get unassigned packages (for package selection)
-  async getUnassignedPackages(params: { search?: string; page?: number; limit?: number } = {}): Promise<{data: Package[], meta: any}> {
+  async getUnassignedPackages(
+    params: GetPackagesParams = {}
+  ): Promise<{ data: Package[]; meta: any }> {
     const response = await apiService.get("/packages", {
       params: {
         ...params,
         packingListId: "", // Empty string to get unassigned packages
-        status: "RECEIVED",
+        status: PackageStatusPackages.IN_WAREHOUSE,
       },
     });
     return response.data;
   },
 
   // Get active containers (for container selection) - optionally filter by container type
-  async getActiveContainers(containerType?: string): Promise<PackingListsResponse> {
+  async getActiveContainers(
+    containerType?: string
+  ): Promise<PackingListsResponse> {
     const response = await apiService.get("/containers/active", {
       params: containerType ? { containerType } : undefined,
     });
@@ -102,8 +158,10 @@ export const packingListService = {
   },
 
   // Finalize packing list (generate invoices without currency conversion)
-  async finalizePackingList(id: string): Promise<PackingListResponse> {
-    const response = await apiService.patch<PackingListResponse>(`/packing-lists/${id}/finalize`);
+  async finalizePackingList(id: string): Promise<PackingList> {
+    const response = await apiService.post<PackingList>(
+      `/packing-lists/${id}/finalize`
+    );
     return response.data;
   },
 };

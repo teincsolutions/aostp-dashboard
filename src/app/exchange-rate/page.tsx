@@ -1,24 +1,48 @@
 "use client";
 
-import { Card, Table, Button, Form, InputNumber, DatePicker, notification, Empty, Spin, Tabs, Select, Space, Tag } from "antd";
+import {
+  Card,
+  Table,
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  DatePicker,
+  notification,
+  Empty,
+  Spin,
+  Tabs,
+  Select,
+  Space,
+  Tag,
+  Popconfirm,
+} from "antd";
 import { Formik, Form as FormikForm, Field } from "formik";
 import * as Yup from "yup";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
-import { exchangeRateColumns } from "./columns";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { ExchangeRateCreatePayload, ShippingMode, AirShippingType, ExchangeRate, ShippingRate } from "@/types/exchangeRate";
+import {
+  ExchangeRateCreatePayload,
+  ShippingMode,
+  AirShippingType,
+  ExchangeRate,
+  ShippingRate,
+  City,
+} from "@/types/exchangeRate";
 import { useShippingRates } from "@/hooks/useShippingRates";
+import { useCities } from "@/hooks/useCities";
 import { useState, useEffect } from "react";
 import dayjs from "dayjs";
-import { message } from "antd";
 import { toast } from "sonner";
 import { getServerValidationErrors } from "@/utils/forms/errorUtils";
 
 const ROLES_ALLOWED = ["FINANCE_MANAGER", "SUPER_ADMIN"];
 
 const exchangeRateValidationSchema = Yup.object().shape({
-  rate: Yup.number().required("Rate is required").moreThan(0, "Rate must be greater than 0"),
+  rate: Yup.number()
+    .required("Rate is required")
+    .moreThan(0, "Rate must be greater than 0"),
   effectiveFrom: Yup.date().required("Effective From is required"),
 });
 
@@ -28,7 +52,13 @@ const shippingRateValidationSchema = Yup.object().shape({
     is: "AIR",
     then: (schema) => schema.required("Air shipping type is required"),
   }),
-  rate: Yup.number().required("Rate is required").moreThan(0, "Rate must be greater than 0"),
+  cityId: Yup.string().required("City ID is required"),
+  ratePerUnit: Yup.number()
+    .required("Rate per unit is required")
+    .moreThan(0, "Rate must be greater than 0"),
+  currency: Yup.string()
+    .required("Currency is required")
+    .oneOf(["GHS", "USD"], "Currency must be GHS or USD"),
   effectiveFrom: Yup.date().required("Effective From is required"),
 });
 
@@ -45,6 +75,7 @@ export default function RateManagementPage() {
     setError: setExchangeError,
     setSuccess: setExchangeSuccess,
     resetSet: resetExchangeSet,
+    deleteExchangeRate,
   } = useExchangeRate();
 
   // Shipping rates
@@ -58,6 +89,8 @@ export default function RateManagementPage() {
     setError: setShippingError,
     isSetSuccess: isShippingSetSuccess,
     resetSet: resetShippingSet,
+    deactivateShippingRate,
+    updateShippingRate,
   } = useShippingRates();
 
   // Pagination states
@@ -71,8 +104,11 @@ export default function RateManagementPage() {
   const [allShippingRates, setAllShippingRates] = useState<ShippingRate[]>([]);
 
   // Get complete rate datasets for validation
-  const allExchangeRatesQuery = useRateHistory({ page: 1, limit: 1000 });
-  const allShippingRatesQuery = useShippingRateHistory({ page: 1, limit: 1000 });
+  const allExchangeRatesQuery = useRateHistory({ page: 1, limit: 100 });
+  const allShippingRatesQuery = useShippingRateHistory({
+    page: 1,
+    limit: 100,
+  });
 
   // Update validation state when full datasets are loaded
   useEffect(() => {
@@ -88,8 +124,10 @@ export default function RateManagementPage() {
   }, [allShippingRatesQuery.data]);
 
   // Date overlap validation functions
-  const validateExchangeRateDateOverlap = (effectiveFrom: dayjs.Dayjs): { isValid: boolean; message?: string } => {
-    const activeRates = allExchangeRates.filter(rate => rate.isActive);
+  const validateExchangeRateDateOverlap = (
+    effectiveFrom: dayjs.Dayjs
+  ): { isValid: boolean; message?: string } => {
+    const activeRates = allExchangeRates.filter((rate) => rate.isActive);
     const selectedDate = effectiveFrom.toISOString();
 
     // Check if there's an active rate that would conflict
@@ -97,7 +135,9 @@ export default function RateManagementPage() {
       if (rate.effectiveFrom <= selectedDate) {
         return {
           isValid: false,
-          message: `Date overlaps with existing active rate effective from ${dayjs(rate.effectiveFrom).format("YYYY-MM-DD HH:mm")}`
+          message: `Date overlaps with existing active rate effective from ${dayjs(
+            rate.effectiveFrom
+          ).format("YYYY-MM-DD HH:mm")}`,
         };
       }
     }
@@ -105,23 +145,38 @@ export default function RateManagementPage() {
     return { isValid: true };
   };
 
-  const validateShippingRateDateOverlap = (effectiveFrom: dayjs.Dayjs, shippingMode: ShippingMode, airShippingType?: AirShippingType): { isValid: boolean; message?: string } => {
+  const validateShippingRateDateOverlap = (
+    effectiveFrom: dayjs.Dayjs,
+    shippingMode: ShippingMode,
+    airShippingType?: AirShippingType
+  ): { isValid: boolean; message?: string } => {
     const selectedDate = effectiveFrom.toISOString();
 
     // Filter rates for the same mode/type combination
-    const relevantRates = allShippingRates.filter(rate => {
+    const relevantRates = allShippingRates.filter((rate) => {
       if (rate.shippingMode !== shippingMode) return false;
-      if (shippingMode === ShippingMode.AIR && rate.airShippingType !== airShippingType) return false;
+      if (
+        shippingMode === ShippingMode.AIR &&
+        rate.airShippingType !== airShippingType
+      )
+        return false;
       return !rate.effectiveTo || rate.effectiveTo > selectedDate; // Active or future rates
     });
 
     // Check for overlaps
     for (const rate of relevantRates) {
-      if (rate.effectiveFrom <= selectedDate && (!rate.effectiveTo || rate.effectiveTo > selectedDate)) {
-        const conflictType = rate.airShippingType ? `AIR - ${rate.airShippingType.replace("_", " ")}` : "SEA";
+      if (
+        rate.effectiveFrom <= selectedDate &&
+        (!rate.effectiveTo || rate.effectiveTo > selectedDate)
+      ) {
+        const conflictType = rate.airShippingType
+          ? `AIR - ${rate.airShippingType.replace("_", " ")}`
+          : "SEA";
         return {
           isValid: false,
-          message: `Date overlaps with existing ${conflictType} rate effective from ${dayjs(rate.effectiveFrom).format("YYYY-MM-DD HH:mm")}`
+          message: `Date overlaps with existing ${conflictType} rate effective from ${dayjs(
+            rate.effectiveFrom
+          ).format("YYYY-MM-DD HH:mm")}`,
         };
       }
     }
@@ -134,13 +189,25 @@ export default function RateManagementPage() {
     data: exchangeHistoryData,
     isLoading: exchangeHistoryLoading,
     refetch: refetchExchangeHistory,
-  } = useRateHistory({ page: exchangePage, limit: exchangeLimit, sortBy: "createdAt", sortOrder: "desc" });
+  } = useRateHistory({
+    page: exchangePage,
+    limit: exchangeLimit,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
 
   const {
     data: shippingHistoryData,
     isLoading: shippingHistoryLoading,
     refetch: refetchShippingHistory,
   } = useShippingRateHistory({ page: shippingPage, limit: shippingLimit });
+
+  // Cities for dropdown
+  const { data: citiesData, isLoading: citiesLoading } = useCities({
+    country: "Ghana",
+    sortBy: "name",
+    sortOrder: "asc",
+  });
 
   // Notification handlers
   if (setExchangeError) {
@@ -179,26 +246,101 @@ export default function RateManagementPage() {
     resetShippingSet();
   }
 
+  // Exchange rate columns
+  const exchangeRateColumns = [
+    {
+      title: "Rate",
+      dataIndex: "rate",
+      key: "rate",
+      render: (rate: number) => rate.toFixed(4),
+    },
+    {
+      title: "Effective From",
+      dataIndex: "effectiveFrom",
+      key: "effectiveFrom",
+      render: (date: string) => new Date(date).toLocaleString(),
+    },
+    {
+      title: "Set By",
+      dataIndex: "setBy",
+      key: "setBy",
+      render: (setBy: any) => setBy?.name || "-",
+    },
+    {
+      title: "Active",
+      dataIndex: "isActive",
+      key: "isActive",
+      render: (isActive: boolean) => (
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "Active" : "Inactive"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date: string) => new Date(date).toLocaleString(),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (record: ExchangeRate) => (
+        <Space size="middle">
+          {!record.isActive && (
+            <Popconfirm
+              title="Delete Exchange Rate"
+              description="Are you sure you want to delete this exchange rate?"
+              onConfirm={() => deleteExchangeRate(record.id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger>Delete</Button>
+            </Popconfirm>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
   // Shipping rate columns
   const shippingRateColumns = [
     {
       title: "Mode",
       dataIndex: "shippingMode",
       key: "shippingMode",
-      render: (mode: ShippingMode) => <Tag color={mode === ShippingMode.SEA ? "blue" : "green"}>{mode}</Tag>,
+      render: (mode: ShippingMode) => (
+        <Tag color={mode === ShippingMode.SEA ? "blue" : "green"}>{mode}</Tag>
+      ),
     },
     {
       title: "Type",
       dataIndex: "airShippingType",
       key: "airShippingType",
       render: (type: AirShippingType) =>
-        type ? <Tag color="orange">{type.replace("_", " ")}</Tag> : <span>-</span>,
+        type ? (
+          <Tag color="orange">{type.replace("_", " ")}</Tag>
+        ) : (
+          <span>-</span>
+        ),
+    },
+    {
+      title: "City",
+      dataIndex: "cityId",
+      key: "cityId",
+      render: (_: any, record: ShippingRate) => {
+        return `${record.city.name} (${record.city.country})` || "-";
+      },
     },
     {
       title: "Rate per Unit",
-      dataIndex: "rate",
-      key: "rate",
-      render: (rate: number) => `$${rate.toFixed(2)}`,
+      dataIndex: "ratePerUnit",
+      key: "ratePerUnit",
+      render: (ratePerUnit: number, record: ShippingRate) => {
+        // Fallback to rate field for backward compatibility
+        const rate = ratePerUnit || record.rate;
+        return rate ? `$${rate.toFixed(2)}` : "-";
+      },
     },
     {
       title: "Currency",
@@ -221,6 +363,25 @@ export default function RateManagementPage() {
         </Tag>
       ),
     },
+    {
+      title:"Actions",
+      key: "actions",
+      render: (_: any, record: ShippingRate) => (
+        <Space size="middle">
+          {record.isActive ? (
+            <Popconfirm
+              title="Deactivate Shipping Rate"
+              description="Are you sure you want to deactivate this shipping rate?"
+              onConfirm={() => deactivateShippingRate(record.id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button size="small" danger>Deactivate</Button>
+            </Popconfirm>
+          ) : null}
+        </Space>
+      ),
+    }
   ];
 
   const { TabPane } = Tabs;
@@ -243,14 +404,18 @@ export default function RateManagementPage() {
                   ) : activeRate ? (
                     <div className="flex flex-col gap-2">
                       <div>
-                        <span className="font-semibold">Rate:</span> {activeRate.rate}
+                        <span className="font-semibold">Rate:</span>{" "}
+                        {activeRate.rate}
                       </div>
                       <div>
                         <span className="font-semibold">Effective From:</span>{" "}
-                        {dayjs(activeRate.effectiveFrom).format("YYYY-MM-DD HH:mm")}
+                        {dayjs(activeRate.effectiveFrom).format(
+                          "YYYY-MM-DD HH:mm"
+                        )}
                       </div>
                       <div>
-                        <span className="font-semibold">Set By:</span> {activeRate.setBy?.name}
+                        <span className="font-semibold">Set By:</span>{" "}
+                        {activeRate.setBy?.name}
                       </div>
                     </div>
                   ) : (
@@ -269,7 +434,8 @@ export default function RateManagementPage() {
                       try {
                         // Validate date overlap before submission
                         const effectiveFrom = dayjs(values.effectiveFrom);
-                        const overlapValidation = validateExchangeRateDateOverlap(effectiveFrom);
+                        const overlapValidation =
+                          validateExchangeRateDateOverlap(effectiveFrom);
 
                         if (!overlapValidation.isValid) {
                           toast.error(overlapValidation.message);
@@ -278,7 +444,9 @@ export default function RateManagementPage() {
 
                         const payload: ExchangeRateCreatePayload = {
                           rate: Number(values.rate),
-                          effectiveFrom: dayjs(values.effectiveFrom).toISOString(),
+                          effectiveFrom: dayjs(
+                            values.effectiveFrom
+                          ).toISOString(),
                           fromCurrency: "USD",
                           toCurrency: "GHS",
                         };
@@ -290,7 +458,10 @@ export default function RateManagementPage() {
                         if (fieldErrors) {
                           setErrors(fieldErrors);
                         } else {
-                          toast.error(error.response?.data?.message || "Failed to set exchange rate");
+                          toast.error(
+                            error.response?.data?.message ||
+                              "Failed to set exchange rate"
+                          );
                         }
                       }
                     }}
@@ -299,7 +470,9 @@ export default function RateManagementPage() {
                       <FormikForm className="flex flex-col gap-4">
                         <Form.Item
                           label="Rate (USD → GHS)"
-                          validateStatus={errors.rate && touched.rate ? "error" : ""}
+                          validateStatus={
+                            errors.rate && touched.rate ? "error" : ""
+                          }
                           help={errors.rate && touched.rate ? errors.rate : ""}
                         >
                           <Field name="rate">
@@ -309,15 +482,24 @@ export default function RateManagementPage() {
                                 min={0.0001}
                                 step={0.0001}
                                 style={{ width: "100%" }}
-                                onChange={val => setFieldValue("rate", val)}
+                                onChange={(val) => setFieldValue("rate", val)}
+                                placeholder="e.g., 11.50"
                               />
                             )}
                           </Field>
                         </Form.Item>
                         <Form.Item
                           label="Effective From"
-                          validateStatus={errors.effectiveFrom && touched.effectiveFrom ? "error" : ""}
-                          help={errors.effectiveFrom && touched.effectiveFrom ? errors.effectiveFrom : ""}
+                          validateStatus={
+                            errors.effectiveFrom && touched.effectiveFrom
+                              ? "error"
+                              : ""
+                          }
+                          help={
+                            errors.effectiveFrom && touched.effectiveFrom
+                              ? errors.effectiveFrom
+                              : ""
+                          }
                         >
                           <Field name="effectiveFrom">
                             {({ field }: any) => (
@@ -325,7 +507,9 @@ export default function RateManagementPage() {
                                 {...field}
                                 showTime
                                 style={{ width: "100%" }}
-                                onChange={val => setFieldValue("effectiveFrom", val)}
+                                onChange={(val) =>
+                                  setFieldValue("effectiveFrom", val)
+                                }
                               />
                             )}
                           </Field>
@@ -359,7 +543,11 @@ export default function RateManagementPage() {
                       setExchangeLimit(ps);
                     },
                   }}
-                  locale={{ emptyText: <Empty description="No historical rates found" /> }}
+                  locale={{
+                    emptyText: (
+                      <Empty description="No historical rates found" />
+                    ),
+                  }}
                   scroll={{ x: true }}
                   size="middle"
                 />
@@ -369,17 +557,29 @@ export default function RateManagementPage() {
             {/* Shipping Rates Tab */}
             <TabPane tab="Shipping Rates" key="shipping">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-                <Card title="Active Shipping Rates" loading={activeRatesLoading}>
+                <Card
+                  title="Active Shipping Rates"
+                  loading={activeRatesLoading}
+                >
                   {activeRates && activeRates.length > 0 ? (
                     <div className="space-y-3">
                       {activeRates.map((rate) => (
-                        <div key={rate.id} className="flex justify-between items-center py-2 border-b">
+                        <div
+                          key={rate.id}
+                          className="flex justify-between items-center py-2 border-b"
+                        >
                           <div>
                             <div className="font-medium">
-                              {rate.shippingMode === "SEA" ? "SEA (per CBM)" : `AIR - ${rate.airShippingType?.replace("_", " ")} (per KG)`}
+                              {rate.shippingMode === "SEA"
+                                ? "SEA (per CBM)"
+                                : `AIR - ${rate.airShippingType?.replace(
+                                    "_",
+                                    " "
+                                  )} (per KG)`}
                             </div>
                             <div className="text-sm text-gray-500">
-                              Effective: {dayjs(rate.effectiveFrom).format("YYYY-MM-DD")}
+                              Effective:{" "}
+                              {dayjs(rate.effectiveFrom).format("YYYY-MM-DD")}
                             </div>
                           </div>
                           <div className="text-right">
@@ -399,7 +599,9 @@ export default function RateManagementPage() {
                     initialValues={{
                       shippingMode: ShippingMode.SEA,
                       airShippingType: undefined,
-                      rate: "",
+                      cityId: "4145a4e0-2e71-414c-9e23-746e6c155c78",
+                      ratePerUnit: "",
+                      currency: "",
                       effectiveFrom: "",
                     }}
                     validationSchema={shippingRateValidationSchema}
@@ -407,11 +609,12 @@ export default function RateManagementPage() {
                       try {
                         // Validate date overlap before submission
                         const effectiveFrom = dayjs(values.effectiveFrom);
-                        const overlapValidation = validateShippingRateDateOverlap(
-                          effectiveFrom,
-                          values.shippingMode,
-                          values.airShippingType
-                        );
+                        const overlapValidation =
+                          validateShippingRateDateOverlap(
+                            effectiveFrom,
+                            values.shippingMode,
+                            values.airShippingType
+                          );
 
                         if (!overlapValidation.isValid) {
                           toast.error(overlapValidation.message);
@@ -421,8 +624,12 @@ export default function RateManagementPage() {
                         const payload = {
                           shippingMode: values.shippingMode,
                           airShippingType: values.airShippingType,
-                          rate: Number(values.rate),
-                          effectiveFrom: dayjs(values.effectiveFrom).toISOString(),
+                          cityId: values.cityId,
+                          ratePerUnit: Number(values.ratePerUnit),
+                          currency: values.currency,
+                          effectiveFrom: dayjs(
+                            values.effectiveFrom
+                          ).toISOString(),
                         };
                         await setShippingRate(payload);
                         toast.success("Shipping rate set successfully");
@@ -432,22 +639,38 @@ export default function RateManagementPage() {
                         if (fieldErrors) {
                           setErrors(fieldErrors);
                         } else {
-                          toast.error(error.response?.data?.message || "Failed to set shipping rate");
+                          toast.error(
+                            error.response?.data?.message ||
+                              "Failed to set shipping rate"
+                          );
                         }
                       }
                     }}
                   >
-                    {({ errors, touched, setFieldValue, values, isSubmitting }) => (
+                    {({
+                      errors,
+                      touched,
+                      setFieldValue,
+                      values,
+                      isSubmitting,
+                    }) => (
                       <FormikForm className="flex flex-col gap-4">
                         <Form.Item
                           label="Shipping Mode"
-                          validateStatus={errors.shippingMode && touched.shippingMode ? "error" : ""}
-                          help={errors.shippingMode && touched.shippingMode ? errors.shippingMode : ""}
+                          validateStatus={
+                            errors.shippingMode && touched.shippingMode
+                              ? "error"
+                              : ""
+                          }
+                          help={
+                            errors.shippingMode && touched.shippingMode
+                              ? errors.shippingMode
+                              : ""
+                          }
                         >
                           <Field name="shippingMode">
                             {({ field }: any) => (
                               <Select
-                                {...field}
                                 style={{ width: "100%" }}
                                 onChange={(val) => {
                                   setFieldValue("shippingMode", val);
@@ -455,9 +678,15 @@ export default function RateManagementPage() {
                                     setFieldValue("airShippingType", undefined);
                                   }
                                 }}
+                                value={values.shippingMode}
+                                placeholder="Select shipping mode"
                               >
-                                <Select.Option value={ShippingMode.SEA}>SEA (per CBM)</Select.Option>
-                                <Select.Option value={ShippingMode.AIR}>AIR (per KG)</Select.Option>
+                                <Select.Option value={ShippingMode.SEA}>
+                                  SEA (per CBM)
+                                </Select.Option>
+                                <Select.Option value={ShippingMode.AIR}>
+                                  AIR (per KG)
+                                </Select.Option>
                               </Select>
                             )}
                           </Field>
@@ -466,16 +695,45 @@ export default function RateManagementPage() {
                         {values.shippingMode === ShippingMode.AIR && (
                           <Form.Item
                             label="Air Shipping Type"
-                            validateStatus={errors.airShippingType && touched.airShippingType ? "error" : ""}
-                            help={errors.airShippingType && touched.airShippingType ? errors.airShippingType : ""}
+                            validateStatus={
+                              errors.airShippingType && touched.airShippingType
+                                ? "error"
+                                : ""
+                            }
+                            help={
+                              errors.airShippingType && touched.airShippingType
+                                ? errors.airShippingType
+                                : ""
+                            }
                           >
                             <Field name="airShippingType">
                               {({ field }: any) => (
-                                <Select {...field} style={{ width: "100%" }}>
-                                  <Select.Option value={AirShippingType.NORMAL_AIR}>Normal Air</Select.Option>
-                                  <Select.Option value={AirShippingType.EXPRESS_AIR}>Express Air</Select.Option>
-                                  <Select.Option value={AirShippingType.BATTERY_GOODS}>Battery Goods</Select.Option>
-                                  <Select.Option value={AirShippingType.PHONES}>Phones</Select.Option>
+                                <Select
+                                  {...field}
+                                  onChange={(val) =>
+                                    setFieldValue("airShippingType", val)
+                                  }
+                                  style={{ width: "100%" }}
+                                  placeholder="Select air shipping type"
+                                >
+                                  <Select.Option
+                                    value={AirShippingType.NORMAL_AIR}
+                                  >
+                                    Normal Air
+                                  </Select.Option>
+                                  <Select.Option
+                                    value={AirShippingType.EXPRESS_AIR}
+                                  >
+                                    Express Air
+                                  </Select.Option>
+                                  <Select.Option
+                                    value={AirShippingType.BATTERY_GOODS}
+                                  >
+                                    Battery Goods
+                                  </Select.Option>
+                                  <Select.Option value={AirShippingType.PHONES}>
+                                    Phones
+                                  </Select.Option>
                                 </Select>
                               )}
                             </Field>
@@ -483,18 +741,96 @@ export default function RateManagementPage() {
                         )}
 
                         <Form.Item
-                          label={`Rate (${values.shippingMode === ShippingMode.SEA ? 'per CBM' : 'per KG'})`}
-                          validateStatus={errors.rate && touched.rate ? "error" : ""}
-                          help={errors.rate && touched.rate ? errors.rate : ""}
+                          label="City"
+                          validateStatus={
+                            errors.cityId && touched.cityId ? "error" : ""
+                          }
+                          help={
+                            errors.cityId && touched.cityId ? errors.cityId : ""
+                          }
                         >
-                          <Field name="rate">
+                          <Field name="cityId">
+                            {({ field }: any) => (
+                              <Select
+                                {...field}
+                                style={{ width: "100%" }}
+                                placeholder="Select city"
+                                loading={citiesLoading}
+                                showSearch
+                                optionFilterProp="children"
+                                filterOption={(input, option) =>
+                                  (option?.children as unknown as string)
+                                    ?.toLowerCase()
+                                    .includes(input.toLowerCase()) || false
+                                }
+                                onChange={(val) => setFieldValue("cityId", val)}
+                              >
+                                {citiesData?.data?.map((city: City) => (
+                                  <Select.Option key={city.id} value={city.id}>
+                                    {city.name}, {city.country}
+                                  </Select.Option>
+                                ))}
+                              </Select>
+                            )}
+                          </Field>
+                        </Form.Item>
+                        <Form.Item
+                          label="Currency"
+                          required
+                          validateStatus={
+                            errors.currency && touched.currency ? "error" : ""
+                          }
+                          help={
+                            errors.currency && touched.currency
+                              ? errors.currency
+                              : ""
+                          }
+                        >
+                          <Field name="currency">
+                            {({ field }: any) => (
+                              <Select
+                                {...field}
+                                style={{ width: "100%" }}
+                                placeholder="Select currency"
+                                onChange={(val) =>
+                                  setFieldValue("currency", val)
+                                }
+                              >
+                                <Select.Option value="GHS">GHS</Select.Option>
+                                <Select.Option value="USD">USD</Select.Option>
+                              </Select>
+                            )}
+                          </Field>
+                        </Form.Item>
+
+                        <Form.Item
+                          label={`Rate per Unit (${
+                            values.shippingMode === ShippingMode.SEA
+                              ? "per CBM"
+                              : "per KG"
+                          })`}
+                          validateStatus={
+                            errors.ratePerUnit && touched.ratePerUnit
+                              ? "error"
+                              : ""
+                          }
+                          help={
+                            errors.ratePerUnit && touched.ratePerUnit
+                              ? errors.ratePerUnit
+                              : ""
+                          }
+                        >
+                          <Field name="ratePerUnit">
                             {({ field }: any) => (
                               <InputNumber
                                 {...field}
                                 min={0.01}
                                 step={0.01}
                                 style={{ width: "100%" }}
-                                onChange={val => setFieldValue("rate", val)}
+                                onChange={(val) =>
+                                  setFieldValue("ratePerUnit", val)
+                                }
+                                placeholder="e.g., 5.00"
                               />
                             )}
                           </Field>
@@ -502,8 +838,16 @@ export default function RateManagementPage() {
 
                         <Form.Item
                           label="Effective From"
-                          validateStatus={errors.effectiveFrom && touched.effectiveFrom ? "error" : ""}
-                          help={errors.effectiveFrom && touched.effectiveFrom ? errors.effectiveFrom : ""}
+                          validateStatus={
+                            errors.effectiveFrom && touched.effectiveFrom
+                              ? "error"
+                              : ""
+                          }
+                          help={
+                            errors.effectiveFrom && touched.effectiveFrom
+                              ? errors.effectiveFrom
+                              : ""
+                          }
                         >
                           <Field name="effectiveFrom">
                             {({ field }: any) => (
@@ -511,7 +855,9 @@ export default function RateManagementPage() {
                                 {...field}
                                 showTime
                                 style={{ width: "100%" }}
-                                onChange={val => setFieldValue("effectiveFrom", val)}
+                                onChange={(val) =>
+                                  setFieldValue("effectiveFrom", val)
+                                }
                               />
                             )}
                           </Field>
@@ -546,7 +892,11 @@ export default function RateManagementPage() {
                       setShippingLimit(ps);
                     },
                   }}
-                  locale={{ emptyText: <Empty description="No shipping rate history found" /> }}
+                  locale={{
+                    emptyText: (
+                      <Empty description="No shipping rate history found" />
+                    ),
+                  }}
                   scroll={{ x: true }}
                   size="middle"
                 />

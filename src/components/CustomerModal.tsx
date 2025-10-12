@@ -118,7 +118,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         {(formik) => (
           <form onSubmit={formik.handleSubmit} className="space-y-4">
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     First Name *
@@ -143,7 +143,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                   )}
                 </div>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     Last Name *
@@ -171,7 +171,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             </Row>
 
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     Email
@@ -194,7 +194,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                   )}
                 </div>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     Phone Number *
@@ -221,53 +221,62 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               </Col>
             </Row>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
-                Alternate Phone
-              </label>
-              <Input
-                placeholder="Enter alternate phone"
-                value={formik.values.alternatePhone}
-                onChange={(e) =>
-                  formik.setFieldValue("alternatePhone", e.target.value)
-                }
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
-                Address *
-              </label>
-              <Input
-                placeholder="Enter address"
-                value={formik.values.address}
-                onChange={(e) =>
-                  formik.setFieldValue("address", e.target.value)
-                }
-                status={
-                  formik.touched.address && formik.errors.address ? "error" : ""
-                }
-              />
-              {formik.touched.address && formik.errors.address && (
-                <div className="text-red-500 text-xs">
-                  {formik.errors.address}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
-                City
-              </label>
-              <Input
-                placeholder="Enter city"
-                value={formik.values.city}
-                onChange={(e) => formik.setFieldValue("city", e.target.value)}
-              />
-            </div>
-
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Alternate Phone
+                  </label>
+                  <Input
+                    placeholder="Enter alternate phone"
+                    value={formik.values.alternatePhone}
+                    onChange={(e) =>
+                      formik.setFieldValue("alternatePhone", e.target.value)
+                    }
+                  />
+                </div>
+              </Col>
+              <Col xs={24} sm={12}>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Address *
+                  </label>
+                  <Input
+                    placeholder="Enter address"
+                    value={formik.values.address}
+                    onChange={(e) =>
+                      formik.setFieldValue("address", e.target.value)
+                    }
+                    status={
+                      formik.touched.address && formik.errors.address
+                        ? "error"
+                        : ""
+                    }
+                  />
+                  {formik.touched.address && formik.errors.address && (
+                    <div className="text-red-500 text-xs">
+                      {formik.errors.address}
+                    </div>
+                  )}
+                </div>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col xs={24} sm={12}>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    City
+                  </label>
+                  <Input
+                    placeholder="Enter city"
+                    value={formik.values.city}
+                    onChange={(e) =>
+                      formik.setFieldValue("city", e.target.value)
+                    }
+                  />
+                </div>
+              </Col>
+              <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     ID Type
@@ -293,7 +302,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                   )}
                 </div>
               </Col>
-              <Col span={12}>
+            </Row>
+            <Row gutter={16}>
+              <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     ID Number
@@ -313,28 +324,29 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                   )}
                 </div>
               </Col>
+              <Col xs={24} sm={12}>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Preferred Channel
+                  </label>
+                  <Select
+                    placeholder="Select preferred channel"
+                    value={formik.values.preferredChannel}
+                    onChange={(value) =>
+                      formik.setFieldValue("preferredChannel", value)
+                    }
+                    allowClear
+                    className="w-full"
+                  >
+                    {preferredChannelOptions.map((option) => (
+                      <Option key={option.value} value={option.value}>
+                        {option.label}
+                      </Option>
+                    ))}
+                  </Select>
+                </div>
+              </Col>
             </Row>
-
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
-                Preferred Channel
-              </label>
-              <Select
-                placeholder="Select preferred channel"
-                value={formik.values.preferredChannel}
-                onChange={(value) =>
-                  formik.setFieldValue("preferredChannel", value)
-                }
-                allowClear
-                className="w-full"
-              >
-                {preferredChannelOptions.map((option) => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-            </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button onClick={onCancel}>Cancel</Button>

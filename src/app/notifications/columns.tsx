@@ -1,6 +1,12 @@
 import { ColumnsType } from "antd/es/table";
 import { Tag, Button, Tooltip } from "antd";
-import { NotificationLog, NotificationChannel, NotificationStatus, NotificationType } from "@/types/notification";
+import {
+  NotificationLog,
+  NotificationChannel,
+  NotificationStatus,
+  NotificationType,
+} from "@/types/notification";
+import lodash from "lodash";
 
 export const columns: ColumnsType<NotificationLog> = [
   {
@@ -8,7 +14,11 @@ export const columns: ColumnsType<NotificationLog> = [
     dataIndex: "channel",
     key: "channel",
     render: (channel: NotificationChannel) => (
-      <Tag color={channel === "EMAIL" ? "blue" : channel === "SMS" ? "green" : "volcano"}>
+      <Tag
+        color={
+          channel === "EMAIL" ? "blue" : channel === "SMS" ? "green" : "volcano"
+        }
+      >
         {channel}
       </Tag>
     ),
@@ -22,7 +32,9 @@ export const columns: ColumnsType<NotificationLog> = [
     title: "Type",
     dataIndex: "type",
     key: "type",
-    render: (type: NotificationType) => <Tag>{type}</Tag>,
+    render: (type: NotificationType) => (
+      <Tag>{lodash.startCase(type.replace("_", " ").toLowerCase())}</Tag>
+    ),
     filters: [
       { text: "Package Intake", value: NotificationType.PACKAGE_INTAKE },
       // Add other types as needed
@@ -45,7 +57,11 @@ export const columns: ColumnsType<NotificationLog> = [
     dataIndex: "status",
     key: "status",
     render: (status: NotificationStatus) => (
-      <Tag color={status === "SENT" ? "green" : status === "FAILED" ? "red" : "orange"}>
+      <Tag
+        color={
+          status === "SENT" ? "green" : status === "FAILED" ? "red" : "orange"
+        }
+      >
         {status}
       </Tag>
     ),

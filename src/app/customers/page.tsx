@@ -42,6 +42,7 @@ import {
 } from "@/types/customer";
 import { getCustomerColumns } from "@/app/customers/columns";
 import { toast } from "sonner";
+import { handleError } from "@/utils/forms/errorUtils";
 
 const { Option } = Select;
 
@@ -110,29 +111,6 @@ export default function CustomersPage() {
   const handleChannelFilter = (value: string) => {
     setChannelFilter(value);
     setCurrentPage(1);
-  };
-  const handleError = (err: any) => {
-    // Robust server validation error handling
-    interface ErrorResponse {
-      response?: {
-        data?: {
-          errors?: string[];
-          message?: string;
-        };
-      };
-    }
-    const response =
-      typeof err === "object" && err !== null && "response" in err
-        ? (err as ErrorResponse).response
-        : undefined;
-    if (response?.data?.errors && Array.isArray(response.data.errors)) {
-      response.data.errors.forEach((e: string) => toast.error(e));
-      // Keep modal open for correction
-    } else if (response?.data?.message) {
-      toast.error(response.data.message);
-    } else {
-      toast.error("Failed to add customer");
-    }
   };
 
   const handleCreateCustomer = async (values: any) => {
@@ -263,7 +241,7 @@ export default function CustomersPage() {
   ];
 
   // Statistics
-  const totalCustomers = customers?.total || 0;
+  const totalCustomers = customers?.meta.total || 0;
   const activeCustomers =
     customers?.data?.filter((c: Customer) => c.isActive).length || 0;
   const inactiveCustomers =
@@ -282,7 +260,7 @@ export default function CustomersPage() {
         <div className="px-4 md:px-6 lg:px-8 py-4 w-full mx-auto space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <h1 className="text-2xl font-bold">Customer Management</h1>
-            <Space>
+            <Space wrap>
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
@@ -394,7 +372,7 @@ export default function CustomersPage() {
               pagination={{
                 current: currentPage,
                 pageSize,
-                total: customers?.total || 0,
+                total: customers?.meta.total || 0,
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) =>

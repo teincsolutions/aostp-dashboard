@@ -7,9 +7,7 @@ import {
   Input,
   Select,
   Space,
-  Modal,
   Form,
-  message,
   Card,
   Row,
   Col,
@@ -42,7 +40,14 @@ import {
   ExportFormat,
 } from "@/types/container";
 import type { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { getContainerColumns } from "@/app/containers/columns";
+import {
+  ContainerCreateModal,
+  ContainerUpdateModal,
+  ContainerStatusUpdateModal,
+} from "@/components/ContainerModals";
+import { handleError } from "@/utils/forms/errorUtils";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -98,9 +103,6 @@ export default function ContainersPage() {
   const [updatingContainer, setUpdatingContainer] = useState<Container | null>(
     null
   );
-  const [newStatus, setNewStatus] = useState<ContainerStatus>(
-    ContainerStatus.PLANNED
-  );
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -108,8 +110,6 @@ export default function ContainersPage() {
 
   // Forms
   const [createForm] = Form.useForm();
-  const [editForm] = Form.useForm();
-  const [statusForm] = Form.useForm();
 
   // React Query hooks
   const { data: containers, isLoading } = useContainers({
@@ -119,9 +119,11 @@ export default function ContainersPage() {
     dateTo: dateRange?.[1]?.format("YYYY-MM-DD"),
   });
 
-  const { data: statistics, isLoading: isLoadingStatistics, error: statisticsError } = useContainerStatistics(
-    viewingContainer?.id || ""
-  );
+  const {
+    data: statistics,
+    isLoading: isLoadingStatistics,
+    error: statisticsError,
+  } = useContainerStatistics(viewingContainer?.id || "");
 
   const {
     createContainer,
@@ -148,72 +150,33 @@ export default function ContainersPage() {
       setCurrentPage(1);
     };
 
-  const handleCreateContainer = async (values: any) => {
+  const handleCreateContainer = async (values: ContainerCreatePayload) => {
     try {
-      // Transform form values to payload
-      const payload: ContainerCreatePayload = {
-        containerNumber: values.containerNumber,
-        vesselFlight: values.vesselFlight,
-        loadingDate: values.loadingDate.format("YYYY-MM-DDTHH:mm:ssZ"),
-        departureCity: values.departureCity,
-        destinationCity: values.destinationCity,
-        eta: values.eta.format("YYYY-MM-DDTHH:mm:ssZ"),
-        containerType: values.containerType,
-        status: values.status,
-        notes: values.notes,
-      };
-
-      await createContainer(payload);
-      toast.success("Container created successfully");
+      await createContainer(values);
       setIsCreateModalVisible(false);
+      toast.success("Container created successfully");
       createForm.resetFields();
-    } catch (error: any) {
-      console.log(error.response.data);
-      toast.error("Failed to create container");
+    } catch (error) {
+      handleError(error);
     }
   };
-
   const handleEditContainer = (container: Container) => {
     setEditingContainer(container);
-    editForm.setFieldsValue({
-      containerNumber: container.containerNumber,
-      loadingDate: container.loadingDate
-        ? new Date(container.loadingDate)
-        : null,
-      departureCity: container.departureCity,
-      destinationCity: container.destinationCity,
-      eta: container.eta ? new Date(container.eta) : null,
-      status: container.status,
-      notes: container.notes,
-    });
     setIsEditModalVisible(true);
   };
 
-  const handleUpdateContainer = async (values: UpdateFormValues) => {
-    if (!editingContainer) return;
-
+  const handleUpdateContainer = async (
+    containerId: string,
+    payload: ContainerUpdatePayload
+  ) => {
     try {
-      const payload: ContainerUpdatePayload = {
-        containerNumber: values.containerNumber,
-        loadingDate: values.loadingDate?.format("YYYY-MM-DDTHH:mm:ssZ"),
-        departureCity: values.departureCity,
-        destinationCity: values.destinationCity,
-        eta: values.eta?.format("YYYY-MM-DDTHH:mm:ssZ"),
-        status: values.status,
-        notes: values.notes,
-      };
-
-      await updateContainer({
-        id: editingContainer.id,
-        containerData: payload,
-      });
-      toast.success("Container updated successfully");
+      await updateContainer({ id: containerId, containerData: payload });
       setIsEditModalVisible(false);
       setEditingContainer(null);
-      editForm.resetFields();
-    } catch (error: any) {
-      console.log(error.response.data);
-      toast.error("Failed to update container");
+      toast.success("Container updated successfully");
+      createForm.resetFields();
+    } catch (error) {
+      handleError(error);
     }
   };
 
@@ -262,16 +225,17 @@ export default function ContainersPage() {
   };
 
   // Table columns
+  const handleStatusUpdateClick = (id: string, status: ContainerStatus) => {
+    setUpdatingContainer(
+      containers?.data?.find((c: Container) => c.id === id) || null
+    );
+    setIsStatusUpdateModalVisible(true);
+  };
+
   const columns = getContainerColumns(
     handleEditContainer,
     handleDeleteContainer,
-    (id: string, status: ContainerStatus) => {
-      setUpdatingContainer(
-        containers?.data?.find((c: Container) => c.id === id) || null
-      );
-      setNewStatus(status);
-      setIsStatusUpdateModalVisible(true);
-    },
+    handleStatusUpdateClick,
     handleViewStatistics,
     handleExportManifest,
     isDeleting,
@@ -280,7 +244,7 @@ export default function ContainersPage() {
   );
 
   // Statistics
-  const totalContainers = containers?.meta?.totalItems || 0;
+  const totalContainers = containers?.meta?.total || 0;
   const activeContainers =
     containers?.data?.filter((c) => c.status !== ContainerStatus.CLOSED)
       .length || 0;
@@ -461,300 +425,36 @@ export default function ContainersPage() {
           </Card>
 
           {/* Create Container Modal */}
-          <Modal
-            title="Create New Container"
-            open={isCreateModalVisible}
-            onCancel={() => {
-              setIsCreateModalVisible(false);
-              createForm.resetFields();
-            }}
-            footer={null}
-            width={800}
-          >
-            <Form
-              form={createForm}
-              layout="vertical"
-              onFinish={handleCreateContainer}
-              initialValues={{
-                status: ContainerStatus.PLANNED,
-              }}
-            >
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="containerNumber"
-                    label="Container Number"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please enter container number",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="containerType"
-                    label="Container Type"
-                    rules={[
-                      { required: true, message: "Please select container type" },
-                    ]}
-                  >
-                    <Select>
-                      <Option value="CONTAINER">Container (Sea Freight)</Option>
-                      <Option value="BAG">Bag (Air Freight)</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="status"
-                    label="Status"
-                    rules={[
-                      { required: true, message: "Please select status" },
-                    ]}
-                  >
-                    <Select>
-                      {statusOptions.map((option) => (
-                        <Option key={option.value} value={option.value}>
-                          {option.label}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="vesselFlight" label="Vessel/Flight Number">
-                    <Input placeholder="e.g., MSC ALTA or EK 787" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="departureCity"
-                    label="Departure City"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please enter departure city",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="destinationCity"
-                    label="Destination City"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please enter destination city",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="loadingDate"
-                    label="Loading Date"
-                    rules={[
-                      { required: true, message: "Please select loading date" },
-                    ]}
-                  >
-                    <DatePicker showTime className="w-full" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="eta"
-                    label="ETA"
-                    rules={[{ required: true, message: "Please select ETA" }]}
-                  >
-                    <DatePicker showTime className="w-full" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="notes" label="Notes">
-                <Input.TextArea rows={3} />
-              </Form.Item>
-
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={isCreating}>
-                    Create Container
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsCreateModalVisible(false);
-                      createForm.resetFields();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </Modal>
+          <ContainerCreateModal
+            isOpen={isCreateModalVisible}
+            onClose={() => setIsCreateModalVisible(false)}
+            onSubmit={handleCreateContainer}
+            loading={isCreating}
+          />
 
           {/* Edit Container Modal */}
-          <Modal
-            title="Edit Container"
-            open={isEditModalVisible}
-            onCancel={() => {
+          <ContainerUpdateModal
+            container={editingContainer}
+            isOpen={isEditModalVisible}
+            onClose={() => {
               setIsEditModalVisible(false);
               setEditingContainer(null);
-              editForm.resetFields();
             }}
-            footer={null}
-            width={800}
-          >
-            <Form
-              form={editForm}
-              layout="vertical"
-              onFinish={handleUpdateContainer}
-            >
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="containerNumber" label="Container Number">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="status" label="Status">
-                    <Select>
-                      {statusOptions.map((option) => (
-                        <Option key={option.value} value={option.value}>
-                          {option.label}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="departureCity" label="Departure City">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="destinationCity" label="Destination City">
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="loadingDate" label="Loading Date">
-                    <DatePicker showTime className="w-full" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="eta" label="ETA">
-                    <DatePicker showTime className="w-full" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="notes" label="Notes">
-                <Input.TextArea rows={3} />
-              </Form.Item>
-
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={isUpdating}>
-                    Update Container
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsEditModalVisible(false);
-                      setEditingContainer(null);
-                      editForm.resetFields();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </Modal>
+            onSubmit={handleUpdateContainer}
+            loading={isUpdating}
+          />
 
           {/* Status Update Modal */}
-          <Modal
-            title="Update Container Status"
-            open={isStatusUpdateModalVisible}
-            onCancel={() => {
+          <ContainerStatusUpdateModal
+            container={updatingContainer}
+            isOpen={isStatusUpdateModalVisible}
+            onClose={() => {
               setIsStatusUpdateModalVisible(false);
               setUpdatingContainer(null);
             }}
-            footer={null}
-            width={400}
-          >
-            <div className="mb-4">
-              <p>
-                Update status for container:{" "}
-                <strong>{updatingContainer?.containerNumber}</strong>
-              </p>
-            </div>
-            <Form
-              form={statusForm}
-              layout="vertical"
-              onFinish={() =>
-                handleUpdateContainerStatus(updatingContainer!.id, newStatus)
-              }
-            >
-              <Form.Item
-                name="status"
-                label="New Status"
-                rules={[{ required: true, message: "Please select status" }]}
-              >
-                <Select value={newStatus} onChange={setNewStatus}>
-                  {statusOptions.map((option) => (
-                    <Option key={option.value} value={option.value}>
-                      {option.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item>
-                <Space>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={isUpdatingStatus}
-                  >
-                    Update Status
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsStatusUpdateModalVisible(false);
-                      setUpdatingContainer(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </Modal>
+            onSubmit={handleUpdateContainerStatus}
+            loading={isUpdatingStatus}
+          />
 
           {/* Statistics Drawer */}
           <Drawer
@@ -774,10 +474,13 @@ export default function ContainersPage() {
               <div className="text-center text-red-500">
                 <p>Error loading statistics</p>
                 <p className="text-sm mt-2">
-                  {statisticsError.message || "Failed to fetch container statistics"}
+                  {statisticsError.message ||
+                    "Failed to fetch container statistics"}
                 </p>
                 {viewingContainer?.id && (
-                  <p className="text-xs mt-1">Container ID: {viewingContainer.id}</p>
+                  <p className="text-xs mt-1">
+                    Container ID: {viewingContainer.id}
+                  </p>
                 )}
               </div>
             ) : statistics ? (
@@ -827,25 +530,29 @@ export default function ContainersPage() {
 
                 <Card title="Status Breakdown">
                   <div className="space-y-3">
-                    {statistics.statusBreakdown ? Object.entries(statistics.statusBreakdown).map(
-                      ([status, count]) => (
-                        <div key={status}>
-                          <div className="flex justify-between">
-                            <span>{status.replace("_", " ")}</span>
-                            <span>{count}</span>
+                    {statistics.statusBreakdown ? (
+                      Object.entries(statistics.statusBreakdown).map(
+                        ([status, count]) => (
+                          <div key={status}>
+                            <div className="flex justify-between">
+                              <span>{status.replace("_", " ")}</span>
+                              <span>{count}</span>
+                            </div>
+                            <Progress
+                              percent={
+                                statistics.totalPackingLists > 0
+                                  ? (count / statistics.totalPackingLists) * 100
+                                  : 0
+                              }
+                              size="small"
+                            />
                           </div>
-                          <Progress
-                            percent={
-                              statistics.totalPackingLists > 0
-                                ? (count / statistics.totalPackingLists) * 100
-                                : 0
-                            }
-                            size="small"
-                          />
-                        </div>
+                        )
                       )
                     ) : (
-                      <div className="text-gray-500 text-center">No status breakdown available</div>
+                      <div className="text-gray-500 text-center">
+                        No status breakdown available
+                      </div>
                     )}
                   </div>
                 </Card>

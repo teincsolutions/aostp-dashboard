@@ -1,162 +1,121 @@
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  Modal,
-  Table,
-  Button,
-  Alert,
-  Space,
-  Typography,
-  Row,
-  Col,
-} from "antd";
+import React, { useMemo, useState } from "react";
+import { Modal, Table, Button, Alert, Space, Typography, Row, Col } from "antd";
 import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
 import { Package } from "@/types/package";
 import { ShippingMode } from "@/types/exchangeRate";
+import {
+  usePackingList,
+  usePackingListMutations,
+  useUnassignedPackages,
+} from "@/hooks/usePackingLists";
+import { useShippingRates } from "@/hooks/useShippingRates";
+import { Customer } from "@/types/customer";
+import { handleError } from "@/utils/forms/errorUtils";
+import { toast } from "sonner";
 
 const { Text } = Typography;
 
-interface PackageAssignment {
-  packageId: string;
-  trackingCode: string;
-  description: string;
-  weight: number;
-  cbm: number;
-  customerId?: string;
-  customerName: string;
+interface PackageWithCalculations extends Package {
   rate?: number;
   calculatedAmount?: number;
-  currency?: string;
   unitType?: string;
 }
 
 interface PackageAssignmentModalProps {
   visible: boolean;
   onCancel: () => void;
-  onConfirm: (selectedPackageIds: string[]) => void;
-  title: string;
-  initialSelectedPackageIds?: string[];
-  loading?: boolean;
-  confirmButtonText?: string;
-  assignedPackageIds?: string[]; // Packages already assigned to the packing list
-  unassignedPackages?: { data?: Package[] };
-  shippingRates?: any[];
-  packagesLoading?: boolean;
+  onConfirm: () => void;
+  packingListId: string;
 }
+const containerTypeMap = {
+  CONTAINER: ShippingMode.SEA,
+  BAG: ShippingMode.AIR,
+};
 
 export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
   visible,
   onCancel,
   onConfirm,
-  title,
-  initialSelectedPackageIds = [],
-  loading = false,
-  confirmButtonText = "Add Selected Packages",
-  assignedPackageIds = [],
-  unassignedPackages = {},
-  shippingRates = [],
-  packagesLoading = false,
+  packingListId,
 }) => {
-  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>(
-    initialSelectedPackageIds
+  const { data: packingList } = usePackingList(packingListId);
+  const [unassignedPage, setUnassignedPage] = useState(1);
+
+  const { data: paginatedUnassignedPackages } = useUnassignedPackages({
+    page: unassignedPage,
+    shippingMode:
+      containerTypeMap[packingList?.container?.containerType || "BAG"],
+  });
+  const {
+    addPackagesToPackingList,
+    removePackagesFromPackingList,
+    isRemovingPackages,
+    isAddingPackages,
+    finalizePackingList,
+    isFinalizing,
+  } = usePackingListMutations();
+  const { useCurrentActiveRates } = useShippingRates();
+
+  const shippingMode =
+    containerTypeMap[packingList?.container?.containerType || "BAG"];
+  // Get current shipping rate for calculations
+  const { data: currentShippingRates } = useCurrentActiveRates(shippingMode);
+  const [selectedPackageIds, setSelectedPackageIds] = React.useState<string[]>(
+    []
   );
-  const [packageAssignments, setPackageAssignments] = useState<
-    PackageAssignment[]
-  >([]);
 
-  // Reset state when modal opens
-  useEffect(() => {
-    if (visible) {
-      setSelectedPackageIds(initialSelectedPackageIds);
-    }
-  }, [visible]);
-
-  // Memoize available packages to prevent unnecessary recalculations
-  const availablePackages = useMemo(() => {
-    return unassignedPackages?.data?.filter(
-      (pkg) =>
-        !selectedPackageIds.includes(pkg.id) &&
-        !assignedPackageIds.includes(pkg.id)
-    ) || [];
-  }, [unassignedPackages?.data, selectedPackageIds, assignedPackageIds]);
-
-  // Selected packages (already assigned + newly selected)
   const selectedPackages = useMemo(() => {
-    return [
-      ...(unassignedPackages?.data?.filter((pkg) =>
+    const filteredPackages =
+      paginatedUnassignedPackages?.filter((pkg) =>
         selectedPackageIds.includes(pkg.id)
-      ) || []),
-      // Add packages already assigned but filter out if they exist in unassigned
-    ].filter(
-      (pkg, index, self) => self.findIndex((p) => p.id === pkg.id) === index
-    );
-  }, [unassignedPackages?.data, selectedPackageIds]);
+      ) || [];
 
-  // Calculate package assignments with shipping rates
-  useEffect(() => {
-    if (selectedPackageIds.length > 0 && unassignedPackages?.data) {
-      const assignments: PackageAssignment[] = unassignedPackages.data
-        .filter((pkg) => selectedPackageIds.includes(pkg.id))
-        .map((pkg) => {
-          // Find appropriate rate based on shipping mode and type
-          const rate = shippingRates.find((r) => {
-            if (pkg.shippingMode === r.shippingMode) {
-              if (r.shippingMode === ShippingMode.AIR) {
-                return r.airShippingType === pkg.airShippingType;
-              }
-              return true; // SEA mode matches all
-            }
-            return false;
-          });
+    // Add calculations for each package
+    return filteredPackages.map((pkg) => {
+      const packageWithCalculations: PackageWithCalculations = pkg;
+      const rate = currentShippingRates?.find(
+        (r) => r.airShippingType === pkg.airShippingType
+      )?.ratePerUnit;
+      let unitType: string;
+      let calculatedAmount: number;
 
-          let calculatedAmount = 0;
-          let unitType = "CBM";
-          let rateValue = 0;
+      if (shippingMode === ShippingMode.SEA) {
+        unitType = "CBM";
+        calculatedAmount = (pkg.cbm || 0) * (rate || 0);
+      } else {
+        unitType = "KG";
+        calculatedAmount = (pkg.weight || 0) * (rate || 0);
+      }
 
-          if (rate) {
-            rateValue = rate.rate;
-            if (rate.shippingMode === ShippingMode.SEA) {
-              // SEA: CBM × Rate
-              calculatedAmount = pkg.cbm * rate.rate;
-            } else {
-              // AIR: Weight × Rate
-              calculatedAmount = pkg.weight * rate.rate;
-              unitType = "KG";
-            }
-          }
+      packageWithCalculations.rate = rate;
+      packageWithCalculations.unitType = unitType;
+      packageWithCalculations.calculatedAmount = calculatedAmount;
 
-          return {
-            packageId: pkg.id,
-            trackingCode: pkg.trackingCode,
-            description: pkg.description || "",
-            weight: pkg.weight,
-            cbm: pkg.cbm,
-            customerId: pkg.customerId,
-            customerName: `${pkg.customer?.firstName} ${pkg.customer?.lastName}`,
-            rate: rateValue,
-            calculatedAmount,
-            currency: rate?.currency || "USD",
-            unitType,
-          };
-        });
+      return packageWithCalculations;
+    });
+  }, [
+    paginatedUnassignedPackages,
+    selectedPackageIds,
+    currentShippingRates,
+    shippingMode,
+  ]);
 
-      setPackageAssignments(assignments);
-    } else {
-      setPackageAssignments([]);
+  // Calculate totals for selected packages
+  const totals = selectedPackages.reduce(
+    (acc, pkg) => {
+      acc.packageCount += 1;
+      acc.weightTotal += pkg.weight || 0;
+      acc.cbmTotal += pkg.cbm || 0;
+      acc.usdTotal += pkg.calculatedAmount || 0;
+      return acc;
+    },
+    {
+      packageCount: 0,
+      weightTotal: 0,
+      cbmTotal: 0,
+      usdTotal: 0,
+      ghsTotal: 0,
     }
-  }, [unassignedPackages?.data, shippingRates, selectedPackageIds]);
-
-  // Totals calculation
-  const totals = packageAssignments.reduce(
-    (acc, pkg) => ({
-      usdTotal:
-        acc.usdTotal + (pkg.currency === "USD" ? pkg.calculatedAmount || 0 : 0),
-      ghsTotal:
-        acc.ghsTotal + (pkg.currency === "GHS" ? pkg.calculatedAmount || 0 : 0),
-      weightTotal: acc.weightTotal + pkg.weight,
-      cbmTotal: acc.cbmTotal + pkg.cbm,
-      packageCount: acc.packageCount + 1,
-    }),
-    { usdTotal: 0, ghsTotal: 0, weightTotal: 0, cbmTotal: 0, packageCount: 0 }
   );
 
   const handleAddPackage = (packageId: string) => {
@@ -166,12 +125,104 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
   };
 
   const handleRemovePackage = (packageId: string) => {
-    setSelectedPackageIds((prev) => prev.filter((id) => id !== packageId));
+    try {
+      removePackagesFromPackingList.mutateAsync({
+        id: packingListId,
+        packageIds: packageId,
+      });
+      setSelectedPackageIds((prev) => prev.filter((id) => id !== packageId));
+    } catch (error) {
+      handleError(error);
+    }
   };
 
-  const handleConfirm = () => {
-    onConfirm(selectedPackageIds);
+  const handleAssignPackages = () => {
+    try {
+      addPackagesToPackingList.mutateAsync({
+        id: packingListId,
+        packageIds: selectedPackageIds,
+      });
+      toast.success(`${selectedPackageIds.length} packages added successfully`);
+      setSelectedPackageIds([]);
+      onConfirm();
+    } catch (error) {
+      handleError(error);
+    }
   };
+
+  const handleFinalize = async () => {
+    try {
+      await finalizePackingList.mutateAsync(packingListId);
+      toast.success(`Packing list finalized successfully`);
+      setSelectedPackageIds([]);
+      onConfirm();
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  // Assigned packages table columns
+  const assignedPackageColumns = [
+    {
+      title: "Tracking Code",
+      dataIndex: "trackingCode",
+      key: "trackingCode",
+      width: 120,
+    },
+    {
+      title: "Customer",
+      dataIndex: "customer",
+      key: "customer",
+      render: (customer: Customer) =>
+        customer ? `${customer.firstName} ${customer.lastName}` : "N/A",
+      width: 150,
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
+      ellipsis: true,
+      width: 200,
+    },
+    {
+      title: "Weight (kg)",
+      dataIndex: "weight",
+      key: "weight",
+      width: 100,
+      render: (weight: number) => (weight ? weight.toFixed(2) : "0.00"),
+    },
+    {
+      title: "CBM",
+      dataIndex: "cbm",
+      key: "cbm",
+      width: 80,
+      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "0.000"),
+    },
+    {
+      title: "Mode",
+      dataIndex: "shippingMode",
+      key: "shippingMode",
+      width: 80,
+      render: (mode: string) => mode,
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 100,
+      render: (_: any, record: Package) => (
+        <Button
+          type="link"
+          danger
+          icon={<MinusOutlined />}
+          loading={isRemovingPackages}
+          onClick={() => handleRemovePackage(record.id)}
+          size="small"
+        >
+          Remove
+        </Button>
+      ),
+    },
+  ];
 
   // Package table columns for available packages
   const availablePackageColumns = [
@@ -201,14 +252,14 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
       dataIndex: "weight",
       key: "weight",
       width: 100,
-      render: (weight: number) => weight ? weight.toFixed(2) : "0.00",
+      render: (weight: number) => (weight ? weight.toFixed(2) : "0.00"),
     },
     {
       title: "CBM",
       dataIndex: "cbm",
       key: "cbm",
       width: 80,
-      render: (cbm: number) => cbm ? cbm.toFixed(3) : "0.000",
+      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "0.000"),
     },
     {
       title: "Mode",
@@ -227,6 +278,7 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
           icon={<PlusOutlined />}
           onClick={() => handleAddPackage(record.id)}
           size="small"
+          disabled={selectedPackageIds.includes(record.id)}
         >
           Add
         </Button>
@@ -244,22 +296,24 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
     },
     {
       title: "Customer",
-      dataIndex: "customerName",
-      key: "customerName",
+      dataIndex: "customer",
+      key: "customer",
+      render: (customer: Customer) =>
+        customer ? `${customer.firstName} ${customer.lastName}` : "N/A",
       width: 150,
     },
     {
       title: "Weight (kg)",
       dataIndex: "weight",
       key: "weight",
-      render: (weight: number) => weight ? weight.toFixed(2) : "0.00",
+      render: (weight: number) => (weight ? weight.toFixed(2) : "0.00"),
       width: 100,
     },
     {
       title: "CBM",
       dataIndex: "cbm",
       key: "cbm",
-      render: (cbm: number) => cbm ? cbm.toFixed(3) : "0.000",
+      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "0.000"),
       width: 80,
     },
     {
@@ -273,27 +327,27 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
       dataIndex: "rate",
       key: "rate",
       width: 100,
-      render: (rate: number, record: PackageAssignment) =>
-        rate ? `${record.currency} ${rate.toFixed(2)}` : "No rate",
+      render: (rate: number, record: Package) =>
+        rate ? `${rate.toFixed(2)}` : "No rate",
     },
     {
       title: "Amount",
       dataIndex: "calculatedAmount",
       key: "calculatedAmount",
       width: 100,
-      render: (amount: number, record: PackageAssignment) =>
-        amount ? `${record.currency} ${amount.toFixed(2)}` : "0.00",
+      render: (amount: number, record: Package) =>
+        amount ? `${amount.toFixed(2)}` : "0.00",
     },
     {
       title: "Actions",
       key: "actions",
       width: 100,
-      render: (_: any, record: PackageAssignment) => (
+      render: (_: any, record: Package) => (
         <Button
           type="link"
           danger
           icon={<MinusOutlined />}
-          onClick={() => handleRemovePackage(record.packageId)}
+          onClick={() => handleRemovePackage(record.id)}
           size="small"
         >
           Remove
@@ -304,7 +358,7 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
 
   return (
     <Modal
-      title={title}
+      title={`Manage Packages ${packingList?.name || ""}`}
       open={visible}
       onCancel={onCancel}
       width={1400}
@@ -315,16 +369,26 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
         <Button
           key="confirm"
           type="primary"
-          onClick={handleConfirm}
-          loading={loading}
-          disabled={selectedPackageIds.length === 0}
+          onClick={handleAssignPackages}
+          loading={isAddingPackages}
+          disabled={selectedPackages.length === 0}
         >
-          {confirmButtonText} ({selectedPackageIds.length})
+          Add Selected Packages ({selectedPackages.length})
+        </Button>,
+        // finalized
+        <Button
+          key="finalize"
+          type="primary"
+          onClick={handleFinalize}
+          loading={isFinalizing}
+          disabled={packingList?.totalPackages === 0}
+        >
+          Finalize Selection ({packingList?.totalPackages})
         </Button>,
       ]}
     >
       <div className="space-y-4">
-        {selectedPackageIds.length > 0 && (
+        {selectedPackages.length > 0 && (
           <Alert
             message="Selected Packages Summary"
             description={
@@ -333,7 +397,8 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
                   <Text strong>Packages:</Text> {totals.packageCount}
                 </Col>
                 <Col span={4}>
-                  <Text strong>Total Weight:</Text> {totals.weightTotal.toFixed(2)} kg
+                  <Text strong>Total Weight:</Text>{" "}
+                  {totals.weightTotal.toFixed(2)} kg
                 </Col>
                 <Col span={4}>
                   <Text strong>Total CBM:</Text> {totals.cbmTotal.toFixed(3)}
@@ -356,20 +421,45 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
         )}
 
         <div className="grid grid-cols-1 gap-6">
+          {/* Assigned Packages */}
+          <div>
+            <Text strong className="text-lg mb-2 block">
+              Assigned Packages ({packingList?.totalPackages})
+            </Text>
+            {packingList?.packages && packingList.packages.length > 0 ? (
+              <Table
+                columns={assignedPackageColumns}
+                dataSource={packingList?.packages || []}
+                rowKey="id"
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: false,
+                  showQuickJumper: false,
+                }}
+                scroll={{ y: 400 }}
+                size="small"
+              />
+            ) : (
+              <Text>No packages assigned to this packing list.</Text>
+            )}
+          </div>
+
           {/* Available Packages */}
           <div>
             <Text strong className="text-lg mb-2 block">
-              Available Packages ({availablePackages.length})
+              Available Packages ({paginatedUnassignedPackages?.length || 0})
             </Text>
             <Table
               columns={availablePackageColumns}
-              dataSource={availablePackages}
-              loading={packagesLoading}
+              dataSource={paginatedUnassignedPackages || []}
               rowKey="id"
               pagination={{
                 pageSize: 10,
                 showSizeChanger: false,
                 showQuickJumper: false,
+                onChange: (page) => {
+                  setUnassignedPage(page);
+                },
               }}
               scroll={{ y: 400 }}
               size="small"
@@ -379,12 +469,12 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
           {/* Selected Packages */}
           <div>
             <Text strong className="text-lg mb-2 block">
-              Selected Packages ({packageAssignments.length})
+              Selected Packages ({selectedPackageIds.length})
             </Text>
             <Table
               columns={selectedPackageColumns}
-              dataSource={packageAssignments}
-              rowKey="packageId"
+              dataSource={selectedPackages}
+              rowKey="id"
               pagination={false}
               scroll={{ y: 400 }}
               size="small"
@@ -415,7 +505,7 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
           </div>
         </div>
 
-        {packageAssignments.some((p) => !p.rate) && (
+        {selectedPackages.some((p: PackageWithCalculations) => !p.rate) && (
           <Alert
             message="Warning"
             description="Some packages don't have matching shipping rates. Please check shipping rates configuration."

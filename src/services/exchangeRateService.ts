@@ -23,9 +23,7 @@ export const exchangeRateService = {
           page,
           limit,
           sortBy,
-          sortOrder,
-          fromCurrency: "USD",
-          toCurrency: "GHS",
+          sortOrder
         },
       }
     );
@@ -39,5 +37,9 @@ export const exchangeRateService = {
       toCurrency: "GHS",
     });
     return res.data;
+  },
+
+  async deleteExchangeRate(id: string): Promise<void> {
+    await apiService.delete(`/exchange-rates/${id}`);
   },
 };

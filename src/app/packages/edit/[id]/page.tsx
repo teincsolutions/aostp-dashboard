@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -22,13 +22,16 @@ import { CustomerModal } from "@/components/CustomerModal";
 import { Form as AntdForm } from "antd";
 import { useGetPackage, usePackageIntake } from "@/hooks/usePackageIntake";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
-import { CreatePackagePayload } from "@/types/package";
+import { UpdatePackagePayload } from "@/types/package";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
-import { CustomerCreatePayload, CustomerUpdatePayload } from "@/types/customer";
-import { UploadProps } from "antd/lib";
+import { CustomerCreatePayload } from "@/types/customer";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
+import { useWarehouseStore } from "@/store/warehouseStore";
+import { useWarehouses } from "@/hooks/useWarehouse";
+import { ShippingMode } from "@/types/exchangeRate";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -63,11 +66,24 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
     visible: false,
     url: "",
   });
-  const [tablePage, setTablePage] = useState(1);
+
+  // Get current user, global warehouse selection, and data
+  const user = useAuthStore((state) => state.user);
+  const { selectedWarehouseId } = useWarehouseStore();
+  const { data: warehouses } = useWarehouses();
+
+  // Determine if user is admin and get current warehouse details
+  const isAdmin = user?.role === "SUPER_ADMIN";
+
+  // Update form field when warehouse selection changes from header
+  useEffect(() => {
+    if (selectedWarehouseId) {
+      form.setFieldsValue({ warehouseId: selectedWarehouseId });
+    }
+  }, [selectedWarehouseId, form]);
 
   // Customer modal state
   const [customerModalVisible, setCustomerModalVisible] = useState(false);
-  const [customerModalForm] = AntdForm.useForm();
   const [customerModalLoading, setCustomerModalLoading] = useState(false);
   const { data: customers, isLoading: customersLoading } = useCustomers({});
 
@@ -89,9 +105,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
   };
 
   // Handler for customer creation (backend)
-  const handleCreateCustomer = async (
-    values: any
-  ) => {
+  const handleCreateCustomer = async (values: any) => {
     setCustomerModalLoading(true);
     try {
       // Only handle create payloads (has firstName and lastName as required)
@@ -152,47 +166,8 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
     return true;
   };
 
-  const normFile = (e: unknown): UploadFile[] => {
-    if (Array.isArray(e)) return e as UploadFile[];
-    return (e as { fileList?: UploadFile[] })?.fileList || [];
-  };
-
   const handlePreview = async (file: UploadFile) => {
     setPreview({ visible: true, url: file.url || file.thumbUrl || "" });
-  };
-
-  const handlePhotoUpload = async (
-    options: Parameters<
-      NonNullable<UploadProps["customRequest"]>
-    >[0]
-  ) => {
-    try {
-      if (typeof options.file === "string") {
-        throw new Error("Invalid file type");
-      }
-      const file = options.file as RcFile;
-
-      // Upload using the pictures endpoint
-      const uploadedList = await uploadPackageFile({
-        folder: "pictures",
-        files: [file],
-      });
-      const uploaded = uploadedList[0]; // Assuming it returns array as in the example
-      setPhotoList((prev) => [
-        ...prev,
-        {
-          uid: file.uid,
-          name: file.name,
-          url: uploaded.url,
-          customKey: uploaded.key,
-          status: "done",
-        } as UploadFile & { customKey?: string },
-      ]);
-      if (options.onSuccess) options.onSuccess("ok");
-    } catch (err) {
-      toast.error("Photo upload failed on selection");
-      if (options.onError) options.onError(new Error("Photo upload failed"));
-    }
   };
 
   // Populate form when package data is loaded
@@ -216,7 +191,6 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
         weight: packageData.weight,
         cbm: packageData.cbm,
         quantity: packageData.quantity,
-        value: 0, // Default since not in package data
         shippingMode: packageData.shippingMode,
         airShippingType: packageData.airShippingType || "",
         warehouseId: packageData.warehouseId,
@@ -227,7 +201,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
     }
   }, [packageData, form]);
 
-  const onFinish = async (values: CreatePackagePayload) => {
+  const onFinish = async (values: UpdatePackagePayload) => {
     try {
       // Prepare uploaded photos for payload (include both existing and new uploaded photos)
       const uploadedPhotos = photoList.map((photo) => ({
@@ -236,18 +210,14 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
       }));
 
       // Create payload
-      const payload: CreatePackagePayload = {
-        trackingCode: values.trackingCode,
-        customerId: values.customerId,
+      const payload: UpdatePackagePayload = {
         description: values.description,
         weight: values.weight,
         cbm: values.cbm,
         quantity: values.quantity,
-        value: values.value,
         shippingMode: values.shippingMode,
         warehouseId: values.warehouseId || "W1",
         notes: values.notes,
-        photos: uploadedPhotos,
       };
 
       // Only add airShippingType if shippingMode is AIR and value exists
@@ -321,9 +291,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
               Edit Package - {packageData.trackingCode}
             </Title>
             <div className="flex gap-2">
-              <Button
-                onClick={() => router.push("/packages")}
-              >
+              <Button onClick={() => router.push("/packages")}>
                 Back to Packages
               </Button>
               <Button
@@ -355,11 +323,21 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                     name="trackingCode"
                     rules={[
                       { required: true, message: "Tracking code is required" },
-                      { min: 3, message: "Tracking code must be at least 3 characters" },
-                      { pattern: /^[A-Za-z0-9-]+$/, message: "Only letters, numbers, and hyphens allowed" }
+                      {
+                        min: 3,
+                        message: "Tracking code must be at least 3 characters",
+                      },
+                      {
+                        pattern: /^[A-Za-z0-9-]+$/,
+                        message: "Only letters, numbers, and hyphens allowed",
+                      },
                     ]}
                   >
-                    <Input className="w-full" placeholder="Enter tracking code" />
+                    <Input
+                      disabled
+                      className="w-full"
+                      placeholder="Enter tracking code"
+                    />
                   </Form.Item>
 
                   <Form.Item
@@ -368,6 +346,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                     rules={[{ required: true }]}
                   >
                     <Select
+                      disabled
                       showSearch
                       placeholder="Select customer"
                       loading={customersLoading}
@@ -398,7 +377,10 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                   <Form.Item
                     label="Description"
                     name="description"
-                    rules={[{ required: true, message: "Description is required" }, { max: 200 }]}
+                    rules={[
+                      { required: true, message: "Description is required" },
+                      { max: 200 },
+                    ]}
                   >
                     <Input.TextArea
                       maxLength={200}
@@ -425,7 +407,9 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                     </Select>
                   </Form.Item>
                   <Form.Item
-                    shouldUpdate={(prevValues, currentValues) => prevValues.shippingMode !== currentValues.shippingMode}
+                    shouldUpdate={(prevValues, currentValues) =>
+                      prevValues.shippingMode !== currentValues.shippingMode
+                    }
                   >
                     {({ getFieldValue }) => {
                       const shippingMode = getFieldValue("shippingMode");
@@ -436,11 +420,15 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                           rules={[
                             {
                               required: true,
-                              message: "Air shipping type is required for AIR shipping"
-                            }
+                              message:
+                                "Air shipping type is required for AIR shipping",
+                            },
                           ]}
                         >
-                          <Select className="w-full" placeholder="Select air shipping type">
+                          <Select
+                            className="w-full"
+                            placeholder="Select air shipping type"
+                          >
                             <Option value="NORMAL_AIR">NORMAL AIR</Option>
                             <Option value="EXPRESS_AIR">EXPRESS AIR</Option>
                             <Option value="BATTERY_GOODS">BATTERY GOODS</Option>
@@ -455,20 +443,24 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
               {/* Measurements & Warehouse Card */}
               <Card className="shadow-sm rounded-2xl">
                 <div className="space-y-4">
-                  <Form.Item
-                    label="Weight (kg)"
-                    name="weight"
-                    rules={[{ required: true, type: "number", min: 0.01 }]}
-                  >
-                    <InputNumber min={0.01} className="w-full" />
-                  </Form.Item>
-                  <Form.Item
-                    label="CBM (m³)"
-                    name="cbm"
-                    rules={[{ required: true, type: "number", min: 0 }]}
-                  >
-                    <InputNumber min={0} className="w-full" />
-                  </Form.Item>
+                  {form.getFieldValue("shippingMode") === ShippingMode.AIR && (
+                    <Form.Item
+                      label="Weight (kg)"
+                      name="weight"
+                      rules={[{ required: true, type: "number", min: 0.01 }]}
+                    >
+                      <InputNumber min={0.01} className="w-full" />
+                    </Form.Item>
+                  )}
+                  {form.getFieldValue("shippingMode") === ShippingMode.SEA && (
+                    <Form.Item
+                      label="CBM (m³)"
+                      name="cbm"
+                      rules={[{ required: true, type: "number", min: 0 }]}
+                    >
+                      <InputNumber min={0} className="w-full" />
+                    </Form.Item>
+                  )}
                   <Form.Item
                     label="Quantity"
                     name="quantity"
@@ -479,15 +471,23 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                   <Form.Item
                     label="Warehouse"
                     name="warehouseId"
+                    rules={[
+                      { required: true, message: "Please select a warehouse" },
+                    ]}
                   >
-                    <Input className="w-full" />
-                  </Form.Item>
-                  <Form.Item
-                    label="Value"
-                    name="value"
-                    rules={[{ required: true, type: "number", min: 0 }]}
-                  >
-                    <InputNumber min={0} className="w-full" />
+                    <Select
+                      className="w-full"
+                      placeholder="Select warehouse"
+                      disabled={!isAdmin}
+                      value={selectedWarehouseId}
+                    >
+                      {warehouses?.data?.map((warehouse) => (
+                        <Select.Option key={warehouse.id} value={warehouse.id}>
+                          {warehouse.warehouseId} - {warehouse.name} (
+                          {warehouse.location})
+                        </Select.Option>
+                      ))}
+                    </Select>
                   </Form.Item>
                   <Form.Item label="Notes" name="notes">
                     <Input.TextArea className="w-full" />
@@ -497,54 +497,29 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
               {/* Package Photos Card (Full width) */}
               <div className="md:col-span-2">
                 <Card className="shadow-sm rounded-2xl">
-                  <Form.Item
-                    label="Package Photos"
-                    name="photos"
-                    getValueFromEvent={normFile}
-                    valuePropName="fileList"
-                  >
-                    <Upload
-                      multiple
-                      listType="picture-card"
-                      customRequest={handlePhotoUpload}
-                      fileList={photoList}
-                      beforeUpload={beforeUpload}
-                      onPreview={handlePreview}
-                      showUploadList={{
-                        showPreviewIcon: true,
-                        showRemoveIcon: true,
-                      }}
-                      onRemove={(file) => {
-                        setPhotoList((prev) =>
-                          prev.filter((f) => f.uid !== file.uid)
-                        );
-                      }}
-                    >
-                      <Button icon={<UploadOutlined />}>Select Photos</Button>
-                    </Upload>
-                    <Modal
-                      open={preview.visible}
-                      footer={null}
-                      onCancel={() => setPreview({ visible: false, url: "" })}
-                    >
-                      <Image
-                        alt="Preview"
-                        style={{ width: "100%" }}
-                        src={preview.url}
-                      />
-                    </Modal>
-                  </Form.Item>
+                  <Upload
+                    multiple
+                    listType="picture-card"
+                    fileList={photoList}
+                    beforeUpload={beforeUpload}
+                    onPreview={handlePreview}
+                    showUploadList={{
+                      showPreviewIcon: true,
+                      showRemoveIcon: false,
+                    }}
+                    onRemove={(file) => {
+                      setPhotoList((prev) =>
+                        prev.filter((f) => f.uid !== file.uid)
+                      );
+                    }}
+                  ></Upload>
                 </Card>
               </div>
             </div>
 
             {/* Sticky Footer */}
             <div className="sticky bottom-0 bg-white/80 backdrop-blur border-t p-3 flex items-center gap-3 justify-end mt-4 z-10">
-              <Button
-                onClick={() => router.push("/packages")}
-              >
-                Cancel
-              </Button>
+              <Button onClick={() => router.push("/packages")}>Cancel</Button>
               <Button
                 type="primary"
                 loading={updatePackagePending || uploadFilePending}

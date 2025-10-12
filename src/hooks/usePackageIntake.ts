@@ -13,6 +13,7 @@ import {
 } from "@/services/packageService";
 import {
   CreatePackagePayload,
+  UpdatePackagePayload,
 } from "@/types/package";
 
 export function useGetPackage(id: string) {
@@ -83,7 +84,7 @@ export function usePackageIntake() {
     status: updatePackageStatus,
     error: updatePackageError,
   } = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: CreatePackagePayload }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdatePackagePayload }) =>
       updatePackageIntake(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recentIntakes"] });

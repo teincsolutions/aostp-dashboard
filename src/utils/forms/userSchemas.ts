@@ -3,10 +3,14 @@ import { Role } from "@/types/user";
 
 // Schema for creating a new user
 export const userCreateSchema = Yup.object().shape({
-  fullName: Yup.string()
-    .required("Full name is required")
-    .min(2, "Full name must be at least 2 characters")
-    .max(100, "Full name must be no more than 100 characters"),
+  firstName: Yup.string()
+    .required("First name is required")
+    .min(2, "First name must be at least 2 characters")
+    .max(50, "First name must be no more than 50 characters"),
+  lastName: Yup.string()
+    .required("Last name is required")
+    .min(2, "Last name must be at least 2 characters")
+    .max(50, "Last name must be no more than 50 characters"),
   username: Yup.string()
     .required("Username is required")
     .min(3, "Username must be at least 3 characters")
@@ -14,19 +18,15 @@ export const userCreateSchema = Yup.object().shape({
   email: Yup.string()
     .email("Invalid email format")
     .required("Email is required"),
-  phone: Yup.string()
-    .optional()
-    .matches(/^\+?[\d\s-\(\)]+$/, "Invalid phone number format"),
-  warehouseId: Yup.string().optional(),
-  isActive: Yup.boolean().required(),
-  force2FA: Yup.boolean().required(),
-  role: Yup.mixed<Role>()
-    .oneOf(Object.values(Role), "Invalid role selected")
-    .required("Role is required"),
   password: Yup.string()
     .optional()
     .min(6, "Password must be at least 6 characters")
     .max(128, "Password must be no more than 128 characters"),
+  role: Yup.mixed<Role>()
+    .oneOf(Object.values(Role), "Invalid role selected")
+    .required("Role is required"),
+  isActive: Yup.boolean().required(),
+  twoFactorEnabled: Yup.boolean().required(),
 });
 
 // Schema for updating an existing user (all fields optional)

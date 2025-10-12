@@ -8,12 +8,13 @@ export interface GetAuditLogsParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-  entityType?: AuditEntityType;
+  entity?: AuditEntityType;
   action?: AuditAction;
-  actor?: string;
+  userId?: string;
   dateFrom?: string;
   dateTo?: string;
   entityId?: string;
+  ipAddress?: string;
   search?: string;
 }
 

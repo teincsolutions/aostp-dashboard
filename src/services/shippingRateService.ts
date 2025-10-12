@@ -29,7 +29,9 @@ export const shippingRateService = {
   },
 
   // Set new shipping rate
-  async setShippingRate(payload: ShippingRateCreatePayload): Promise<ShippingRate> {
+  async setShippingRate(
+    payload: ShippingRateCreatePayload
+  ): Promise<ShippingRate> {
     const res = await apiService.post<ShippingRate>("/shipping-rates", {
       ...payload,
       currency: payload.currency || "USD",
@@ -38,8 +40,30 @@ export const shippingRateService = {
   },
 
   // Update shipping rate
-  async updateShippingRate(id: string, payload: Partial<ShippingRateCreatePayload>): Promise<ShippingRate> {
-    const res = await apiService.put<ShippingRate>(`/shipping-rates/${id}`, payload);
+  async updateShippingRate(
+    id: string,
+    payload: Partial<ShippingRateCreatePayload>
+  ): Promise<ShippingRate> {
+    const res = await apiService.patch<ShippingRate>(
+      `/shipping-rates/${id}`,
+      payload
+    );
+    return res.data;
+  },
+
+  // Get current active shipping rate by shipping mode
+  async getCurrentActiveRates(
+    shippingMode: ShippingMode,
+    params?: { airShippingType?: AirShippingType }
+  ): Promise<ShippingRate[]> {
+    const url = `/shipping-rates/current/${shippingMode}`;
+    const queryParams: any = {};
+    if (params?.airShippingType) {
+      queryParams.airShippingType = params.airShippingType;
+    }
+    const res = await apiService.get<ShippingRate[]>(url, {
+      params: queryParams,
+    });
     return res.data;
   },
 

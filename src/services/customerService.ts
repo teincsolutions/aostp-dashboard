@@ -1,20 +1,20 @@
 // src/services/customerService.ts
 
-import { apiService } from './api';
+import { PaginatedResponse } from "@/types/common";
+import { apiService } from "./api";
 import {
   Customer,
   CustomerCreatePayload,
   CustomerUpdatePayload,
   CustomerStats,
   CustomerStatus,
-} from '@/types/customer';
+} from "@/types/customer";
 
 export const customerService = {
   getCustomers: (params: Record<string, unknown>) =>
-    apiService.get<{ data: Customer[]; total: number }>('/customers', { params }),
+    apiService.get<PaginatedResponse<Customer>>("/customers", { params }),
 
-  getCustomerById: (id: string) =>
-    apiService.get<Customer>(`/customers/${id}`),
+  getCustomerById: (id: string) => apiService.get<Customer>(`/customers/${id}`),
 
   getCustomerByCode: (customerCode: string) =>
     apiService.get<Customer>(`/customers/code/${customerCode}`),
@@ -26,7 +26,7 @@ export const customerService = {
     apiService.get<CustomerStats>(`/customers/${id}/stats`),
 
   createCustomer: (payload: CustomerCreatePayload) =>
-    apiService.post<Customer>('/customers', payload),
+    apiService.post<Customer>("/customers", payload),
 
   updateCustomer: (id: string, payload: CustomerUpdatePayload) =>
     apiService.patch<Customer>(`/customers/${id}`, payload),
@@ -34,9 +34,9 @@ export const customerService = {
   toggleCustomerStatus: (id: string, isActive: boolean) =>
     apiService.patch<Customer>(`/customers/${id}`, { isActive }),
 
-  exportCustomers: (params: Record<string, unknown>, format: 'pdf' | 'excel') =>
+  exportCustomers: (params: Record<string, unknown>, format: "pdf" | "excel") =>
     apiService.get<Blob>(`/customers/export`, {
       params: { ...params, format },
-      responseType: 'blob',
+      responseType: "blob",
     }),
 };

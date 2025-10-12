@@ -1,18 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { containerService } from "@/services/containerService";
-import { GetContainersParams, ContainerCreatePayload, ContainerUpdatePayload, ExportFormat } from "@/types/container";
+import {
+  GetContainersParams,
+  ContainerCreatePayload,
+  ContainerUpdatePayload,
+  ExportFormat,
+} from "@/types/container";
 import { ContainerStatus } from "@/types/container";
 
 // Query keys for React Query
 export const containerKeys = {
   all: ["containers"] as const,
   lists: () => [...containerKeys.all, "list"] as const,
-  list: (params: GetContainersParams) => [...containerKeys.lists(), params] as const,
+  list: (params: GetContainersParams) =>
+    [...containerKeys.lists(), params] as const,
   active: () => [...containerKeys.all, "active"] as const,
-  dateRange: (startDate: string, endDate: string) => [...containerKeys.all, "dateRange", startDate, endDate] as const,
+  dateRange: (startDate: string, endDate: string) =>
+    [...containerKeys.all, "dateRange", startDate, endDate] as const,
   details: () => [...containerKeys.all, "detail"] as const,
   detail: (id: string) => [...containerKeys.details(), id] as const,
-  number: (containerNumber: string) => [...containerKeys.all, "number", containerNumber] as const,
+  number: (containerNumber: string) =>
+    [...containerKeys.all, "number", containerNumber] as const,
   statistics: (id: string) => [...containerKeys.all, "statistics", id] as const,
   manifest: (id: string) => [...containerKeys.all, "manifest", id] as const,
 } as const;
@@ -40,11 +48,17 @@ export const useActiveContainers = () => {
 };
 
 // Hook for fetching containers by date range
-export const useContainersByDateRange = (startDate: string, endDate: string) => {
+export const useContainersByDateRange = (
+  startDate: string,
+  endDate: string
+) => {
   return useQuery({
     queryKey: containerKeys.dateRange(startDate, endDate),
     queryFn: async () => {
-      const response = await containerService.getContainersByDateRange(startDate, endDate);
+      const response = await containerService.getContainersByDateRange(
+        startDate,
+        endDate
+      );
       return response.data;
     },
     enabled: !!startDate && !!endDate,
@@ -70,7 +84,9 @@ export const useContainerByNumber = (containerNumber: string) => {
   return useQuery({
     queryKey: containerKeys.number(containerNumber),
     queryFn: async () => {
-      const response = await containerService.getContainerByNumber(containerNumber);
+      const response = await containerService.getContainerByNumber(
+        containerNumber
+      );
       return response.data;
     },
     enabled: !!containerNumber,
@@ -111,10 +127,8 @@ export const useContainerMutations = () => {
 
   // Create container mutation
   const createContainerMutation = useMutation({
-    mutationFn: async (containerData: ContainerCreatePayload) => {
-      const response = await containerService.createContainer(containerData);
-      return response.data;
-    },
+    mutationFn: async (containerData: ContainerCreatePayload) =>
+      await containerService.createContainer(containerData),
     onSuccess: () => {
       // Invalidate and refetch containers list
       queryClient.invalidateQueries({ queryKey: containerKeys.lists() });
@@ -125,10 +139,13 @@ export const useContainerMutations = () => {
 
   // Update container mutation
   const updateContainerMutation = useMutation({
-    mutationFn: async ({ id, containerData }: { id: string; containerData: ContainerUpdatePayload }) => {
-      const response = await containerService.updateContainer(id, containerData);
-      return response.data;
-    },
+    mutationFn: async ({
+      id,
+      containerData,
+    }: {
+      id: string;
+      containerData: ContainerUpdatePayload;
+    }) => await containerService.updateContainer(id, containerData),
     onSuccess: (data) => {
       // Update the container in cache
       queryClient.setQueryData(containerKeys.detail(data.id), data);
@@ -137,7 +154,9 @@ export const useContainerMutations = () => {
       // Invalidate active containers
       queryClient.invalidateQueries({ queryKey: containerKeys.active() });
       // Invalidate container number cache
-      queryClient.invalidateQueries({ queryKey: containerKeys.number(data.containerNumber) });
+      queryClient.invalidateQueries({
+        queryKey: containerKeys.number(data.containerNumber),
+      });
     },
   });
 
@@ -145,11 +164,18 @@ export const useContainerMutations = () => {
   const deleteContainerMutation = useMutation({
     mutationFn: async (id: string) => {
       // First check the container status
-      const container = queryClient.getQueryData(containerKeys.detail(id)) as { status: ContainerStatus } | undefined;
-      if (container && (container.status === ContainerStatus.SHIPPED ||
-                       container.status === ContainerStatus.ARRIVED ||
-                       container.status === ContainerStatus.CLOSED)) {
-        throw new Error(`Cannot delete container with status ${container.status}. Only PLANNED or LOADED containers can be deleted.`);
+      const container = queryClient.getQueryData(containerKeys.detail(id)) as
+        | { status: ContainerStatus }
+        | undefined;
+      if (
+        container &&
+        (container.status === ContainerStatus.SHIPPED ||
+          container.status === ContainerStatus.ARRIVED ||
+          container.status === ContainerStatus.CLOSED)
+      ) {
+        throw new Error(
+          `Cannot delete container with status ${container.status}. Only PLANNED or LOADED containers can be deleted.`
+        );
       }
 
       await containerService.deleteContainer(id);
@@ -179,14 +205,25 @@ export const useContainerMutations = () => {
       // Invalidate active containers
       queryClient.invalidateQueries({ queryKey: containerKeys.active() });
       // Invalidate container number cache
-      queryClient.invalidateQueries({ queryKey: containerKeys.number(data.containerNumber) });
+      queryClient.invalidateQueries({
+        queryKey: containerKeys.number(data.containerNumber),
+      });
     },
   });
 
   // Export container manifest mutation
   const exportContainerManifestMutation = useMutation({
-    mutationFn: async ({ id, format }: { id: string; format: ExportFormat }) => {
-      const response = await containerService.exportContainerManifest(id, format);
+    mutationFn: async ({
+      id,
+      format,
+    }: {
+      id: string;
+      format: ExportFormat;
+    }) => {
+      const response = await containerService.exportContainerManifest(
+        id,
+        format
+      );
       return response.data;
     },
   });

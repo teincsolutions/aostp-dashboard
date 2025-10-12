@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use, useEffect, useState } from "react";
-import { Spin } from "antd";
+import { Button, Spin } from "antd";
 import { useAuth } from "@/hooks/useAuth";
 import { redirect } from "next/navigation";
 import { usePathname } from "next/navigation";
@@ -58,7 +58,11 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
         <p className="text-sm text-gray-500">
           Required roles: {requiredRoles.join(", ")}
         </p>
-        <p className="text-sm text-gray-500">Your role: {user.role}</p>
+        <p className="text-sm text-gray-500">Your role: {user.role.replace("_", " ")}</p>
+
+        <div className="mt-4">
+          <Button onClick={() => redirect("/")}>Go Home</Button>
+        </div>
       </div>
     );
   }

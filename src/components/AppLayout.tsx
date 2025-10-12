@@ -44,7 +44,7 @@ export const menuItems: Array<MenuItem> = [
     key: "/package-intake",
     icon: <BoxPlotOutlined />,
     label: "Package Intake",
-    roles: ["SUPER_ADMIN", "PAYMENT_CLERK"],
+    roles: ["SUPER_ADMIN", "PAYMENT_CLERK", "OPERATIONS_CLERK"],
   },
   
   // Group: Packages, Packing Lists, Warehouse, Containers
@@ -111,7 +111,7 @@ export const menuItems: Array<MenuItem> = [
     key: "/notifications",
     icon: <FileTextOutlined />,
     label: "Notifications",
-    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
+    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK", "FINANCE_MANAGER", "PAYMENT_CLERK"],
   },
   {
     key: "/audit-logs",

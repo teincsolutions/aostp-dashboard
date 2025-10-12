@@ -7,6 +7,7 @@ import {
   Receipt,
   Package,
   PackageItem,
+  UpdatePackagePayload,
 } from "@/types/package";
 
 export const createPackage = async (
@@ -69,7 +70,7 @@ export const getPackage = async (id: string): Promise<Package> => {
 
 export const updatePackageIntake = async (
   id: string,
-  payload: CreatePackagePayload
+  payload: UpdatePackagePayload
 ): Promise<Package> => {
   const res = await apiService.patch(`/packages/${id}`, payload);
   return res.data;

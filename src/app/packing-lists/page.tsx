@@ -56,6 +56,7 @@ import type { Dayjs } from "dayjs";
 import type { RangePickerProps } from "antd/es/date-picker";
 import { Role } from "@/types/user";
 import dayjs from "dayjs";
+import { on } from "events";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -69,7 +70,6 @@ export default function PackingListsPage() {
     [Dayjs | null, Dayjs | null] | null
   >(null);
   const [shipmentModeFilter, setShipmentModeFilter] = useState<string>("");
-  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isDetailsDrawerVisible, setIsDetailsDrawerVisible] = useState(false);
   const [isPackageAssignmentModalVisible, setIsPackageAssignmentModalVisible] =
@@ -77,8 +77,6 @@ export default function PackingListsPage() {
   const [editingPackingList, setEditingPackingList] =
     useState<PackingList | null>(null);
   const [detailsPackingList, setDetailsPackingList] =
-    useState<PackingList | null>(null);
-  const [assignmentPackingList, setAssignmentPackingList] =
     useState<PackingList | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -102,15 +100,11 @@ export default function PackingListsPage() {
   const { data: activeContainers = [] } = useActiveContainers();
 
   const {
-    createPackingList,
     updatePackingList,
     deletePackingList,
-    addPackagesToPackingList,
     exportPackingList,
-    isCreating,
     isUpdating,
     isDeleting,
-    isAddingPackages,
     isExporting,
   } = usePackingListMutations();
 
@@ -120,21 +114,6 @@ export default function PackingListsPage() {
   const { data: packingListSummary } = usePackingListSummary(
     detailsPackingList?.id || ""
   );
-  const { data: assignedPackagesSummary } = usePackingListSummary(
-    assignmentPackingList?.id || ""
-  );
-  const { data: unassignedPackagesForModal } = useUnassignedPackages({
-    page: 1,
-    limit: 1000,
-  });
-  const { activeRates: shippingRatesForModal = [] } = useShippingRates();
-
-  // Get assigned package IDs to filter them out from available packages
-  const assignedPackageIds = useMemo(() => {
-    return assignedPackagesSummary?.data?.customerSummaries?.flatMap(
-      (summary) => summary.packages.map((pkg) => pkg.id)
-    ) || [];
-  }, [assignedPackagesSummary?.data?.customerSummaries]);
 
   // Use all active containers
   const filteredContainers = activeContainers;
@@ -160,16 +139,6 @@ export default function PackingListsPage() {
     setCurrentPage(1);
   };
 
-  const handleCreatePackingList = async (values: PackingListCreatePayload) => {
-    try {
-      await createPackingList.mutateAsync(values);
-      toast.success("Packing list created successfully");
-      setIsCreateModalVisible(false);
-      createForm.resetFields();
-    } catch (error: any) {
-      toast.error("Failed to create packing list", error.response.data.message);
-    }
-  };
 
   const handleEditPackingList = (packingList: PackingList) => {
     setEditingPackingList(packingList);
@@ -235,28 +204,12 @@ export default function PackingListsPage() {
     }
   };
 
+  const [currentAssignmentsPackingListId, setCurrentAssignmentsPackingListId] =
+    useState<string>("");
+
   const handleManagePackages = (packingList: PackingList) => {
-    setAssignmentPackingList(packingList);
+    setCurrentAssignmentsPackingListId(packingList.id);
     setIsPackageAssignmentModalVisible(true);
-  };
-
-  const handlePackageAssignmentConfirm = async (packageIds: string[]) => {
-    if (!assignmentPackingList) return;
-
-    try {
-      await addPackagesToPackingList.mutateAsync({
-        id: assignmentPackingList.id,
-        packageIds,
-      });
-      toast.success(`${packageIds.length} packages added successfully`);
-      setIsPackageAssignmentModalVisible(false);
-      setAssignmentPackingList(null);
-    } catch (error: any) {
-      toast.error(
-        "Failed to add packages to packing list",
-        error.response.data.message
-      );
-    }
   };
 
   // Filter options
@@ -292,7 +245,7 @@ export default function PackingListsPage() {
     ).length || 0;
   const totalPackages =
     packingLists?.data?.reduce(
-      (sum: number, pl: PackingList) => sum + (pl.packageCount || 0),
+      (sum: number, pl: PackingList) => sum + (pl.totalPackages || 0),
       0
     ) || 0;
 
@@ -301,9 +254,7 @@ export default function PackingListsPage() {
     handleEditPackingList,
     handleDeletePackingList,
     handleViewDetails,
-    handleExportPackingList,
     isDeleting,
-    isExporting,
     handleManagePackages
   );
 
@@ -441,7 +392,7 @@ export default function PackingListsPage() {
               pagination={{
                 current: currentPage,
                 pageSize,
-                total: packingLists?.meta?.totalItems || 0,
+                total: packingLists?.meta?.total || 0,
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) =>
@@ -453,119 +404,6 @@ export default function PackingListsPage() {
               }}
             />
           </Card>
-
-          {/* Create Packing List Modal */}
-          <Modal
-            title="Create New Packing List"
-            open={isCreateModalVisible}
-            onCancel={() => {
-              setIsCreateModalVisible(false);
-              createForm.resetFields();
-            }}
-            footer={null}
-            width={700}
-          >
-            <Form
-              form={createForm}
-              layout="vertical"
-              onFinish={handleCreatePackingList}
-            >
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="name"
-                    label="Packing List Name"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please enter packing list name",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="containerId"
-                    label="Container"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please select a container",
-                      },
-                    ]}
-                  >
-                    <Select
-                      showSearch
-                      placeholder="Search and select container"
-                      filterOption={(input, option) =>
-                        (option?.children?.toString() ?? "")
-                          .toLowerCase()
-                          .includes(input.toLowerCase())
-                      }
-                      loading={!activeContainers}
-                    >
-                      {filteredContainers?.map((container) => (
-                        <Option key={container.id} value={container.id}>
-                          {container.containerNumber} -{" "}
-                          {container.destinationCity} ({container.status})
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="loadingDate"
-                    label="Loading Date"
-                    rules={[
-                      { required: true, message: "Please select loading date" },
-                    ]}
-                  >
-                    <DatePicker className="w-full" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="loadingCity" label="Loading City">
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="eta" label="Estimated Time of Arrival">
-                    <DatePicker className="w-full" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="notes" label="Notes">
-                    <Input.TextArea rows={3} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={isCreating}>
-                    Create Packing List
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsCreateModalVisible(false);
-                      createForm.resetFields();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </Modal>
 
           {/* Edit Packing List Modal */}
           <Modal
@@ -621,7 +459,7 @@ export default function PackingListsPage() {
                 </Col>
                 <Col span={12}>
                   <Form.Item name="destinationCity" label="Destination City">
-                    <Input/>
+                    <Input />
                   </Form.Item>
                 </Col>
               </Row>
@@ -663,14 +501,13 @@ export default function PackingListsPage() {
             visible={isPackageAssignmentModalVisible}
             onCancel={() => {
               setIsPackageAssignmentModalVisible(false);
-              setAssignmentPackingList(null);
+              setCurrentAssignmentsPackingListId("");
             }}
-            onConfirm={handlePackageAssignmentConfirm}
-            title={`Manage Packages - ${assignmentPackingList?.name}`}
-            loading={isAddingPackages}
-            assignedPackageIds={assignedPackageIds}
-            unassignedPackages={unassignedPackagesForModal}
-            shippingRates={shippingRatesForModal}
+            onConfirm={()=>{
+              setIsPackageAssignmentModalVisible(false);
+              setCurrentAssignmentsPackingListId("");
+            }}
+            packingListId={currentAssignmentsPackingListId}
           />
 
           {/* Packing List Details Drawer */}
@@ -689,8 +526,12 @@ export default function PackingListsPage() {
                   <Descriptions.Item label="Name" span={2}>
                     {packingListDetails.name}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Container ID">
-                    {packingListDetails.containerId || "N/A"}
+                  <Descriptions.Item label="Container Number">
+                    {packingListDetails.container?.containerNumber || "N/A"}{" "}
+                    <br />
+                    <span className="text-gray-500 text-xs">
+                      {packingListDetails.container?.containerType || "N/A"}
+                    </span>
                   </Descriptions.Item>
                   <Descriptions.Item label="Destination City">
                     {packingListDetails.destinationCity || "N/A"}
@@ -726,37 +567,48 @@ export default function PackingListsPage() {
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Package Count">
-                    {packingListDetails.packageCount || 0}
+                    {packingListDetails.totalPackages || 0}
                   </Descriptions.Item>
                   <Descriptions.Item label="Notes" span={2}>
                     {packingListDetails.notes || "N/A"}
                   </Descriptions.Item>
                 </Descriptions>
 
-                {packingListSummary && packingListSummary.data && (
+                {packingListSummary && (
                   <>
                     <Divider>Summary by Customer</Divider>
                     <div className="space-y-4">
-                      {packingListSummary.data.customerSummaries.map(
-                        (summary: PackingListSummary["customerSummaries"][0]) => (
+                      {packingListSummary.customerSummaries.map(
+                        (
+                          summary: PackingListSummary["customerSummaries"][0]
+                        ) => (
                           <Card key={summary.customer.id} size="small">
                             <div>
                               <h4 className="font-medium mb-2">
-                                {summary.customer.name}
+                                {summary.customer.firstName}{" "}
+                                {summary.customer.lastName} ({" "}
+                                {summary.customer.customerCode})
                               </h4>
                               <p className="text-sm text-gray-600 mb-2">
-                                {summary.totals.packageCount} packages •{" "}
-                                {summary.totals.totalWeight}kg • {summary.totals.totalCbm}m³
+                                {summary.packageCount} packages •{" "}
+                                {summary.totalWeight}kg • {summary.totalCBM}m³
                               </p>
                               <div className="text-xs text-gray-500">
-                                Total Value: ${summary.totals.totalValue?.toFixed(2) || "0.00"}
+                                Total Value: $
+                                {summary?.totalValue?.toFixed(2) || "0.00"}
                               </div>
                               <div className="mt-2">
-                                <Text strong className="text-xs">Packages:</Text>
+                                <Text strong className="text-xs">
+                                  Packages:
+                                </Text>
                                 <div className="mt-1 max-h-20 overflow-y-auto">
                                   {summary.packages.map((pkg) => (
-                                    <div key={pkg.id} className="text-xs text-gray-600 border-b pb-1 mb-1 last:border-b-0">
-                                      {pkg.trackingCode} - {pkg.description} ({pkg.weight}kg, {pkg.cbm}m³)
+                                    <div
+                                      key={pkg.id}
+                                      className="text-xs text-gray-600 border-b pb-1 mb-1 last:border-b-0"
+                                    >
+                                      {pkg.trackingCode} - {pkg.description} (
+                                      {pkg.weight}kg, {pkg.cbm}m³)
                                     </div>
                                   ))}
                                 </div>
@@ -773,29 +625,39 @@ export default function PackingListsPage() {
                           <Col span={6}>
                             <Statistic
                               title="Total Packages"
-                              value={packingListSummary.data.totals.packageCount}
-                              valueStyle={{ color: '#722ed1' }}
+                              value={
+                                packingListSummary.packingList.totalPackages
+                              }
+                              valueStyle={{ color: "#722ed1" }}
                             />
                           </Col>
                           <Col span={6}>
                             <Statistic
                               title="Total Weight (kg)"
-                              value={packingListSummary.data.totals.totalWeight.toFixed(2)}
-                              valueStyle={{ color: '#1890ff' }}
+                              value={packingListSummary.packingList.totalWeight?.toFixed(
+                                2
+                              )}
+                              valueStyle={{ color: "#1890ff" }}
                             />
                           </Col>
                           <Col span={6}>
                             <Statistic
                               title="Total CBM"
-                              value={packingListSummary.data.totals.totalCbm.toFixed(2)}
-                              valueStyle={{ color: '#52c41a' }}
+                              value={packingListSummary.packingList.totalCBM?.toFixed(
+                                2
+                              )}
+                              valueStyle={{ color: "#52c41a" }}
                             />
                           </Col>
                           <Col span={6}>
                             <Statistic
                               title="Total Value"
-                              value={`$${packingListSummary.data.totals.totalValue?.toFixed(2) || "0.00"}`}
-                              valueStyle={{ color: '#faad14' }}
+                              value={`$${
+                                packingListSummary.packingList?.totalValue?.toFixed(
+                                  2
+                                ) || "0.00"
+                              }`}
+                              valueStyle={{ color: "#faad14" }}
                             />
                           </Col>
                         </Row>

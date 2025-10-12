@@ -31,15 +31,16 @@ export const auditLogColumns: ColumnsType<AuditLog> = [
     dataIndex: "actor",
     key: "actor",
     render: (actor: AuditLog["actor"]) =>
+      !actor ? "-" :
       <Tooltip title={`${actor.name} (${actor.email})`}>
         <span>{actor.name}</span>
       </Tooltip>,
     width: 140,
   },
   {
-    title: "Entity Type",
-    dataIndex: "entityType",
-    key: "entityType",
+    title: "Entity",
+    dataIndex: "entity",
+    key: "entity",
     width: 120,
     filters: [
       { text: "User", value: "USER" },
@@ -53,13 +54,6 @@ export const auditLogColumns: ColumnsType<AuditLog> = [
       { text: "Shipping Rate", value: "SHIPPING_RATE" },
       { text: "Other", value: "OTHER" },
     ],
-  },
-  {
-    title: "Entity ID",
-    dataIndex: "entityId",
-    key: "entityId",
-    width: 120,
-    ellipsis: true,
   },
   {
     title: "Action",

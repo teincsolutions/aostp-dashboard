@@ -99,8 +99,8 @@ export const containerService = {
   // Create new container
   async createContainer(
     containerData: ContainerCreatePayload
-  ): Promise<ContainerResponse> {
-    const response = await apiService.post<ContainerResponse>(
+  ): Promise<Container> {
+    const response = await apiService.post<Container>(
       "/containers",
       containerData
     );
@@ -111,8 +111,8 @@ export const containerService = {
   async updateContainer(
     id: string,
     containerData: ContainerUpdatePayload
-  ): Promise<ContainerResponse> {
-    const response = await apiService.patch<ContainerResponse>(
+  ): Promise<Container> {
+    const response = await apiService.patch<Container>(
       `/containers/${id}`,
       containerData
     );

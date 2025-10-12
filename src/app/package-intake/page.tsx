@@ -13,7 +13,6 @@ import {
   Card,
   Modal,
   Image,
-  Input as AntInput,
   Space,
 } from "antd";
 import {
@@ -23,7 +22,6 @@ import {
 } from "@ant-design/icons";
 import { CustomerModal } from "@/components/CustomerModal";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
-import { Form as AntdForm } from "antd";
 import { packageIntakeColumns } from "@/app/package-intake/columns";
 import { usePackageIntake } from "@/hooks/usePackageIntake";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
@@ -33,11 +31,10 @@ import { useAuthStore } from "@/store/authStore";
 import { useWarehouseStore } from "@/store/warehouseStore";
 import { CreatePackagePayload } from "@/types/package";
 import { ReceiptModal } from "@/components/ReceiptModal";
-import { Warehouse } from "@/types/warehouse";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
-import { CustomerCreatePayload, CustomerUpdatePayload } from "@/types/customer";
+import { CustomerCreatePayload } from "@/types/customer";
 import { UploadProps } from "antd/lib";
 import { toast } from "sonner";
 import { InvoiceStatus } from "@/types/invoice";
@@ -93,7 +90,6 @@ export default function PackageIntakePage() {
   const user = useAuthStore((state) => state.user);
   const { selectedWarehouseId } = useWarehouseStore();
   const { data: warehouses } = useWarehouses();
-  const { data: customers, isLoading: customersLoading } = useCustomers({});
 
   // Determine if user is admin and get current warehouse details
   const isAdmin = user?.role === "SUPER_ADMIN";

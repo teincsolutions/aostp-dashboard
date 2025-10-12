@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { packingListService } from "@/services/packingListService";
+import { GetPackagesParams, packingListService } from "@/services/packingListService";
 import {
   PackingListCreatePayload,
   PackingListUpdatePayload,
@@ -38,8 +38,7 @@ export const usePackingLists = (params: PackingListQueryParams = {}) => {
 export const usePackingList = (id: string) => {
   return useQuery({
     queryKey: packingListKeys.detail(id),
-    queryFn: async () =>
-      await packingListService.getPackingListById(id),
+    queryFn: async () => await packingListService.getPackingListById(id),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -57,12 +56,13 @@ export const usePackingListSummary = (id: string) => {
 
 // Hook for fetching unassigned packages
 export const useUnassignedPackages = (
-  params: { search?: string; page?: number; limit?: number } = {}
+  params: GetPackagesParams = {}
 ) => {
   return useQuery({
     queryKey: packingListKeys.unassignedPackages(params),
-    queryFn: () => packingListService.getUnassignedPackages(params),
+    queryFn: async () => (await packingListService.getUnassignedPackages(params)).data,
     staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 };
 
@@ -142,7 +142,7 @@ export const usePackingListMutations = () => {
 
   // Remove packages from packing list mutation
   const removePackagesFromPackingList = useMutation({
-    mutationFn: ({ id, packageIds }: { id: string; packageIds: string[] }) =>
+    mutationFn: ({ id, packageIds }: { id: string; packageIds: string }) =>
       packingListService.removePackagesFromPackingList(id, packageIds),
     onSuccess: (data, variables) => {
       // Update the specific packing list

@@ -1,5 +1,5 @@
 // src/types/package.ts
-import { Warehouse } from './warehouse';
+import { Warehouse } from "./warehouse";
 
 export interface PackagePhotoInput {
   url: string;
@@ -42,12 +42,13 @@ export interface CreatePackagePayload {
   shippingMode: "SEA" | "AIR";
   airShippingType?: string;
   warehouseId: string;
-  value?: number;
   notes?: string;
   photos?: PackagePhotoInput[];
 }
 
-
+export type UpdatePackagePayload = Partial<
+  Omit<CreatePackagePayload, "customerId" | "trackingCode">
+>;
 
 export interface Receipt {
   id: string;
@@ -72,7 +73,7 @@ export enum PackageStatusPackages {
   RELEASED = "RELEASED",
 }
 
-export enum ShipmentType {
+export enum ShippingMode {
   AIR = "AIR",
   SEA = "SEA",
 }
@@ -94,8 +95,8 @@ export interface PackageItem {
   weight: number;
   dimensions?: any; // Probably an object with height, width, length
   cbm: number;
-  shippingMode: 'SEA' | 'AIR';
-  airShippingType?: 'NORMAL_AIR' | 'EXPRESS_AIR' | null;
+  shippingMode: "SEA" | "AIR";
+  airShippingType?: "NORMAL_AIR" | "EXPRESS_AIR" | null;
   status: string; // RECEIVED, etc.
   intakeDate: string;
   packageId?: string | null;
@@ -115,8 +116,8 @@ export interface Package {
   weight: number;
   cbm: number;
   quantity: number;
-  shippingMode: 'SEA' | 'AIR';
-  airShippingType?: 'NORMAL_AIR' | 'EXPRESS_AIR' | null;
+  shippingMode: "SEA" | "AIR";
+  airShippingType?: "NORMAL_AIR" | "EXPRESS_AIR" | null;
   isConsolidated: boolean;
   status: string; // RECEIVED, etc.
   receivedDate: string;
@@ -135,6 +136,11 @@ export interface Package {
   invoice?: any;
   warehouse: Warehouse;
   items?: PackageItem[];
-  createdBy?: { id: string; firstName: string; lastName: string; email?: string };
+  createdBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+  };
   correlationId?: string;
 }

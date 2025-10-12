@@ -47,6 +47,18 @@ export function useExchangeRate() {
     },
   });
 
+  // Delete exchange rate
+  const {
+    mutate: deleteExchangeRate,
+    isPending: deletePending,
+  } = useMutation({
+    mutationFn: (id: string) => exchangeRateService.deleteExchangeRate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exchangeRate", "active"] });
+      queryClient.invalidateQueries({ queryKey: ["exchangeRate", "history"] });
+    },
+  });
+
   return {
     activeRate,
     activeLoading,
@@ -58,5 +70,7 @@ export function useExchangeRate() {
     setError,
     setSuccess,
     resetSet,
+    deleteExchangeRate,
+    deletePending,
   };
 }

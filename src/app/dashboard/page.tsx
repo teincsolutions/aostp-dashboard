@@ -5,6 +5,9 @@ import { Card, Button, Table, Skeleton, Empty, notification } from "antd";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useCustomers } from "@/hooks/useCustomers";
+import { useActiveContainers } from "@/hooks/useContainers";
+import { usePackages } from "@/hooks/usePackageManagement";
 import { columns as invoiceColumns } from "@/app/dashboard/invoices.columns";
 import { columns as agingPackageColumns } from "@/app/dashboard/aging-packages.columns";
 import { DashboardFilters } from "@/types/dashboard";
@@ -47,6 +50,11 @@ export default function DashboardPage() {
   const { kpis, charts, tables, isLoading, error } =
     useDashboard(filters);
 
+  // Individual hooks for KPI stats
+  const { data: customerData, isLoading: customerLoading } = useCustomers({ page: 1, limit: 1 });
+  const { data: packagesData, isLoading: packagesLoading } = usePackages({ page: 1, limit: 1 });
+  const { data: activeContainersData, isLoading: activeContainersLoading } = useActiveContainers();
+
   // Error notifications
   if (
     error.kpis ||
@@ -67,24 +75,24 @@ export default function DashboardPage() {
   const kpiItems = [
     {
       title: "Total Customers",
-      value: kpis?.customersTotal ?? 0,
+      value: customerData?.meta?.total ?? 0,
       icon: <TeamOutlined />,
       caption: "",
-      loading: isLoading.kpis,
+      loading: customerLoading,
     },
     {
       title: "Total Packages",
-      value: kpis?.packagesTotal ?? 0,
+      value: packagesData?.total ?? 0,
       icon: <InboxOutlined />,
       caption: `SEA: ${kpis?.seaTotal ?? 0} | AIR: ${kpis?.airTotal ?? 0}`,
-      loading: isLoading.kpis,
+      loading: packagesLoading,
     },
     {
       title: "Active Containers",
-      value: kpis?.activeContainers ?? 0,
+      value: activeContainersData?.length ?? 0,
       icon: <ContainerOutlined />,
       caption: "",
-      loading: isLoading.kpis,
+      loading: activeContainersLoading,
     },
     {
       title: "Outstanding Invoices",
