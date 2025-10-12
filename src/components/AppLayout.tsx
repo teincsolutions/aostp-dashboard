@@ -9,6 +9,7 @@ import {
   UsergroupAddOutlined,
   FileTextOutlined,
   ContainerOutlined,
+  GlobalOutlined,
 } from "@ant-design/icons";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
@@ -73,11 +74,17 @@ export const menuItems: Array<MenuItem> = [
     roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
   },
   
-  // Group: Customers, Users
+  // Group: Customers, Cities, Users
   {
     key: "/customers",
     icon: <TeamOutlined />,
     label: "Customers",
+    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
+  },
+  {
+    key: "/cities",
+    icon: <GlobalOutlined />,
+    label: "Cities",
     roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
   },
   {
