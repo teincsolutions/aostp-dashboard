@@ -204,7 +204,6 @@ export default function RateManagementPage() {
 
   // Cities for dropdown
   const { data: citiesData, isLoading: citiesLoading } = useCities({
-    country: "Ghana",
     sortBy: "name",
     sortOrder: "asc",
   });
@@ -384,7 +383,7 @@ export default function RateManagementPage() {
     }
   ];
 
-  const { TabPane } = Tabs;
+  
 
   return (
     <AuthGuard requiredRoles={ROLES_ALLOWED}>
@@ -394,515 +393,527 @@ export default function RateManagementPage() {
             <h1 className="text-2xl font-bold">Rate Management</h1>
           </div>
 
-          <Tabs defaultActiveKey="exchange" type="card">
-            {/* Currency Exchange Rates Tab */}
-            <TabPane tab="Currency Exchange Rates" key="exchange">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-                <Card title="Current Active Rate" loading={activeLoading}>
-                  {activeError ? (
-                    <Empty description="Failed to load active rate" />
-                  ) : activeRate ? (
-                    <div className="flex flex-col gap-2">
-                      <div>
-                        <span className="font-semibold">Rate:</span>{" "}
-                        {activeRate.rate}
-                      </div>
-                      <div>
-                        <span className="font-semibold">Effective From:</span>{" "}
-                        {dayjs(activeRate.effectiveFrom).format(
-                          "YYYY-MM-DD HH:mm"
-                        )}
-                      </div>
-                      <div>
-                        <span className="font-semibold">Set By:</span>{" "}
-                        {activeRate.setBy?.name}
-                      </div>
-                    </div>
-                  ) : (
-                    <Spin />
-                  )}
-                </Card>
-
-                <Card title="Set New Exchange Rate">
-                  <Formik
-                    initialValues={{
-                      rate: "",
-                      effectiveFrom: "",
-                    }}
-                    validationSchema={exchangeRateValidationSchema}
-                    onSubmit={async (values, { setErrors, resetForm }) => {
-                      try {
-                        // Validate date overlap before submission
-                        const effectiveFrom = dayjs(values.effectiveFrom);
-                        const overlapValidation =
-                          validateExchangeRateDateOverlap(effectiveFrom);
-
-                        if (!overlapValidation.isValid) {
-                          toast.error(overlapValidation.message);
-                          return;
-                        }
-
-                        const payload: ExchangeRateCreatePayload = {
-                          rate: Number(values.rate),
-                          effectiveFrom: dayjs(
-                            values.effectiveFrom
-                          ).toISOString(),
-                          fromCurrency: "USD",
-                          toCurrency: "GHS",
-                        };
-                        await setActiveRate(payload);
-                        toast.success("Exchange rate set successfully");
-                        resetForm();
-                      } catch (error: any) {
-                        const fieldErrors = getServerValidationErrors(error);
-                        if (fieldErrors) {
-                          setErrors(fieldErrors);
-                        } else {
-                          toast.error(
-                            error.response?.data?.message ||
-                              "Failed to set exchange rate"
-                          );
-                        }
-                      }
-                    }}
-                  >
-                    {({ errors, touched, setFieldValue, isSubmitting }) => (
-                      <FormikForm className="flex flex-col gap-4">
-                        <Form.Item
-                          label="Rate (USD → GHS)"
-                          validateStatus={
-                            errors.rate && touched.rate ? "error" : ""
-                          }
-                          help={errors.rate && touched.rate ? errors.rate : ""}
-                        >
-                          <Field name="rate">
-                            {({ field }: any) => (
-                              <InputNumber
-                                {...field}
-                                min={0.0001}
-                                step={0.0001}
-                                style={{ width: "100%" }}
-                                onChange={(val) => setFieldValue("rate", val)}
-                                placeholder="e.g., 11.50"
-                              />
-                            )}
-                          </Field>
-                        </Form.Item>
-                        <Form.Item
-                          label="Effective From"
-                          validateStatus={
-                            errors.effectiveFrom && touched.effectiveFrom
-                              ? "error"
-                              : ""
-                          }
-                          help={
-                            errors.effectiveFrom && touched.effectiveFrom
-                              ? errors.effectiveFrom
-                              : ""
-                          }
-                        >
-                          <Field name="effectiveFrom">
-                            {({ field }: any) => (
-                              <DatePicker
-                                {...field}
-                                showTime
-                                style={{ width: "100%" }}
-                                onChange={(val) =>
-                                  setFieldValue("effectiveFrom", val)
-                                }
-                              />
-                            )}
-                          </Field>
-                        </Form.Item>
-                        <Button
-                          type="primary"
-                          htmlType="submit"
-                          loading={setExchangePending || isSubmitting}
-                          disabled={setExchangePending || isSubmitting}
-                        >
-                          Set Rate
-                        </Button>
-                      </FormikForm>
-                    )}
-                  </Formik>
-                </Card>
-              </div>
-
-              <Card title="Historical Exchange Rates">
-                <Table
-                  columns={exchangeRateColumns}
-                  dataSource={exchangeHistoryData?.data || []}
-                  rowKey="id"
-                  loading={exchangeHistoryLoading}
-                  pagination={{
-                    current: exchangePage,
-                    pageSize: exchangeLimit,
-                    total: exchangeHistoryData?.total || 0,
-                    onChange: (p, ps) => {
-                      setExchangePage(p);
-                      setExchangeLimit(ps);
-                    },
-                  }}
-                  locale={{
-                    emptyText: (
-                      <Empty description="No historical rates found" />
-                    ),
-                  }}
-                  scroll={{ x: true }}
-                  size="middle"
-                />
-              </Card>
-            </TabPane>
-
-            {/* Shipping Rates Tab */}
-            <TabPane tab="Shipping Rates" key="shipping">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-                <Card
-                  title="Active Shipping Rates"
-                  loading={activeRatesLoading}
-                >
-                  {activeRates && activeRates.length > 0 ? (
-                    <div className="space-y-3">
-                      {activeRates.map((rate) => (
-                        <div
-                          key={rate.id}
-                          className="flex justify-between items-center py-2 border-b"
-                        >
-                          <div>
-                            <div className="font-medium">
-                              {rate.shippingMode === "SEA"
-                                ? "SEA (per CBM)"
-                                : `AIR - ${rate.airShippingType?.replace(
-                                    "_",
-                                    " "
-                                  )} (per KG)`}
+          <Tabs
+            defaultActiveKey="exchange"
+            type="card"
+            items={[
+              {
+                key: "exchange",
+                label: "Currency Exchange Rates",
+                children: (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+                      <Card title="Current Active Rate" loading={activeLoading}>
+                        {activeError ? (
+                          <Empty description="Failed to load active rate" />
+                        ) : activeRate ? (
+                          <div className="flex flex-col gap-2">
+                            <div>
+                              <span className="font-semibold">Rate:</span>{" "}
+                              {activeRate.rate}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              Effective:{" "}
-                              {dayjs(rate.effectiveFrom).format("YYYY-MM-DD")}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-bold">${rate.ratePerUnit}</div>
-                            <div className="text-sm">{rate.currency}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <Empty description="No active shipping rates" />
-                  )}
-                </Card>
-
-                <Card title="Set New Shipping Rate">
-                  <Formik
-                    initialValues={{
-                      shippingMode: ShippingMode.SEA,
-                      airShippingType: undefined,
-                      cityId: "4145a4e0-2e71-414c-9e23-746e6c155c78",
-                      ratePerUnit: "",
-                      currency: "",
-                      effectiveFrom: "",
-                    }}
-                    validationSchema={shippingRateValidationSchema}
-                    onSubmit={async (values, { setErrors, resetForm }) => {
-                      try {
-                        // Validate date overlap before submission
-                        const effectiveFrom = dayjs(values.effectiveFrom);
-                        const overlapValidation =
-                          validateShippingRateDateOverlap(
-                            effectiveFrom,
-                            values.shippingMode,
-                            values.airShippingType
-                          );
-
-                        if (!overlapValidation.isValid) {
-                          toast.error(overlapValidation.message);
-                          return;
-                        }
-
-                        const payload = {
-                          shippingMode: values.shippingMode,
-                          airShippingType: values.airShippingType,
-                          cityId: values.cityId,
-                          ratePerUnit: Number(values.ratePerUnit),
-                          currency: values.currency,
-                          effectiveFrom: dayjs(
-                            values.effectiveFrom
-                          ).toISOString(),
-                        };
-                        await setShippingRate(payload);
-                        toast.success("Shipping rate set successfully");
-                        resetForm();
-                      } catch (error: any) {
-                        const fieldErrors = getServerValidationErrors(error);
-                        if (fieldErrors) {
-                          setErrors(fieldErrors);
-                        } else {
-                          toast.error(
-                            error.response?.data?.message ||
-                              "Failed to set shipping rate"
-                          );
-                        }
-                      }
-                    }}
-                  >
-                    {({
-                      errors,
-                      touched,
-                      setFieldValue,
-                      values,
-                      isSubmitting,
-                    }) => (
-                      <FormikForm className="flex flex-col gap-4">
-                        <Form.Item
-                          label="Shipping Mode"
-                          validateStatus={
-                            errors.shippingMode && touched.shippingMode
-                              ? "error"
-                              : ""
-                          }
-                          help={
-                            errors.shippingMode && touched.shippingMode
-                              ? errors.shippingMode
-                              : ""
-                          }
-                        >
-                          <Field name="shippingMode">
-                            {({ field }: any) => (
-                              <Select
-                                style={{ width: "100%" }}
-                                onChange={(val) => {
-                                  setFieldValue("shippingMode", val);
-                                  if (val === ShippingMode.SEA) {
-                                    setFieldValue("airShippingType", undefined);
-                                  }
-                                }}
-                                value={values.shippingMode}
-                                placeholder="Select shipping mode"
-                              >
-                                <Select.Option value={ShippingMode.SEA}>
-                                  SEA (per CBM)
-                                </Select.Option>
-                                <Select.Option value={ShippingMode.AIR}>
-                                  AIR (per KG)
-                                </Select.Option>
-                              </Select>
-                            )}
-                          </Field>
-                        </Form.Item>
-
-                        {values.shippingMode === ShippingMode.AIR && (
-                          <Form.Item
-                            label="Air Shipping Type"
-                            validateStatus={
-                              errors.airShippingType && touched.airShippingType
-                                ? "error"
-                                : ""
-                            }
-                            help={
-                              errors.airShippingType && touched.airShippingType
-                                ? errors.airShippingType
-                                : ""
-                            }
-                          >
-                            <Field name="airShippingType">
-                              {({ field }: any) => (
-                                <Select
-                                  {...field}
-                                  onChange={(val) =>
-                                    setFieldValue("airShippingType", val)
-                                  }
-                                  style={{ width: "100%" }}
-                                  placeholder="Select air shipping type"
-                                >
-                                  <Select.Option
-                                    value={AirShippingType.NORMAL_AIR}
-                                  >
-                                    Normal Air
-                                  </Select.Option>
-                                  <Select.Option
-                                    value={AirShippingType.EXPRESS_AIR}
-                                  >
-                                    Express Air
-                                  </Select.Option>
-                                  <Select.Option
-                                    value={AirShippingType.BATTERY_GOODS}
-                                  >
-                                    Battery Goods
-                                  </Select.Option>
-                                  <Select.Option value={AirShippingType.PHONES}>
-                                    Phones
-                                  </Select.Option>
-                                </Select>
+                            <div>
+                              <span className="font-semibold">Effective From:</span>{" "}
+                              {dayjs(activeRate.effectiveFrom).format(
+                                "YYYY-MM-DD HH:mm"
                               )}
-                            </Field>
-                          </Form.Item>
+                            </div>
+                            <div>
+                              <span className="font-semibold">Set By:</span>{" "}
+                              {activeRate.setBy?.name}
+                            </div>
+                          </div>
+                        ) : (
+                          <Spin />
                         )}
+                      </Card>
 
-                        <Form.Item
-                          label="City"
-                          validateStatus={
-                            errors.cityId && touched.cityId ? "error" : ""
-                          }
-                          help={
-                            errors.cityId && touched.cityId ? errors.cityId : ""
-                          }
+                      <Card title="Set New Exchange Rate">
+                        <Formik
+                          initialValues={{
+                            rate: "",
+                            effectiveFrom: "",
+                          }}
+                          validationSchema={exchangeRateValidationSchema}
+                          onSubmit={async (values, { setErrors, resetForm }) => {
+                            try {
+                              // Validate date overlap before submission
+                              const effectiveFrom = dayjs(values.effectiveFrom);
+                              const overlapValidation =
+                                validateExchangeRateDateOverlap(effectiveFrom);
+
+                              if (!overlapValidation.isValid) {
+                                toast.error(overlapValidation.message);
+                                return;
+                              }
+
+                              const payload: ExchangeRateCreatePayload = {
+                                rate: Number(values.rate),
+                                effectiveFrom: dayjs(
+                                  values.effectiveFrom
+                                ).toISOString(),
+                                fromCurrency: "USD",
+                                toCurrency: "GHS",
+                              };
+                              await setActiveRate(payload);
+                              toast.success("Exchange rate set successfully");
+                              resetForm();
+                            } catch (error: any) {
+                              const fieldErrors = getServerValidationErrors(error);
+                              if (fieldErrors) {
+                                setErrors(fieldErrors);
+                              } else {
+                                toast.error(
+                                  error.response?.data?.message ||
+                                    "Failed to set exchange rate"
+                                );
+                              }
+                            }
+                          }}
                         >
-                          <Field name="cityId">
-                            {({ field }: any) => (
-                              <Select
-                                {...field}
-                                style={{ width: "100%" }}
-                                placeholder="Select city"
-                                loading={citiesLoading}
-                                showSearch
-                                optionFilterProp="children"
-                                filterOption={(input, option) =>
-                                  (option?.children as unknown as string)
-                                    ?.toLowerCase()
-                                    .includes(input.toLowerCase()) || false
+                          {({ errors, touched, setFieldValue, isSubmitting }) => (
+                            <FormikForm className="flex flex-col gap-4">
+                              <Form.Item
+                                label="Rate (USD → GHS)"
+                                validateStatus={
+                                  errors.rate && touched.rate ? "error" : ""
                                 }
-                                onChange={(val) => setFieldValue("cityId", val)}
+                                help={errors.rate && touched.rate ? errors.rate : ""}
                               >
-                                {citiesData?.data?.map((city: City) => (
-                                  <Select.Option key={city.id} value={city.id}>
-                                    {city.name}, {city.country}
-                                  </Select.Option>
-                                ))}
-                              </Select>
-                            )}
-                          </Field>
-                        </Form.Item>
-                        <Form.Item
-                          label="Currency"
-                          required
-                          validateStatus={
-                            errors.currency && touched.currency ? "error" : ""
-                          }
-                          help={
-                            errors.currency && touched.currency
-                              ? errors.currency
-                              : ""
-                          }
-                        >
-                          <Field name="currency">
-                            {({ field }: any) => (
-                              <Select
-                                {...field}
-                                style={{ width: "100%" }}
-                                placeholder="Select currency"
-                                onChange={(val) =>
-                                  setFieldValue("currency", val)
+                                <Field name="rate">
+                                  {({ field }: any) => (
+                                    <InputNumber
+                                      {...field}
+                                      min={0.0001}
+                                      step={0.0001}
+                                      style={{ width: "100%" }}
+                                      onChange={(val) => setFieldValue("rate", val)}
+                                      placeholder="e.g., 11.50"
+                                    />
+                                  )}
+                                </Field>
+                              </Form.Item>
+                              <Form.Item
+                                label="Effective From"
+                                validateStatus={
+                                  errors.effectiveFrom && touched.effectiveFrom
+                                    ? "error"
+                                    : ""
+                                }
+                                help={
+                                  errors.effectiveFrom && touched.effectiveFrom
+                                    ? errors.effectiveFrom
+                                    : ""
                                 }
                               >
-                                <Select.Option value="GHS">GHS</Select.Option>
-                                <Select.Option value="USD">USD</Select.Option>
-                              </Select>
-                            )}
-                          </Field>
-                        </Form.Item>
+                                <Field name="effectiveFrom">
+                                  {({ field }: any) => (
+                                    <DatePicker
+                                      {...field}
+                                      showTime
+                                      style={{ width: "100%" }}
+                                      onChange={(val) =>
+                                        setFieldValue("effectiveFrom", val)
+                                      }
+                                    />
+                                  )}
+                                </Field>
+                              </Form.Item>
+                              <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={setExchangePending || isSubmitting}
+                                disabled={setExchangePending || isSubmitting}
+                              >
+                                Set Rate
+                              </Button>
+                            </FormikForm>
+                          )}
+                        </Formik>
+                      </Card>
+                    </div>
 
-                        <Form.Item
-                          label={`Rate per Unit (${
-                            values.shippingMode === ShippingMode.SEA
-                              ? "per CBM"
-                              : "per KG"
-                          })`}
-                          validateStatus={
-                            errors.ratePerUnit && touched.ratePerUnit
-                              ? "error"
-                              : ""
-                          }
-                          help={
-                            errors.ratePerUnit && touched.ratePerUnit
-                              ? errors.ratePerUnit
-                              : ""
-                          }
+                    <Card title="Historical Exchange Rates">
+                      <Table
+                        columns={exchangeRateColumns}
+                        dataSource={exchangeHistoryData?.data || []}
+                        rowKey="id"
+                        loading={exchangeHistoryLoading}
+                        pagination={{
+                          current: exchangePage,
+                          pageSize: exchangeLimit,
+                          total: exchangeHistoryData?.total || 0,
+                          onChange: (p, ps) => {
+                            setExchangePage(p);
+                            setExchangeLimit(ps);
+                          },
+                        }}
+                        locale={{
+                          emptyText: (
+                            <Empty description="No historical rates found" />
+                          ),
+                        }}
+                        scroll={{ x: true }}
+                        size="middle"
+                      />
+                    </Card>
+                  </>
+                ),
+              },
+              {
+                key: "shipping",
+                label: "Shipping Rates",
+                children: (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+                      <Card
+                        title="Active Shipping Rates"
+                        loading={activeRatesLoading}
+                      >
+                        {activeRates && activeRates.length > 0 ? (
+                          <div className="space-y-3">
+                            {activeRates.map((rate) => (
+                              <div
+                                key={rate.id}
+                                className="flex justify-between items-center py-2 border-b"
+                              >
+                                <div>
+                                  <div className="font-medium">
+                                    {rate.shippingMode === "SEA"
+                                      ? "SEA (per CBM)"
+                                      : `AIR - ${rate.airShippingType?.replace(
+                                          "_",
+                                          " "
+                                        )} (per KG)`}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    Effective:{" "}
+                                    {dayjs(rate.effectiveFrom).format("YYYY-MM-DD")}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-bold">${rate.ratePerUnit}</div>
+                                  <div className="text-sm">{rate.currency}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <Empty description="No active shipping rates" />
+                        )}
+                      </Card>
+
+                      <Card title="Set New Shipping Rate">
+                        <Formik
+                          initialValues={{
+                            shippingMode: ShippingMode.SEA,
+                            airShippingType: undefined,
+                            cityId: "",
+                            ratePerUnit: "",
+                            currency: "",
+                            effectiveFrom: "",
+                          }}
+                          validationSchema={shippingRateValidationSchema}
+                          onSubmit={async (values, { setErrors, resetForm }) => {
+                            try {
+                              // Validate date overlap before submission
+                              const effectiveFrom = dayjs(values.effectiveFrom);
+                              const overlapValidation =
+                                validateShippingRateDateOverlap(
+                                  effectiveFrom,
+                                  values.shippingMode,
+                                  values.airShippingType
+                                );
+
+                              if (!overlapValidation.isValid) {
+                                toast.error(overlapValidation.message);
+                                return;
+                              }
+
+                              const payload = {
+                                shippingMode: values.shippingMode,
+                                airShippingType: values.airShippingType,
+                                cityId: values.cityId,
+                                ratePerUnit: Number(values.ratePerUnit),
+                                currency: values.currency,
+                                effectiveFrom: dayjs(
+                                  values.effectiveFrom
+                                ).toISOString(),
+                              };
+                              await setShippingRate(payload);
+                              toast.success("Shipping rate set successfully");
+                              resetForm();
+                            } catch (error: any) {
+                              const fieldErrors = getServerValidationErrors(error);
+                              if (fieldErrors) {
+                                setErrors(fieldErrors);
+                              } else {
+                                toast.error(
+                                  error.response?.data?.message ||
+                                    "Failed to set shipping rate"
+                                );
+                              }
+                            }
+                          }}
                         >
-                          <Field name="ratePerUnit">
-                            {({ field }: any) => (
-                              <InputNumber
-                                {...field}
-                                min={0.01}
-                                step={0.01}
-                                style={{ width: "100%" }}
-                                onChange={(val) =>
-                                  setFieldValue("ratePerUnit", val)
+                          {({
+                            errors,
+                            touched,
+                            setFieldValue,
+                            values,
+                            isSubmitting,
+                          }) => (
+                            <FormikForm className="flex flex-col gap-4">
+                              <Form.Item
+                                label="Shipping Mode"
+                                validateStatus={
+                                  errors.shippingMode && touched.shippingMode
+                                    ? "error"
+                                    : ""
                                 }
-                                placeholder="e.g., 5.00"
-                              />
-                            )}
-                          </Field>
-                        </Form.Item>
-
-                        <Form.Item
-                          label="Effective From"
-                          validateStatus={
-                            errors.effectiveFrom && touched.effectiveFrom
-                              ? "error"
-                              : ""
-                          }
-                          help={
-                            errors.effectiveFrom && touched.effectiveFrom
-                              ? errors.effectiveFrom
-                              : ""
-                          }
-                        >
-                          <Field name="effectiveFrom">
-                            {({ field }: any) => (
-                              <DatePicker
-                                {...field}
-                                showTime
-                                style={{ width: "100%" }}
-                                onChange={(val) =>
-                                  setFieldValue("effectiveFrom", val)
+                                help={
+                                  errors.shippingMode && touched.shippingMode
+                                    ? errors.shippingMode
+                                    : ""
                                 }
-                              />
-                            )}
-                          </Field>
-                        </Form.Item>
+                              >
+                                <Field name="shippingMode">
+                                  {({ field }: any) => (
+                                    <Select
+                                      style={{ width: "100%" }}
+                                      onChange={(val) => {
+                                        setFieldValue("shippingMode", val);
+                                        if (val === ShippingMode.SEA) {
+                                          setFieldValue("airShippingType", undefined);
+                                        }
+                                      }}
+                                      value={values.shippingMode}
+                                      placeholder="Select shipping mode"
+                                    >
+                                      <Select.Option value={ShippingMode.SEA}>
+                                        SEA (per CBM)
+                                      </Select.Option>
+                                      <Select.Option value={ShippingMode.AIR}>
+                                        AIR (per KG)
+                                      </Select.Option>
+                                    </Select>
+                                  )}
+                                </Field>
+                              </Form.Item>
 
-                        <Button
-                          type="primary"
-                          htmlType="submit"
-                          loading={setShippingPending || isSubmitting}
-                          disabled={setShippingPending || isSubmitting}
-                        >
-                          Set Rate
-                        </Button>
-                      </FormikForm>
-                    )}
-                  </Formik>
-                </Card>
-              </div>
+                              {values.shippingMode === ShippingMode.AIR && (
+                                <Form.Item
+                                  label="Air Shipping Type"
+                                  validateStatus={
+                                    errors.airShippingType && touched.airShippingType
+                                      ? "error"
+                                      : ""
+                                  }
+                                  help={
+                                    errors.airShippingType && touched.airShippingType
+                                      ? errors.airShippingType
+                                      : ""
+                                  }
+                                >
+                                  <Field name="airShippingType">
+                                    {({ field }: any) => (
+                                      <Select
+                                        {...field}
+                                        onChange={(val) =>
+                                          setFieldValue("airShippingType", val)
+                                        }
+                                        style={{ width: "100%" }}
+                                        placeholder="Select air shipping type"
+                                      >
+                                        <Select.Option
+                                          value={AirShippingType.NORMAL_AIR}
+                                        >
+                                          Normal Air
+                                        </Select.Option>
+                                        <Select.Option
+                                          value={AirShippingType.EXPRESS_AIR}
+                                        >
+                                          Express Air
+                                        </Select.Option>
+                                        <Select.Option
+                                          value={AirShippingType.BATTERY_GOODS}
+                                        >
+                                          Battery Goods
+                                        </Select.Option>
+                                        <Select.Option value={AirShippingType.PHONES}>
+                                          Phones
+                                        </Select.Option>
+                                      </Select>
+                                    )}
+                                  </Field>
+                                </Form.Item>
+                              )}
 
-              <Card title="Shipping Rate History">
-                <Table
-                  columns={shippingRateColumns}
-                  dataSource={shippingHistoryData?.data || []}
-                  rowKey="id"
-                  loading={shippingHistoryLoading}
-                  pagination={{
-                    current: shippingPage,
-                    pageSize: shippingLimit,
-                    total: shippingHistoryData?.total || 0,
-                    onChange: (p, ps) => {
-                      setShippingPage(p);
-                      setShippingLimit(ps);
-                    },
-                  }}
-                  locale={{
-                    emptyText: (
-                      <Empty description="No shipping rate history found" />
-                    ),
-                  }}
-                  scroll={{ x: true }}
-                  size="middle"
-                />
-              </Card>
-            </TabPane>
-          </Tabs>
+                              <Form.Item
+                                label="City"
+                                validateStatus={
+                                  errors.cityId && touched.cityId ? "error" : ""
+                                }
+                                help={
+                                  errors.cityId && touched.cityId ? errors.cityId : ""
+                                }
+                              >
+                                <Field name="cityId">
+                                  {({ field }: any) => (
+                                    <Select
+                                      style={{ width: "100%" }}
+                                      placeholder="Select city"
+                                      loading={citiesLoading}
+                                      showSearch
+                                      optionFilterProp="children"
+                                      filterOption={(input, option) =>
+                                        (option?.children as unknown as string)
+                                          ?.toLowerCase()
+                                          .includes(input.toLowerCase()) || false
+                                      }
+                                      onChange={(val) => setFieldValue("cityId", val)}
+                                    >
+                                      {citiesData?.data?.map((city: City) => (
+                                        <Select.Option key={city.id} value={city.id}>
+                                          {city.name}, {city.country}
+                                        </Select.Option>
+                                      ))}
+                                    </Select>
+                                  )}
+                                </Field>
+                              </Form.Item>
+                              <Form.Item
+                                label="Currency"
+                                required
+                                validateStatus={
+                                  errors.currency && touched.currency ? "error" : ""
+                                }
+                                help={
+                                  errors.currency && touched.currency
+                                    ? errors.currency
+                                    : ""
+                                }
+                              >
+                                <Field name="currency">
+                                  {({ field }: any) => (
+                                    <Select
+                                      {...field}
+                                      style={{ width: "100%" }}
+                                      placeholder="Select currency"
+                                      onChange={(val) =>
+                                        setFieldValue("currency", val)
+                                      }
+                                    >
+                                      <Select.Option value="GHS">GHS</Select.Option>
+                                      <Select.Option value="USD">USD</Select.Option>
+                                    </Select>
+                                  )}
+                                </Field>
+                              </Form.Item>
+
+                              <Form.Item
+                                label={`Rate per Unit (${
+                                  values.shippingMode === ShippingMode.SEA
+                                    ? "per CBM"
+                                    : "per KG"
+                                })`}
+                                validateStatus={
+                                  errors.ratePerUnit && touched.ratePerUnit
+                                    ? "error"
+                                    : ""
+                                }
+                                help={
+                                  errors.ratePerUnit && touched.ratePerUnit
+                                    ? errors.ratePerUnit
+                                    : ""
+                                }
+                              >
+                                <Field name="ratePerUnit">
+                                  {({ field }: any) => (
+                                    <InputNumber
+                                      {...field}
+                                      min={0.01}
+                                      step={0.01}
+                                      style={{ width: "100%" }}
+                                      onChange={(val) =>
+                                        setFieldValue("ratePerUnit", val)
+                                      }
+                                      placeholder="e.g., 5.00"
+                                    />
+                                  )}
+                                </Field>
+                              </Form.Item>
+
+                              <Form.Item
+                                label="Effective From"
+                                validateStatus={
+                                  errors.effectiveFrom && touched.effectiveFrom
+                                    ? "error"
+                                    : ""
+                                }
+                                help={
+                                  errors.effectiveFrom && touched.effectiveFrom
+                                    ? errors.effectiveFrom
+                                    : ""
+                                }
+                              >
+                                <Field name="effectiveFrom">
+                                  {({ field }: any) => (
+                                    <DatePicker
+                                      {...field}
+                                      showTime
+                                      style={{ width: "100%" }}
+                                      onChange={(val) =>
+                                        setFieldValue("effectiveFrom", val)
+                                      }
+                                    />
+                                  )}
+                                </Field>
+                              </Form.Item>
+
+                              <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={setShippingPending || isSubmitting}
+                                disabled={setShippingPending || isSubmitting}
+                              >
+                                Set Rate
+                              </Button>
+                            </FormikForm>
+                          )}
+                        </Formik>
+                      </Card>
+                    </div>
+
+                    <Card title="Shipping Rate History">
+                      <Table
+                        columns={shippingRateColumns}
+                        dataSource={shippingHistoryData?.data || []}
+                        rowKey="id"
+                        loading={shippingHistoryLoading}
+                        pagination={{
+                          current: shippingPage,
+                          pageSize: shippingLimit,
+                          total: shippingHistoryData?.total || 0,
+                          onChange: (p, ps) => {
+                            setShippingPage(p);
+                            setShippingLimit(ps);
+                          },
+                        }}
+                        locale={{
+                          emptyText: (
+                            <Empty description="No shipping rate history found" />
+                          ),
+                        }}
+                        scroll={{ x: true }}
+                        size="middle"
+                      />
+                    </Card>
+                  </>
+                ),
+              },
+            ]}
+          />
         </div>
       </AppLayout>
     </AuthGuard>
