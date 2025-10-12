@@ -3,19 +3,14 @@
 import { ApiResponse, PaginatedResponse } from "./common";
 import { Container } from "./container";
 import { Customer } from "./customer";
-import { AirShippingType, ShippingMode } from "./exchangeRate";
 import { Invoice } from "./invoice";
 import { Package } from "./package";
 
 // Packing List status enum
 export enum PackingListStatus {
   DRAFT = "DRAFT",
-  PLANNED = "PLANNED",
-  LOADING = "LOADING",
-  LOADED = "LOADED",
-  IN_TRANSIT = "IN_TRANSIT",
-  DELIVERED = "DELIVERED",
-  CANCELLED = "CANCELLED",
+  FINALIZED = "FINALIZED",
+  POSTED = "POSTED",
 }
 
 // Packing List interface

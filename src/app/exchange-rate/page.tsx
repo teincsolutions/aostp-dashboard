@@ -338,7 +338,7 @@ export default function RateManagementPage() {
       key: "ratePerUnit",
       render: (ratePerUnit: number, record: ShippingRate) => {
         // Fallback to rate field for backward compatibility
-        const rate = ratePerUnit || record.rate;
+        const rate = ratePerUnit;
         return rate ? `$${rate.toFixed(2)}` : "-";
       },
     },
@@ -583,7 +583,7 @@ export default function RateManagementPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold">${rate.rate}</div>
+                            <div className="font-bold">${rate.ratePerUnit}</div>
                             <div className="text-sm">{rate.currency}</div>
                           </div>
                         </div>

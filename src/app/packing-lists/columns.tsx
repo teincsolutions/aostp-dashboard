@@ -9,6 +9,11 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type { PackingList } from "@/types/packingList";
 import { PackingListStatus } from "@/types/packingList";
+export const packingListStatusColors = {
+  [PackingListStatus.DRAFT]: "default",
+  [PackingListStatus.POSTED]: "green",
+  [PackingListStatus.FINALIZED]: "orange",
+};
 
 export const getPackingListColumns = (
   onEditPackingList: (packingList: PackingList) => void,
@@ -68,28 +73,14 @@ export const getPackingListColumns = (
     dataIndex: "status",
     key: "status",
     render: (status: PackingListStatus) => {
-      const statusColors = {
-        [PackingListStatus.DRAFT]: "default",
-        [PackingListStatus.PLANNED]: "orange",
-        [PackingListStatus.LOADING]: "purple",
-        [PackingListStatus.LOADED]: "blue",
-        [PackingListStatus.IN_TRANSIT]: "cyan",
-        [PackingListStatus.DELIVERED]: "green",
-        [PackingListStatus.CANCELLED]: "red",
-      };
-
       return (
-        <Tag color={statusColors[status]}>{status?.replace("_", " ")}</Tag>
+        <Tag color={packingListStatusColors[status]}>{status?.replace("_", " ")}</Tag>
       );
     },
     filters: [
       { text: "Draft", value: PackingListStatus.DRAFT },
-      { text: "Planned", value: PackingListStatus.PLANNED },
-      { text: "Loading", value: PackingListStatus.LOADING },
-      { text: "Loaded", value: PackingListStatus.LOADED },
-      { text: "In Transit", value: PackingListStatus.IN_TRANSIT },
-      { text: "Delivered", value: PackingListStatus.DELIVERED },
-      { text: "Cancelled", value: PackingListStatus.CANCELLED },
+      { text: "Posted", value: PackingListStatus.POSTED },
+      { text: "Finalized", value: PackingListStatus.FINALIZED },
     ],
   },
   {
@@ -103,7 +94,6 @@ export const getPackingListColumns = (
     title: "Actions",
     key: "actions",
     render: (_, record) => {
-
       return (
         <Space size="small">
           <Tooltip title="View Details">

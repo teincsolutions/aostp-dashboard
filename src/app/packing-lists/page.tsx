@@ -49,14 +49,16 @@ import {
   PackingList,
   PackingListSummary,
   ExportFormat,
+  CustomerPackingSummary,
 } from "@/types/packingList";
-import { getPackingListColumns } from "./columns";
+import { getPackingListColumns, packingListStatusColors } from "./columns";
 import { Package } from "@/types/package";
 import type { Dayjs } from "dayjs";
 import type { RangePickerProps } from "antd/es/date-picker";
 import { Role } from "@/types/user";
 import dayjs from "dayjs";
 import { on } from "events";
+import { getPacklistTotals } from "@/utils/forms/getPacklistTotals";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -115,6 +117,10 @@ export default function PackingListsPage() {
     detailsPackingList?.id || ""
   );
 
+  const packageListTotals = useMemo(() => {
+    return getPacklistTotals(packingListDetails as PackingList);
+  }, [packingListDetails]);
+
   // Use all active containers
   const filteredContainers = activeContainers;
 
@@ -138,7 +144,6 @@ export default function PackingListsPage() {
     setDateRange(dates);
     setCurrentPage(1);
   };
-
 
   const handleEditPackingList = (packingList: PackingList) => {
     setEditingPackingList(packingList);
@@ -215,12 +220,8 @@ export default function PackingListsPage() {
   // Filter options
   const statusOptions = [
     { label: "Draft", value: PackingListStatus.DRAFT },
-    { label: "Planned", value: PackingListStatus.PLANNED },
-    { label: "Loading", value: PackingListStatus.LOADING },
-    { label: "Loaded", value: PackingListStatus.LOADED },
-    { label: "In Transit", value: PackingListStatus.IN_TRANSIT },
-    { label: "Delivered", value: PackingListStatus.DELIVERED },
-    { label: "Cancelled", value: PackingListStatus.CANCELLED },
+    { text: "Posted", value: PackingListStatus.POSTED },
+    { text: "Finalized", value: PackingListStatus.FINALIZED },
   ];
 
   const shipmentModeOptions = [
@@ -233,15 +234,14 @@ export default function PackingListsPage() {
   const activePackingLists =
     packingLists?.data?.filter((pl: PackingList) =>
       [
-        PackingListStatus.PLANNED,
-        PackingListStatus.LOADING,
-        PackingListStatus.LOADED,
-        PackingListStatus.IN_TRANSIT,
+        PackingListStatus.DRAFT,
+        PackingListStatus.FINALIZED,
+        PackingListStatus.POSTED,
       ].includes(pl.status)
     ).length || 0;
   const completedPackingLists =
     packingLists?.data?.filter(
-      (pl: PackingList) => pl.status === PackingListStatus.DELIVERED
+      (pl: PackingList) => pl.status === PackingListStatus.FINALIZED
     ).length || 0;
   const totalPackages =
     packingLists?.data?.reduce(
@@ -503,7 +503,7 @@ export default function PackingListsPage() {
               setIsPackageAssignmentModalVisible(false);
               setCurrentAssignmentsPackingListId("");
             }}
-            onConfirm={()=>{
+            onConfirm={() => {
               setIsPackageAssignmentModalVisible(false);
               setCurrentAssignmentsPackingListId("");
             }}
@@ -550,18 +550,7 @@ export default function PackingListsPage() {
                   </Descriptions.Item>
                   <Descriptions.Item label="Status">
                     <Tag
-                      color={
-                        packingListDetails.status ===
-                        PackingListStatus.DELIVERED
-                          ? "green"
-                          : packingListDetails.status ===
-                            PackingListStatus.CANCELLED
-                          ? "red"
-                          : packingListDetails.status ===
-                            PackingListStatus.IN_TRANSIT
-                          ? "cyan"
-                          : "blue"
-                      }
+                      color={packingListStatusColors[packingListDetails.status]}
                     >
                       {packingListDetails.status.replace("_", " ")}
                     </Tag>
@@ -579,9 +568,7 @@ export default function PackingListsPage() {
                     <Divider>Summary by Customer</Divider>
                     <div className="space-y-4">
                       {packingListSummary.customerSummaries.map(
-                        (
-                          summary: PackingListSummary["customerSummaries"][0]
-                        ) => (
+                        (summary: CustomerPackingSummary) => (
                           <Card key={summary.customer.id} size="small">
                             <div>
                               <h4 className="font-medium mb-2">
@@ -593,10 +580,6 @@ export default function PackingListsPage() {
                                 {summary.packageCount} packages •{" "}
                                 {summary.totalWeight}kg • {summary.totalCBM}m³
                               </p>
-                              <div className="text-xs text-gray-500">
-                                Total Value: $
-                                {summary?.totalValue?.toFixed(2) || "0.00"}
-                              </div>
                               <div className="mt-2">
                                 <Text strong className="text-xs">
                                   Packages:
@@ -626,7 +609,8 @@ export default function PackingListsPage() {
                             <Statistic
                               title="Total Packages"
                               value={
-                                packingListSummary.packingList.totalPackages
+                                packingListSummary.packingList.totalPackages ||
+                                0
                               }
                               valueStyle={{ color: "#722ed1" }}
                             />
@@ -651,13 +635,22 @@ export default function PackingListsPage() {
                           </Col>
                           <Col span={6}>
                             <Statistic
-                              title="Total Value"
+                              title="Total Shipping Cost (USD)"
                               value={`$${
-                                packingListSummary.packingList?.totalValue?.toFixed(
-                                  2
-                                ) || "0.00"
+                                packageListTotals?.usdTotal?.toFixed(2) ||
+                                "0.00"
                               }`}
-                              valueStyle={{ color: "#faad14" }}
+                              valueStyle={{ color: "#faad14", fontSize: 14 }}
+                              className="text-small"
+                            />
+                            <Statistic
+                              title="Total Shipping Cost (GHS)"
+                              value={`$${
+                                packageListTotals?.ghsTotal?.toFixed(2) ||
+                                "0.00"
+                              }`}
+                              className="text-small"
+                              valueStyle={{ color: "#2ffa14ff", fontSize: 14 }}
                             />
                           </Col>
                         </Row>

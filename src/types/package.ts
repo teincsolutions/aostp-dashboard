@@ -39,8 +39,8 @@ export interface CreatePackagePayload {
   weight?: number; // Optional - added during package management before packing lists
   cbm?: number; // Optional - added during package management before packing lists
   quantity: number;
-  shippingMode: "SEA" | "AIR";
-  airShippingType?: string;
+  shippingMode: ShippingMode;
+  airShippingType?: AirType | null;
   warehouseId: string;
   notes?: string;
   photos?: PackagePhotoInput[];
@@ -79,8 +79,10 @@ export enum ShippingMode {
 }
 
 export enum AirType {
-  EXPRESS = "EXPRESS",
-  STANDARD = "STANDARD",
+  NORMAL_AIR = "NORMAL_AIR",
+  EXPRESS_AIR = "EXPRESS_AIR",
+  BATTERY_GOODS = "BATTERY_GOODS",
+  PHONES = "PHONES"
 }
 
 // Updated Package Items based on new structure
@@ -95,8 +97,8 @@ export interface PackageItem {
   weight: number;
   dimensions?: any; // Probably an object with height, width, length
   cbm: number;
-  shippingMode: "SEA" | "AIR";
-  airShippingType?: "NORMAL_AIR" | "EXPRESS_AIR" | null;
+  shippingMode: ShippingMode;
+  airShippingType?: AirType | null;
   status: string; // RECEIVED, etc.
   intakeDate: string;
   packageId?: string | null;
@@ -116,8 +118,8 @@ export interface Package {
   weight: number;
   cbm: number;
   quantity: number;
-  shippingMode: "SEA" | "AIR";
-  airShippingType?: "NORMAL_AIR" | "EXPRESS_AIR" | null;
+  shippingMode: ShippingMode;
+  airShippingType?: AirType | null;
   isConsolidated: boolean;
   status: string; // RECEIVED, etc.
   receivedDate: string;

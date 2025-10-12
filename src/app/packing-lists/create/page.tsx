@@ -1,5 +1,4 @@
 "use client";
-import { ShippingMode } from "@/types/exchangeRate";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Form,
@@ -7,7 +6,6 @@ import {
   Button,
   Card,
   Steps,
-  Table,
   Space,
   Select,
   DatePicker,
@@ -31,8 +29,6 @@ import {
   useActiveContainers,
   useContainerMutations,
 } from "@/hooks/useContainers";
-import { useUnassignedPackages } from "@/hooks/usePackingLists";
-import { useShippingRates } from "@/hooks/useShippingRates";
 import {
   PackingListCreatePayload,
   PackageAssignment,
@@ -44,10 +40,8 @@ import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { ContainerCreateModal } from "@/components/ContainerModals";
 import { Role } from "@/types/user";
-import {
-  getServerValidationErrors,
-  handleError,
-} from "@/utils/forms/errorUtils";
+import { handleError } from "@/utils/forms/errorUtils";
+import { PackageAssignmentPanel } from "@/components/PackageAssignmentPanel";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -63,13 +57,7 @@ type PackageAssignmentWithCalc = PackageAssignment & {
 const PackingListCreatePage: React.FC = () => {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
-  const [packingListData, setPackingListData] = useState<Partial<PackingList>>(
-    {}
-  );
-  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
-  const [packageAssignments, setPackageAssignments] = useState<
-    PackageAssignmentWithCalc[]
-  >([]);
+  const [packingList, setPackingList] = useState<PackingList>();
   const [containerModalVisible, setContainerModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -79,102 +67,65 @@ const PackingListCreatePage: React.FC = () => {
 
   // React Query hooks
   const { data: activeContainers = [] } = useActiveContainers();
-
-  // Show all active containers for selection
-  const { data: unassignedPackages, isLoading: packagesLoading } =
-    useUnassignedPackages({
-      page: 1,
-      limit: 100,
-    });
-  const { activeRates: shippingRates = [] } = useShippingRates();
-
-  const {
-    createPackingList,
-    finalizePackingList,
-    addPackagesToPackingList,
-    removePackagesFromPackingList,
-    isCreating,
-    isFinalizing,
-  } = usePackingListMutations();
-
   const { createContainer, isCreating: isCreatingContainer } =
     useContainerMutations();
 
-  // Filter unassigned packages
-  const availablePackages: Package[] =
-    unassignedPackages?.filter(
-      (pkg: { id: string }) => !selectedPackageIds.includes(pkg.id)
-    ) || [];
+  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
+  const {
+    addPackagesToPackingList,
+    isAddingPackages,
+    finalizePackingList,
+    isRemovingPackages,
+    isFinalizing,
+    removePackagesFromPackingList,
+    createPackingList,
+    isCreating,
+  } = usePackingListMutations();
 
-  // Calculate package assignments with shipping rates
-  useEffect(() => {
-    if (selectedPackageIds.length > 0) {
-      const assignments: PackageAssignmentWithCalc[] = selectedPackageIds
-        .map((id) => {
-          const pkg = unassignedPackages?.find((p) => p.id === id);
-          if (!pkg) return null;
+  const handleAssignPackages = () => {
+    if (!packingList) return;
 
-          // Find appropriate rate based on shipping mode and type
-          const rate = shippingRates.find((r) => {
-            if (pkg.shippingMode === r.shippingMode) {
-              if (r.shippingMode === ShippingMode.AIR) {
-                return r.airShippingType === pkg.airShippingType;
-              }
-              return true; // SEA mode matches all
-            }
-            return false;
-          });
-
-          let calculatedAmount = 0;
-          let unitType = "CBM";
-          let rateValue = 0;
-
-          if (rate) {
-            rateValue = rate.rate || 0;
-            if (rate.shippingMode === ShippingMode.SEA) {
-              // SEA: CBM × Rate
-              calculatedAmount = pkg.cbm * (rate.rate || 0);
-            } else {
-              // AIR: Weight × Rate
-              calculatedAmount = pkg.weight * (rate.rate || 0);
-              unitType = "KG";
-            }
-          }
-
-          return {
-            packageId: pkg.id,
-            trackingCode: pkg.trackingCode,
-            description: pkg.description || "",
-            weight: pkg.weight,
-            cbm: pkg.cbm,
-            customerId: pkg.customerId,
-            customerName: `${pkg.customer?.firstName} ${pkg.customer?.lastName}`,
-            rate: rateValue,
-            calculatedAmount,
-            currency: rate?.currency || "USD",
-            unitType,
-          };
-        })
-        .filter(Boolean) as PackageAssignmentWithCalc[];
-
-      setPackageAssignments(assignments);
-    } else {
-      setPackageAssignments([]);
+    try {
+      addPackagesToPackingList.mutateAsync({
+        id: packingList.id,
+        packageIds: selectedPackageIds,
+      });
+      toast.success(`${selectedPackageIds.length} packages added successfully`);
+      setSelectedPackageIds([]);
+    } catch (error) {
+      handleError(error);
     }
-  }, [selectedPackageIds, shippingRates, unassignedPackages]);
+  };
 
-  // Totals calculation
-  const totals = packageAssignments.reduce(
-    (acc, pkg) => ({
-      usdTotal:
-        acc.usdTotal + (pkg.currency === "USD" ? pkg.calculatedAmount || 0 : 0),
-      ghsTotal:
-        acc.ghsTotal + (pkg.currency === "GHS" ? pkg.calculatedAmount || 0 : 0),
-      weightTotal: acc.weightTotal + pkg.weight,
-      cbmTotal: acc.cbmTotal + pkg.cbm,
-    }),
-    { usdTotal: 0, ghsTotal: 0, weightTotal: 0, cbmTotal: 0 }
-  );
+  const handleFinalize = async () => {
+    if (!packingList) return;
+    try {
+      await finalizePackingList.mutateAsync(packingList.id);
+      toast.success(`Packing list finalized successfully`);
+      setSelectedPackageIds([]);
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  const handleAddPackage = (packageId: string) => {
+    if (!selectedPackageIds.includes(packageId)) {
+      setSelectedPackageIds((prev) => [...prev, packageId]);
+    }
+  };
+
+  const handleRemovePackage = (packageId: string) => {
+    if (!packingList) return;
+    try {
+      removePackagesFromPackingList.mutateAsync({
+        id: packingList.id!,
+        packageIds: packageId,
+      });
+      setSelectedPackageIds((prev) => prev.filter((id) => id !== packageId));
+    } catch (error) {
+      handleError(error);
+    }
+  };
 
   // Step handlers
   const handleNext = useCallback(async () => {
@@ -188,7 +139,7 @@ const PackingListCreatePage: React.FC = () => {
   const handleStepClick = async (step: number) => {
     // if packing list not created, prevent going to step 1 or 2
     if (step === 1) {
-      if (!packingListData) {
+      if (!packingList) {
         toast.error("Please create a packing list first");
         return;
       }
@@ -203,50 +154,19 @@ const PackingListCreatePage: React.FC = () => {
     setCurrentStep(step);
   };
 
-  // Package selection handlers
-  const addPackage = async (packageId: string) => {
-    setSelectedPackageIds((prev) => [...prev, packageId]);
-  };
-
   useEffect(() => {
     if (createPackingList.data && createPackingList.data) {
       toast.success("Packing list created successfully");
-      setPackingListData(createPackingList.data);
+      setPackingList(createPackingList.data);
       setCurrentStep(1);
     }
   }, [createPackingList.data]);
 
-  const removePackage = async (packageId: string) => {
-    if (packingListData) {
-        setSelectedPackageIds((prev) => prev.filter((id) => id !== packageId));
-    } else {
-      toast.error("Packing list not created yet");
-      return;
-    }
-  };
-
-  const handleAddPackages = async () => {
-    if (selectedPackageIds.length === 0 && packingListData.id) {
-      try {
-        await addPackagesToPackingList.mutateAsync({
-          id: packingListData.id,
-          packageIds: selectedPackageIds,
-        });
-      } catch (error) {
-        handleError(error);
-      }
-    } else {
-      toast.error("No new packages to add");
-    }
-  };
-
   // Create packing list after container selection
   const handleCreatePackingList = async () => {
-    if (!packingListData) return;
-
     try {
       const values = await basicInfoForm.validateFields();
-      setPackingListData((prev) => ({ ...prev, ...values }));
+      setPackingList((prev) => ({ ...prev, ...values }));
 
       const createPayload: PackingListCreatePayload = {
         ...values,
@@ -275,10 +195,10 @@ const PackingListCreatePage: React.FC = () => {
 
   // Finalize packing list
   const handleFinalizePackingList = async () => {
-    if (!packingListData) return;
+    if (!packingList) return;
 
     try {
-      await finalizePackingList.mutateAsync(packingListData.id!);
+      await finalizePackingList.mutateAsync(packingList.id!);
       toast.success(
         "Packing list finalized and invoices generated successfully"
       );
@@ -289,146 +209,6 @@ const PackingListCreatePage: React.FC = () => {
       );
     }
   };
-
-  // Finalize packing list creation
-  const handleFinalize = async () => {
-    try {
-      setLoading(true);
-
-      // Create the packing list first
-      const createPayload: PackingListCreatePayload = {
-        ...packingListData,
-        loadingDate: dayjs(packingListData.loadingDate).format("YYYY-MM-DD"),
-        eta: packingListData.eta
-          ? dayjs(packingListData.eta).format("YYYY-MM-DD")
-          : undefined,
-        packageIds: selectedPackageIds,
-      } as PackingListCreatePayload;
-
-      createPackingList.mutate(createPayload);
-      if (!createPackingList.data || !createPackingList.data.id) {
-        toast.success(
-          "Packing list created and invoices generated successfully"
-        );
-        router.push("/packing-lists");
-      }
-    } catch (error: any) {
-      toast.error(
-        error.response?.data?.message || "Failed to finalize packing list"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Package table columns for available packages
-  const packageColumns = [
-    {
-      title: "Tracking Code",
-      dataIndex: "trackingCode",
-      key: "trackingCode",
-    },
-    {
-      title: "Customer",
-      dataIndex: "customer",
-      key: "customer",
-      render: (customer: any) => `${customer.firstName} ${customer.lastName}`,
-    },
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
-    },
-    {
-      title: "Weight (kg)",
-      dataIndex: "weight",
-      key: "weight",
-    },
-    {
-      title: "CBM",
-      dataIndex: "cbm",
-      key: "cbm",
-    },
-    {
-      title: "Mode",
-      dataIndex: "shippingMode",
-      key: "shippingMode",
-      render: (mode: string) => mode,
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_: any, record: Package) => (
-        <Button
-          type="link"
-          icon={<PlusOutlined />}
-          onClick={() => addPackage(record.id)}
-          disabled={selectedPackageIds.includes(record.id)}
-        >
-          Add
-        </Button>
-      ),
-    },
-  ];
-
-  // Selected packages table columns
-  const selectedPackageColumns = [
-    {
-      title: "Tracking Code",
-      dataIndex: "trackingCode",
-      key: "trackingCode",
-    },
-    {
-      title: "Customer",
-      dataIndex: "customerName",
-      key: "customerName",
-    },
-    {
-      title: "Weight (kg)",
-      dataIndex: "weight",
-      key: "weight",
-      render: (weight: number) => (weight ? weight.toFixed(2) : "N/A"),
-    },
-    {
-      title: "CBM",
-      dataIndex: "cbm",
-      key: "cbm",
-      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "N/A"),
-    },
-    {
-      title: "Unit Type",
-      dataIndex: "unitType",
-      key: "unitType",
-    },
-    {
-      title: "Rate",
-      dataIndex: "rate",
-      key: "rate",
-      render: (rate: number, record: PackageAssignmentWithCalc) =>
-        `${record.currency} ${rate?.toFixed(2) || 0}`,
-    },
-    {
-      title: "Amount",
-      dataIndex: "calculatedAmount",
-      key: "calculatedAmount",
-      render: (amount: number, record: PackageAssignmentWithCalc) =>
-        `${record.currency} ${amount?.toFixed(2) || 0}`,
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_: any, record: PackageAssignmentWithCalc) => (
-        <Button
-          type="link"
-          danger
-          icon={<MinusOutlined />}
-          onClick={() => removePackage(record.packageId)}
-        >
-          Remove
-        </Button>
-      ),
-    },
-  ];
 
   return (
     <AuthGuard
@@ -607,79 +387,13 @@ const PackingListCreatePage: React.FC = () => {
             {currentStep === 1 && (
               // Step 2: Package Assignment
               <div className="space-y-4">
-                {!packingListData ? (
-                  <Alert
-                    message="Packing list not created"
-                    description="Please create the packing list in the previous step first."
-                    type="warning"
-                    showIcon
-                  />
-                ) : (
-                  <>
-                    {/* Package Selection with Search/Filter */}
-                    <div>
-                      <Title level={4}>Available Packages</Title>
-                      <Table
-                        columns={packageColumns}
-                        dataSource={availablePackages}
-                        loading={packagesLoading}
-                        rowKey="id"
-                        pagination={{ pageSize: 10 }}
-                        size="small"
-                        scroll={{ x: true }}
-                      />
-                    </div>
-
-                    {/* Assigned Packages */}
-                    <div>
-                      <Title level={4}>
-                        Assigned Packages ({packageAssignments.length})
-                      </Title>
-                      <Table
-                        columns={selectedPackageColumns}
-                        dataSource={packageAssignments}
-                        rowKey="packageId"
-                        pagination={false}
-                        size="small"
-                        scroll={{ x: true }}
-                        summary={() => (
-                          <Table.Summary.Row>
-                            <Table.Summary.Cell index={0} colSpan={3}>
-                              <Text strong>Totals</Text>
-                            </Table.Summary.Cell>
-                            <Table.Summary.Cell index={1}>
-                              <Text strong>
-                                {totals.weightTotal.toFixed(2)} kg
-                              </Text>
-                            </Table.Summary.Cell>
-                            <Table.Summary.Cell index={2}>
-                              <Text strong>{totals.cbmTotal.toFixed(3)}</Text>
-                            </Table.Summary.Cell>
-                            <Table.Summary.Cell index={3} colSpan={4}>
-                              <Space>
-                                <Text strong>
-                                  USD: ${totals.usdTotal.toFixed(2)}
-                                </Text>
-                                <Text strong>
-                                  GHS: ₵{totals.ghsTotal.toFixed(2)}
-                                </Text>
-                              </Space>
-                            </Table.Summary.Cell>
-                          </Table.Summary.Row>
-                        )}
-                      />
-                    </div>
-
-                    {packageAssignments.some((p) => !p.rate) && (
-                      <Alert
-                        message="Warning"
-                        description="Some packages don't have matching shipping rates. Please check shipping rates configuration."
-                        type="warning"
-                        showIcon
-                      />
-                    )}
-                  </>
-                )}
+                <PackageAssignmentPanel
+                  packingList={packingList}
+                  selectedPackageIds={selectedPackageIds}
+                  isRemovingPackages={isRemovingPackages}
+                  handleAddPackage={handleAddPackage}
+                  handleRemovePackage={handleRemovePackage}
+                />
               </div>
             )}
 
@@ -691,26 +405,24 @@ const PackingListCreatePage: React.FC = () => {
                 <Card size="small" title="Basic Information">
                   <Row gutter={16}>
                     <Col xs={24} sm={12}>
-                      <Text strong>Name:</Text> {packingListData.name}
+                      <Text strong>Name:</Text> {packingList?.name}
                     </Col>
                     <Col xs={24} sm={12}>
                       <Text strong>Destination City:</Text>{" "}
-                      {packingListData.destinationCity}
+                      {packingList?.destinationCity}
                     </Col>
                   </Row>
                   <Row gutter={16} className="mt-2">
                     <Col xs={24} sm={12}>
                       <Text strong>Loading Date:</Text>{" "}
-                      {packingListData.loadingDate
-                        ? dayjs(packingListData.loadingDate).format(
-                            "DD/MM/YYYY"
-                          )
+                      {packingList?.loadingDate
+                        ? dayjs(packingList.loadingDate).format("DD/MM/YYYY")
                         : "N/A"}
                     </Col>
                     <Col xs={24} sm={12}>
                       <Text strong>ETA:</Text>{" "}
-                      {packingListData.eta
-                        ? dayjs(packingListData.eta).format("DD/MM/YYYY")
+                      {packingList?.eta
+                        ? dayjs(packingList.eta).format("DD/MM/YYYY")
                         : "N/A"}
                     </Col>
                   </Row>
@@ -719,19 +431,16 @@ const PackingListCreatePage: React.FC = () => {
                 <Card size="small" title="Summary">
                   <Row gutter={16}>
                     <Col xs={24} sm={12} md={6}>
-                      <Text strong>Packages:</Text> {packageAssignments.length}
+                      <Text strong>Packages:</Text>{" "}
+                      {packingList?.totalPackages || 0}
                     </Col>
                     <Col xs={24} sm={12} md={6}>
                       <Text strong>Total Weight:</Text>{" "}
-                      {totals.weightTotal.toFixed(2)} kg
+                      {packingList?.totalWeight?.toFixed(2)} kg
                     </Col>
                     <Col xs={24} sm={12} md={6}>
                       <Text strong>Total CBM:</Text>{" "}
-                      {totals.cbmTotal.toFixed(3)}
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <Text strong>Total Value:</Text> $
-                      {totals.usdTotal.toFixed(2)}
+                      {packingList?.totalCBM?.toFixed(3)}
                     </Col>
                   </Row>
                 </Card>
@@ -757,7 +466,7 @@ const PackingListCreatePage: React.FC = () => {
                         size="large"
                         loading={isFinalizing}
                         disabled={
-                          !packingListData || selectedPackageIds.length === 0
+                          !packingList || selectedPackageIds.length === 0
                         }
                       >
                         Finalize Packing List
@@ -780,22 +489,38 @@ const PackingListCreatePage: React.FC = () => {
             </Button>
 
             {currentStep < 2 ? (
-              <Button
-                type="primary"
-                onClick={() => {
-                  if (currentStep === 0) {
-                    handleCreatePackingList();
-                  } else {
-                    handleNext();
+              <div className="flex gap-2">
+                <Button
+                  key="confirm"
+                  type="default"
+                  onClick={handleAssignPackages}
+                  loading={isAddingPackages}
+                  disabled={selectedPackageIds.length === 0}
+                >
+                  Add Selected Packages ({selectedPackageIds.length})
+                </Button>
+                ,
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    if (currentStep === 0) {
+                      handleCreatePackingList();
+                    } else {
+                      handleNext();
+                    }
+                  }}
+                  loading={loading || isCreating}
+                  disabled={
+                    isCreating ||
+                    isFinalizing ||
+                    packingList?.totalPackages === 0
                   }
-                }}
-                loading={loading || isCreating}
-                disabled={isCreating || isFinalizing}
-                icon={<RightOutlined />}
-                iconPosition="end"
-              >
-                {currentStep === 0 && "Save &"} Next
-              </Button>
+                  icon={<RightOutlined />}
+                  iconPosition="end"
+                >
+                  {currentStep === 0 && "Save &"} Next
+                </Button>
+              </div>
             ) : null}
           </div>
 
