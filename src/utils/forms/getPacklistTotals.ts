@@ -53,9 +53,9 @@ export function getPackageWithCalculations(
 
   let calculatedAmount: number;
   if (shippingMode === ShippingMode.SEA) {
-    calculatedAmount = (pkg.cbm || 0) * (rate || 0);
+    calculatedAmount = (pkg.cbm || 0) * (rate || 0) * (pkg.quantity || 1);
   } else {
-    calculatedAmount = (pkg.weight || 0) * (rate || 0);
+    calculatedAmount = (pkg.weight || 0) * (rate || 0) * (pkg.quantity || 1);
   }
   return { ...pkg, calculatedAmount };
 }

@@ -236,15 +236,15 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       width: 80,
     },
     {
-      title: "Unit",
-      dataIndex: "unitType",
-      key: "unitType",
+      title: "Qty",
+      dataIndex: "quantity",
+      key: "quantity",
       width: 60,
     },
     {
       title: "Rate",
-      dataIndex: "rate",
-      key: "rate",
+      dataIndex: "ratePerUnit",
+      key: "ratePerUnit",
       width: 100,
       render: (rate: number, record: Package) =>
         rate ? `${rate.toFixed(2)}` : "No rate",
