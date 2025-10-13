@@ -242,7 +242,7 @@ const containerTypeMap = {
   ];
 
   // Statistics
-  const totalPackingLists = packingLists?.meta?.totalItems || 0;
+  const totalPackingLists = packingLists?.meta.total || 0;
   const activePackingLists =
     packingLists?.data?.filter((pl: PackingList) =>
       [

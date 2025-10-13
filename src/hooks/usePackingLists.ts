@@ -179,9 +179,10 @@ export const usePackingListMutations = () => {
   // Finalize packing list mutation (generates invoices without FX conversion per UC12)
   const finalizePackingList = useMutation({
     mutationFn: (id: string) => packingListService.finalizePackingList(id),
-    onSuccess: () => {
+    onSuccess: (data, id) => {
       // Invalidate packing lists to refresh data
       queryClient.invalidateQueries({ queryKey: packingListKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: packingListKeys.detail(id) });
     },
   });
 
