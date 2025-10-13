@@ -75,7 +75,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   ]);
 
   // Calculate totals for selected packages
-  const totals = getPacklistTotals(packingList, currentShippingRates, activeRate?.rate);
+  const totals = getPacklistTotals(selectedPackages, currentShippingRates, activeRate?.rate);
 
   // Assigned packages table columns
   const assignedPackageColumns = [

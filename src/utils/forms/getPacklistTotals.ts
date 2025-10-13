@@ -9,12 +9,12 @@ export interface PackageWithCalculations extends Package {
 }
 
 export function getPacklistTotals(
-  packingList?: PackingList,
+  packages: Package[],
   currentShippingRates?: ShippingRate[],
   exchangeRate?: number
 ) {
   // Calculate totals for selected packages
-  const totals = packingList?.packages.reduce(
+  const totals = packages.reduce(
     (acc, pkg) => {
       const pkgWithCalc = getPackageWithCalculations(
         pkg,
