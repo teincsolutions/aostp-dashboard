@@ -14,16 +14,10 @@ import {
   Row,
   Col,
   Tag,
-  Collapse,
-  Space,
-  Badge,
   Image,
 } from "antd";
 import { toast } from "sonner";
-import {
-  ExclamationCircleOutlined,
-  FolderOpenOutlined,
-} from "@ant-design/icons";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 import {
   EyeOutlined,
   EditOutlined,
@@ -32,17 +26,11 @@ import {
   FileExcelOutlined,
   FilePdfOutlined,
   SwapOutlined,
-  MergeCellsOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
-import {
-  PackageStatusPackages,
-  ShippingMode,
-  Package,
-  Customer,
-} from "@/types/package";
+import { PackageStatusPackages, ShippingMode, Package } from "@/types/package";
 
 // Display type for table that uses the new Package structure
 type DisplayPackage = Package & {
@@ -53,12 +41,9 @@ type DisplayPackage = Package & {
 import { useRouter } from "next/navigation";
 
 import { usePackages } from "@/hooks/usePackageManagement";
-import { usePackageItems } from "@/hooks/usePackageManagement";
 import { usePackageManagement } from "@/hooks/usePackageManagement";
 import { Form } from "antd";
-import { usePackageReceipt } from "@/hooks/usePackages";
 import { ReceiptModal } from "@/components/ReceiptModal";
-import { Warehouse } from "@/types/warehouse";
 
 const { Search } = Input;
 const { useForm } = Form;
@@ -72,6 +57,14 @@ const shipmentTypeOptions = [
   { label: "Air", value: ShippingMode.AIR },
   { label: "Sea", value: ShippingMode.SEA },
 ];
+
+export const packageStatusColors = {
+  [PackageStatusPackages.IN_WAREHOUSE]: "gold",
+  [PackageStatusPackages.ASSIGNED]: "blue",
+  [PackageStatusPackages.SHIPPED]: "purple",
+  [PackageStatusPackages.ARRIVED]: "yellowgreen",
+  [PackageStatusPackages.RELEASED]: "green",
+};
 
 export default function PackagesPage() {
   const router = useRouter();
@@ -120,12 +113,8 @@ export default function PackagesPage() {
   // Use new package management hooks
   const { data: packagesData, isLoading: packagesLoading } =
     usePackages(params);
-  const {
-    updatePackageMutation,
-    deletePackageMutation,
-    consolidatePackagesMutation,
-    generateTrackingCodeMutation,
-  } = usePackageManagement();
+  const { deletePackageMutation, consolidatePackagesMutation } =
+    usePackageManagement();
 
   const packages = packagesData?.data || [];
   const total = packagesData?.total || 0;
@@ -151,16 +140,6 @@ export default function PackagesPage() {
 
   const handleEdit = (record: DisplayPackage) => {
     router.push(`/packages/edit/${record.id}`);
-  };
-
-  const handleUploadPhoto = (record: DisplayPackage) => {
-    // Placeholder for upload photo functionality
-    console.log("Upload photo for package:", record.id);
-  };
-
-  const handleUpdateStatus = (record: DisplayPackage) => {
-    // Placeholder for status update functionality
-    console.log("Update status for package:", record.id);
   };
 
   const handleDelete = (record: DisplayPackage) => {
@@ -308,15 +287,8 @@ export default function PackagesPage() {
       })),
       width: 100,
       render: (status: PackageStatusPackages) => {
-        const colorMap = {
-          [PackageStatusPackages.IN_WAREHOUSE]: "gold",
-          [PackageStatusPackages.ASSIGNED]: "blue",
-          [PackageStatusPackages.SHIPPED]: "purple",
-          [PackageStatusPackages.ARRIVED]: "yellowgreen",
-          [PackageStatusPackages.RELEASED]: "green",
-        };
         return (
-          <Tag color={colorMap[status] || "default"}>
+          <Tag color={packageStatusColors[status] || "default"}>
             {status.replace("_", " ")}
           </Tag>
         );
@@ -351,24 +323,6 @@ export default function PackagesPage() {
               size="small"
               onClick={() => handleEdit(record)}
               disabled={record.status !== PackageStatusPackages.IN_WAREHOUSE}
-            />
-          </Tooltip>
-
-          {/* Upload Photo Button */}
-          <Tooltip title="Upload/Edit Photo">
-            <Button
-              icon={<UploadOutlined />}
-              size="small"
-              onClick={() => handleUploadPhoto(record)}
-            />
-          </Tooltip>
-
-          {/* Update Status Button */}
-          <Tooltip title="Update Status">
-            <Button
-              icon={<SwapOutlined />}
-              size="small"
-              onClick={() => handleUpdateStatus(record)}
             />
           </Tooltip>
 
@@ -508,26 +462,9 @@ export default function PackagesPage() {
                   setViewModalVisible(false);
                   handleEdit(selectedPackage!);
                 }}
+                disabled={selectedPackage?.status !== PackageStatusPackages.IN_WAREHOUSE}
               >
                 Edit
-              </Button>,
-              <Button
-                key="upload"
-                onClick={() => {
-                  setViewModalVisible(false);
-                  handleUploadPhoto(selectedPackage!);
-                }}
-              >
-                Upload Photo
-              </Button>,
-              <Button
-                key="status"
-                onClick={() => {
-                  setViewModalVisible(false);
-                  handleUpdateStatus(selectedPackage!);
-                }}
-              >
-                Update Status
               </Button>,
               <Button
                 key="delete"
@@ -536,6 +473,7 @@ export default function PackagesPage() {
                   setViewModalVisible(false);
                   handleDelete(selectedPackage!);
                 }}
+                disabled={selectedPackage?.status !== PackageStatusPackages.IN_WAREHOUSE}
               >
                 Delete
               </Button>,
@@ -605,7 +543,9 @@ export default function PackagesPage() {
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Status">
-                    {selectedPackage.status}
+                    <Tag color={packageStatusColors[selectedPackage?.status] || "default"}>
+                      {selectedPackage?.status.replace("_", " ")}
+                    </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Payment Status">
                     <Tag

@@ -93,15 +93,19 @@ export default function InvoicesPage() {
         customer ? `${customer.firstName} ${customer.lastName}` : "N/A",
     },
     {
-      title: "Packing List ID",
+      title: "Packing List",
       dataIndex: "packingListId",
       key: "packingListId",
+      render: (_: any, record: Invoice) => (
+        <span style={{ fontFamily: "monospace", fontWeight: 500 }}>
+          {record.packingList?.name || "N/A"}
+        </span>
+      ),
     },
     {
       title: "Packages",
-      dataIndex: "packages",
-      key: "packages",
-      render: (packages: any[]) => packages?.length || 0,
+      dataIndex: "totalPackages",
+      key: "totalPackages",
     },
     {
       title: "Total USD",

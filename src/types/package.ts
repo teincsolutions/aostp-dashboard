@@ -121,7 +121,7 @@ export interface Package {
   shippingMode: ShippingMode;
   airShippingType?: AirType | null;
   isConsolidated: boolean;
-  status: string; // RECEIVED, etc.
+  status: PackageStatusPackages; // RECEIVED, etc.
   receivedDate: string;
   daysInWarehouse: number;
   notes: string;
