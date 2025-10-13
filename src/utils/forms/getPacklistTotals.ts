@@ -3,6 +3,7 @@ import { Package } from "@/types/package";
 import { PackingList } from "@/types/packingList";
 interface PackageWithCalculations extends Package {
   calculatedAmount?: number;
+  ratePerUnit?: number;
 }
 
 export function getPacklistTotals(
@@ -57,5 +58,5 @@ export function getPackageWithCalculations(
   } else {
     calculatedAmount = (pkg.weight || 0) * (rate || 0) * (pkg.quantity || 1);
   }
-  return { ...pkg, calculatedAmount };
+  return { ...pkg, calculatedAmount, ratePerUnit: rate  };
 }
