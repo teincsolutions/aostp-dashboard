@@ -2,9 +2,7 @@ import { ShippingMode, ShippingRate } from "@/types/exchangeRate";
 import { Package } from "@/types/package";
 import { PackingList } from "@/types/packingList";
 interface PackageWithCalculations extends Package {
-  rate?: number;
   calculatedAmount?: number;
-  unitType?: string;
 }
 
 export function getPacklistTotals(
@@ -42,21 +40,22 @@ export function getPackageWithCalculations(
   shippingMode: ShippingMode,
   currentShippingRates: ShippingRate[]
 ): PackageWithCalculations {
-  const packageWithCalculations: PackageWithCalculations = pkg;
-  const rate = currentShippingRates?.find(
-    (r) => r.airShippingType === pkg.airShippingType
-  )?.ratePerUnit;
 
-  let unitType: string;
-  let calculatedAmount: number;
+  if(currentShippingRates.length === 0) return {...pkg, calculatedAmount: 0};
 
-  if (shippingMode === ShippingMode.SEA) {
-    unitType = "CBM";
-    calculatedAmount = (pkg.cbm || 0) * (rate || 0);
-  } else {
-    unitType = "KG";
-    calculatedAmount = (pkg.weight || 0) * (rate || 0);
+  let rate = currentShippingRates[0]?.ratePerUnit;
+
+  if (shippingMode === ShippingMode.AIR) {
+    rate = currentShippingRates?.find(
+      (r) => r.airShippingType === pkg.airShippingType
+    )?.ratePerUnit;
   }
 
-  return packageWithCalculations;
+  let calculatedAmount: number;
+  if (shippingMode === ShippingMode.SEA) {
+    calculatedAmount = (pkg.cbm || 0) * (rate || 0);
+  } else {
+    calculatedAmount = (pkg.weight || 0) * (rate || 0);
+  }
+  return { ...pkg, calculatedAmount };
 }
