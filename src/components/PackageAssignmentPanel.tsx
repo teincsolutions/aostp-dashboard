@@ -14,6 +14,7 @@ import {
   PackageWithCalculations,
 } from "@/utils/forms/getPacklistTotals";
 import { PackingList, PackingListStatus } from "@/types/packingList";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const { Text } = Typography;
 
@@ -45,6 +46,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       containerTypeMap[packingList?.container?.containerType || "BAG"],
   });
   const { useCurrentActiveRates } = useShippingRates();
+  const { activeRate } = useExchangeRate();
 
   const shippingMode =
     containerTypeMap[packingList?.container?.containerType || "BAG"];
@@ -73,7 +75,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   ]);
 
   // Calculate totals for selected packages
-  const totals = getPacklistTotals(packingList, currentShippingRates);
+  const totals = getPacklistTotals(packingList, currentShippingRates, activeRate?.rate);
 
   // Assigned packages table columns
   const assignedPackageColumns = [
@@ -295,8 +297,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                       (0 > 0 && (
                         <Text strong>USD: ${totals?.usdTotal.toFixed(2)}</Text>
                       ))}
-                    {totals?.ghsTotal ||
-                      (0 > 0 && (
+                    {totals?.ghsTotal || (0 > 0 && (
                         <Text strong>GHS: ₵{totals?.ghsTotal.toFixed(2)}</Text>
                       ))}
                   </Space>

@@ -1,3 +1,4 @@
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { ShippingMode, ShippingRate } from "@/types/exchangeRate";
 import { Package } from "@/types/package";
 import { PackingList } from "@/types/packingList";
@@ -9,7 +10,8 @@ export interface PackageWithCalculations extends Package {
 
 export function getPacklistTotals(
   packingList?: PackingList,
-  currentShippingRates?: ShippingRate[]
+  currentShippingRates?: ShippingRate[],
+  exchangeRate?: number
 ) {
   // Calculate totals for selected packages
   const totals = packingList?.packages.reduce(
@@ -23,6 +25,7 @@ export function getPacklistTotals(
       acc.weightTotal += pkg.weight || 0;
       acc.cbmTotal += pkg.cbm || 0;
       acc.usdTotal += pkgWithCalc.calculatedAmount || 0;
+      acc.ghsTotal += (pkgWithCalc.calculatedAmount || 0) * (exchangeRate || 0);
       return acc;
     },
     {
