@@ -52,13 +52,14 @@ import {
   CustomerPackingSummary,
 } from "@/types/packingList";
 import { getPackingListColumns, packingListStatusColors } from "./columns";
-import { Package } from "@/types/package";
+import { Package, ShippingMode } from "@/types/package";
 import type { Dayjs } from "dayjs";
 import type { RangePickerProps } from "antd/es/date-picker";
 import { Role } from "@/types/user";
 import dayjs from "dayjs";
 import { on } from "events";
 import { getPacklistTotals } from "@/utils/forms/getPacklistTotals";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -83,8 +84,11 @@ export default function PackingListsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
+const containerTypeMap = {
+  CONTAINER: ShippingMode.SEA,
+  BAG: ShippingMode.AIR,
+};
   // Forms
-  const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
   // React Query hooks
@@ -117,9 +121,17 @@ export default function PackingListsPage() {
     detailsPackingList?.id || ""
   );
 
+    const { useCurrentActiveRates } = useShippingRates();
+    const { activeRate } = useExchangeRate();
+
+    const shippingMode =
+      containerTypeMap[detailsPackingList?.container?.containerType || "BAG"];
+    // Get current shipping rate for calculations
+    const { data: currentShippingRates } = useCurrentActiveRates(shippingMode);
+
   const packageListTotals = useMemo(() => {
-    return getPacklistTotals(packingListDetails as PackingList);
-  }, [packingListDetails]);
+    return getPacklistTotals(detailsPackingList?.packages || [], currentShippingRates, activeRate?.rate);
+  }, [detailsPackingList, currentShippingRates, activeRate]);
 
   // Use all active containers
   const filteredContainers = activeContainers;
