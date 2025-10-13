@@ -1,7 +1,8 @@
 import { ShippingMode, ShippingRate } from "@/types/exchangeRate";
 import { Package } from "@/types/package";
 import { PackingList } from "@/types/packingList";
-interface PackageWithCalculations extends Package {
+
+export interface PackageWithCalculations extends Package {
   calculatedAmount?: number;
   ratePerUnit?: number;
 }

@@ -11,16 +11,12 @@ import { Customer } from "@/types/customer";
 import {
   getPackageWithCalculations,
   getPacklistTotals,
+  PackageWithCalculations,
 } from "@/utils/forms/getPacklistTotals";
 import { PackingList, PackingListStatus } from "@/types/packingList";
 
 const { Text } = Typography;
 
-interface PackageWithCalculations extends Package {
-  rate?: number;
-  calculatedAmount?: number;
-  unitType?: string;
-}
 
 interface PackageAssignmentProps {
   packingList?: PackingList;
@@ -225,14 +221,14 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       title: "Weight (kg)",
       dataIndex: "weight",
       key: "weight",
-      render: (weight: number) => (weight ? weight.toFixed(2) : "0.00"),
+      render: (weight: number) => (weight ? weight.toFixed(2) : "N/A"),
       width: 100,
     },
     {
       title: "CBM",
       dataIndex: "cbm",
       key: "cbm",
-      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "0.000"),
+      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "N/A"),
       width: 80,
     },
     {
@@ -415,7 +411,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
         )}
       </div>
 
-      {selectedPackages.some((p: PackageWithCalculations) => !p.rate) && (
+      {selectedPackages.some((p: PackageWithCalculations) => !p.ratePerUnit) && (
         <Alert
           message="Warning"
           description="Some packages don't have matching shipping rates. Please check shipping rates configuration."
