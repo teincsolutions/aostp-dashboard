@@ -25,6 +25,7 @@ import {
   TeamOutlined,
 } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
+import { toast } from "sonner";
 
 const statusOptions = [
   { value: "RECEIVED", label: "Received" },
@@ -65,10 +66,7 @@ export default function DashboardPage() {
     error.recentInvoices ||
     error.agingPackages
   ) {
-    notification.error({
-      message: "Dashboard Data Error",
-      description: "Some dashboard data failed to load. Please try again.",
-    });
+    toast.error("Some dashboard data failed to load. Please try again.");
   }
 
   // KPI Cards

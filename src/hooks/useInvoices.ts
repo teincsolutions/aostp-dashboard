@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { getInvoices, getInvoicePdf, getInvoicesByCustomer } from '@/services/invoiceService';
-import { Invoice } from '@/types/invoice';
 
 export const useCustomerInvoices = (customerId: string, limit: number = 5) => {
   return useQuery({

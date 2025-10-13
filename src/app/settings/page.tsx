@@ -8,6 +8,7 @@ import { AppSettings, UpdateSettingsPayload } from "@/types/settings";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 const { Title, Text } = Typography;
 
@@ -42,12 +43,12 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (isUpdateSuccess) {
-      notification.success({ message: "Settings updated successfully" });
+      toast.success("Settings updated successfully");
       resetUpdate();
       refetch();
     }
     if (isUpdateError && updateError) {
-      notification.error({ message: "Failed to update settings", description: updateError.message });
+      toast.error("Failed to update settings", { description: updateError.message });
     }
   }, [isUpdateSuccess, isUpdateError, updateError, resetUpdate, refetch]);
 

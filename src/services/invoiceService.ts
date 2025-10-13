@@ -1,13 +1,9 @@
 // src/services/invoiceService.ts
 
 import { apiService } from '@/services/api';
+import { PaginatedResponse } from '@/types/common';
 import {
   Invoice,
-  Payment,
-  PaymentCreatePayload,
-  PaymentStats,
-  Receipt,
-  OutstandingBalance,
 } from '@/types/invoice';
 
 export const getInvoices = async (params?: {
@@ -15,7 +11,7 @@ export const getInvoices = async (params?: {
   limit?: number;
   customerId?: string;
   status?: string;
-}): Promise<{ data: Invoice[]; total: number }> => {
+}): Promise<PaginatedResponse<Invoice>> => {
   const res = await apiService.get('/invoices', { params });
   return res.data;
 };

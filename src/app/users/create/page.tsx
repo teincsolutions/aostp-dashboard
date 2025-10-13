@@ -19,6 +19,7 @@ import { Role } from "@/types/user";
 import { userCreateSchema } from "@/utils/forms/userSchemas";
 import { getServerValidationErrors } from "@/utils/forms/errorUtils";
 import { Formik } from "formik";
+import { toast } from "sonner";
 
 const roleOptions = [
   { label: "Super Admin", value: Role.SUPER_ADMIN },
@@ -41,9 +42,7 @@ export default function CreateUserPage() {
       if (serverErrors) {
         setErrors(serverErrors);
       } else {
-        notification.error({
-          message: (error as Error)?.message || "Create failed",
-        });
+        toast.error((error as Error)?.message || "Create failed");
       }
     } finally {
       setSubmitting(false);

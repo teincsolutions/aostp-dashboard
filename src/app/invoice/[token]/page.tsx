@@ -23,6 +23,7 @@ import {
 import { apiService } from "@/services/api";
 import { Invoice, Payment } from "@/types/invoice";
 import dayjs from "dayjs";
+import { toast } from "sonner";
 
 const { Title, Text } = Typography;
 
@@ -42,15 +43,14 @@ export default function PublicInvoiceView() {
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
-        const response = await apiService.get<PublicInvoice>(`/public/invoices/${token}`);
+        const response = await apiService.get<PublicInvoice>(
+          `/public/invoices/${token}`
+        );
         setInvoice(response.data);
       } catch (err: any) {
         console.error("Failed to load invoice:", err);
         setError(err.response?.data?.message || "Failed to load invoice");
-        notification.error({
-          message: "Error",
-          description: err.response?.data?.message || "Unable to load invoice",
-        });
+        toast.error(err.response?.data?.message || "Unable to load invoice");
       } finally {
         setLoading(false);
       }
@@ -79,9 +79,9 @@ export default function PublicInvoiceView() {
       link.click();
       window.URL.revokeObjectURL(url);
 
-      notification.success({ message: "PDF downloaded successfully" });
+      toast.success("PDF downloaded successfully");
     } catch (err) {
-      notification.error({ message: "Failed to download PDF" });
+      toast.error("Failed to download PDF");
     }
   };
 
@@ -140,7 +140,9 @@ export default function PublicInvoiceView() {
       title: "Shipping Mode",
       dataIndex: "shippingMode",
       key: "shippingMode",
-      render: (mode: string) => <Tag color={mode === "AIR" ? "blue" : "green"}>{mode}</Tag>,
+      render: (mode: string) => (
+        <Tag color={mode === "AIR" ? "blue" : "green"}>{mode}</Tag>
+      ),
     },
     {
       title: "Amount",
@@ -224,8 +226,12 @@ export default function PublicInvoiceView() {
                 <Descriptions.Item label="Customer">
                   {invoice.customer.firstName} {invoice.customer.lastName}
                 </Descriptions.Item>
-                <Descriptions.Item label="Email">{invoice.customer.email}</Descriptions.Item>
-                <Descriptions.Item label="Phone">{invoice.customer.phoneNumber}</Descriptions.Item>
+                <Descriptions.Item label="Email">
+                  {invoice.customer.email}
+                </Descriptions.Item>
+                <Descriptions.Item label="Phone">
+                  {invoice.customer.phoneNumber}
+                </Descriptions.Item>
               </Descriptions>
             </Card>
           </Col>
@@ -241,8 +247,12 @@ export default function PublicInvoiceView() {
                 <Descriptions.Item label="Due Date">
                   {dayjs(invoice.dueDate).format("MMMM DD, YYYY")}
                 </Descriptions.Item>
-                <Descriptions.Item label="Currency">{invoice.currency}</Descriptions.Item>
-                <Descriptions.Item label="Exchange Rate">{invoice.exchangeRate}</Descriptions.Item>
+                <Descriptions.Item label="Currency">
+                  {invoice.currency}
+                </Descriptions.Item>
+                <Descriptions.Item label="Exchange Rate">
+                  {invoice.exchangeRate}
+                </Descriptions.Item>
               </Descriptions>
             </Card>
           </Col>
@@ -274,7 +284,9 @@ export default function PublicInvoiceView() {
                 value={invoice.balance}
                 prefix="$"
                 precision={2}
-                valueStyle={{ color: invoice.balance > 0 ? "#cf1322" : "#3f8600" }}
+                valueStyle={{
+                  color: invoice.balance > 0 ? "#cf1322" : "#3f8600",
+                }}
               />
             </Col>
             <Col xs={12} sm={6}>
@@ -319,7 +331,8 @@ export default function PublicInvoiceView() {
         <Card className="bg-gray-50">
           <div className="text-center">
             <Text type="secondary">
-              This invoice was generated on behalf of AOSTP Logistics Management System
+              This invoice was generated on behalf of AOSTP Logistics Management
+              System
             </Text>
             <br />
             <Text type="secondary">

@@ -25,6 +25,7 @@ import {
   ChangePasswordPayload,
   TwoFAVerifyPayload,
 } from "@/types/auth";
+import { toast } from "sonner";
 
 const ProfileSchema = Yup.object().shape({
   firstName: Yup.string().required("First name required"),
@@ -155,11 +156,11 @@ export default function ProfilePage() {
                   };
                   security.changePassword.mutate(payload, {
                     onSuccess: () => {
-                      notification.success({ message: "Password changed" });
+                      toast.success("Password changed");
                       actions.resetForm();
                     },
                     onError: () => {
-                      notification.error({ message: "Failed to change password" });
+                      toast.error("Failed to change password");
                     },
                   });
                   actions.setSubmitting(false);
@@ -212,10 +213,10 @@ export default function ProfilePage() {
                         onOk: () => {
                           security.disable2FA.mutate(undefined, {
                             onSuccess: () => {
-                              notification.success({ message: "2FA disabled" });
+                              toast.success("2FA disabled");
                             },
                             onError: () => {
-                              notification.error({ message: "Failed to disable 2FA" });
+                              toast.error("Failed to disable 2FA");
                             },
                           });
                         },
@@ -296,11 +297,11 @@ export default function ProfilePage() {
                             const payload: TwoFAVerifyPayload = { code: values.code };
                             security.verify2FA.mutate(payload, {
                               onSuccess: () => {
-                                notification.success({ message: "2FA enabled" });
+                                toast.success("2FA enabled");
                                 setShow2FAModal(false);
                               },
                               onError: () => {
-                                notification.error({ message: "Invalid code" });
+                                toast.error("Invalid code");
                               },
                             });
                             actions.setSubmitting(false);

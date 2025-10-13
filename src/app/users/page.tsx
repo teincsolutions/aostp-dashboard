@@ -25,6 +25,7 @@ import { userUpdateSchema } from "@/utils/forms/userSchemas";
 import { getServerValidationErrors } from "@/utils/forms/errorUtils";
 import type { TablePaginationConfig } from "antd/es/table";
 import type { FilterValue } from "antd/es/table/interface";
+import { toast } from "sonner";
 
 const roleOptions = [
   { label: "Super Admin", value: Role.SUPER_ADMIN },
@@ -73,7 +74,7 @@ export default function UsersPage() {
   const handleToggleUserStatus = async (id: string, isActive: boolean) => {
     // TODO: implement toggle API
     console.log('Toggle user status', id, isActive);
-    notification.success({ message: "User status updated" });
+    toast.success("User status updated");
     refetch();
   };
 
@@ -84,9 +85,9 @@ export default function UsersPage() {
       onOk: async () => {
         try {
           await resetPasswordMutation.mutateAsync({ id: user.id });
-          notification.success({ message: "Password reset email sent successfully" });
+          toast.success("Password reset email sent successfully");
         } catch (error) {
-          notification.error({ message: "Failed to send password reset email" });
+          toast.error("Failed to send password reset email");
         }
       },
     });
@@ -219,7 +220,7 @@ export default function UsersPage() {
                 try {
                   // TODO: implement update API
                   console.log('Update user', editingUser?.id, values);
-                  notification.success({ message: "User updated" });
+                  toast.success("User updated");
                   setEditModal(false);
                   setEditingUser(null);
                   refetch();
@@ -228,9 +229,7 @@ export default function UsersPage() {
                   if (serverErrors) {
                     setErrors(serverErrors);
                   } else {
-                    notification.error({
-                      message: (err as Error)?.message || "Update failed",
-                    });
+                    toast.error((err as Error)?.message || "Update failed");
                   }
                 } finally {
                   setSubmitting(false);

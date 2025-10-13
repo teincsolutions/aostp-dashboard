@@ -182,7 +182,7 @@ export default function InvoicesPage() {
   ];
 
   // Statistics
-  const totalInvoices = invoices?.total || 0;
+  const totalInvoices = invoices?.meta.total || 0;
   const paidInvoices =
     invoices?.data?.filter((inv: Invoice) => inv.status === InvoiceStatus.PAID)
       .length || 0;
@@ -312,7 +312,7 @@ export default function InvoicesPage() {
               pagination={{
                 current: currentPage,
                 pageSize,
-                total: invoices?.total || 0,
+                total: invoices?.meta.total || 0,
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) =>

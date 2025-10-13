@@ -6,6 +6,7 @@ import { useNotifications, useRetryNotification, useRetryFailedNotifications } f
 import { NotificationChannel, NotificationStatus, NotificationLog } from "@/types/notification";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { toast } from "sonner";
 
 const { RangePicker } = DatePicker;
 
@@ -67,10 +68,10 @@ export default function NotificationsPage() {
                   onClick={async () => {
                     try {
                       await retryMutation.mutateAsync(record.id);
-                      notification.success({ message: "Notification retried successfully" });
+                      toast.success("Notification retried successfully");
                       refetch();
                     } catch (err) {
-                      notification.error({ message: "Retry failed", description: String(err) });
+                      toast.error("Retry failed", { description: String(err) });
                     }
                   }}
                 >
@@ -91,10 +92,10 @@ export default function NotificationsPage() {
   const handleBulkRetry = async () => {
     try {
       await bulkRetryMutation.mutateAsync();
-      notification.success({ message: "Bulk retry triggered for failed notifications" });
+      toast.success("Bulk retry triggered for failed notifications");
       refetch();
     } catch (err) {
-      notification.error({ message: "Bulk retry failed", description: String(err) });
+      toast.error("Bulk retry failed", { description: String(err) });
     }
   };
 

@@ -210,36 +210,23 @@ export default function RateManagementPage() {
 
   // Notification handlers
   if (setExchangeError) {
-    notification.error({
-      message: "Failed to set exchange rate",
-      description: setExchangeError.message,
-      duration: 3,
-    });
+    toast.error(`Failed to set exchange rate: ${setExchangeError.message}`  );
     resetExchangeSet();
   }
   if (setExchangeSuccess) {
-    notification.success({
-      message: "Exchange rate updated",
-      duration: 2,
-    });
+    toast.success("Exchange rate updated");
+
     refetchActive();
     refetchExchangeHistory();
     resetExchangeSet();
   }
 
   if (setShippingError) {
-    notification.error({
-      message: "Failed to set shipping rate",
-      description: setShippingError.message,
-      duration: 3,
-    });
+    toast.error(`Failed to set shipping rate: ${setShippingError.message}`);
     resetShippingSet();
   }
   if (isShippingSetSuccess) {
-    notification.success({
-      message: "Shipping rate updated",
-      duration: 2,
-    });
+    toast.success("Shipping rate updated");
     refetchActiveShipping();
     refetchShippingHistory();
     resetShippingSet();
