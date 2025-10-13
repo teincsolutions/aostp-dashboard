@@ -43,7 +43,6 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
       });
       toast.success(`${selectedPackageIds.length} packages added successfully`);
       setSelectedPackageIds([]);
-      onConfirm();
     } catch (error) {
       handleError(error);
     }
