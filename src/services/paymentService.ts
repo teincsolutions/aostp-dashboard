@@ -54,6 +54,14 @@ export const paymentService = {
     return response.data;
   },
 
+  // Get all payments records
+  async getAllPayments(params: { page?: number; limit?: number; sortBy?: string; sortOrder?: string } = {}): Promise<PaymentsResponse> {
+    const response = await apiService.get<PaymentsResponse>("/payments", {
+      params,
+    });
+    return response.data;
+  },
+
   // Get outstanding balance for a customer
   async getOutstandingBalance(customerId: string): Promise<OutstandingBalanceResponse> {
     const response = await apiService.get<OutstandingBalanceResponse>(`/payments/customer/${customerId}/balance`);

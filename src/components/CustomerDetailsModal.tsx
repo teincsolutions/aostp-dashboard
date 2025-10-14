@@ -1,12 +1,32 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Tabs, Card, Statistic, Row, Col, Table, Avatar, Tag, Empty } from "antd";
-import { DollarOutlined, ShoppingCartOutlined, CreditCardOutlined, CalendarOutlined, EyeOutlined } from "@ant-design/icons";
+import {
+  Modal,
+  Tabs,
+  Card,
+  Statistic,
+  Row,
+  Col,
+  Table,
+  Avatar,
+  Tag,
+  Empty,
+} from "antd";
+import {
+  DollarOutlined,
+  ShoppingCartOutlined,
+  CreditCardOutlined,
+  CalendarOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 import { Customer } from "@/types/customer";
 import { useCustomerStats } from "@/hooks/useCustomers";
 import { useCustomerInvoices } from "@/hooks/useInvoices";
-import { useCustomerPayments, useOutstandingBalance } from "@/hooks/usePayments";
+import {
+  useCustomerPayments,
+  useOutstandingBalance,
+} from "@/hooks/usePayments";
 
 interface CustomerDetailsModalProps {
   visible: boolean;
@@ -32,13 +52,18 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
   const [activeTab, setActiveTab] = useState("stats");
 
   // Fetch customer statistics
-  const { data: stats, isLoading: statsLoading } = useCustomerStats(customer?.id || "");
+  const { data: stats, isLoading: statsLoading } = useCustomerStats(
+    customer?.id || ""
+  );
 
   // Fetch customer balance
-  const { data: balance, isLoading: balanceLoading } = useOutstandingBalance(customer?.id || "");
+  const { data: balance, isLoading: balanceLoading } = useOutstandingBalance(
+    customer?.id || ""
+  );
 
   // Fetch recent invoices (last 5)
-  const { data: recentInvoices, isLoading: invoicesLoading } = useCustomerInvoices(customer?.id || "", 5);
+  const { data: recentInvoices, isLoading: invoicesLoading } =
+    useCustomerInvoices(customer?.id || "", { limit: 5 });
 
   // Fetch recent payments (last 5)
   const { data: paymentHistory } = useCustomerPayments(customer?.id || "", {
@@ -49,7 +74,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
 
   // Combine recent activity from invoices and payments
   const recentActivity: RecentActivity[] = [
-    ...(recentInvoices?.map(invoice => ({
+    ...(recentInvoices?.data?.map((invoice) => ({
       id: invoice.id,
       type: "invoice" as const,
       amount: invoice.totalAmount,
@@ -58,15 +83,16 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       status: invoice.status,
       invoiceNumber: invoice.invoiceNumber,
     })) || []),
-    ...(paymentHistory?.data?.map(payment => ({
+    ...(paymentHistory?.data?.map((payment) => ({
       id: payment.id,
       type: "payment" as const,
       amount: payment.amount,
       currency: payment.currency,
       date: payment.createdAt,
     })) || []),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  .slice(0, 10);
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10);
 
   const invoiceColumns = [
     {
@@ -85,7 +111,15 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       dataIndex: "status",
       key: "status",
       render: (status: string) => (
-        <Tag color={status === "PAID" ? "green" : status === "PENDING" ? "orange" : "red"}>
+        <Tag
+          color={
+            status === "PAID"
+              ? "green"
+              : status === "PENDING"
+              ? "orange"
+              : "red"
+          }
+        >
           {status}
         </Tag>
       ),
@@ -105,9 +139,17 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       render: (record: RecentActivity) => (
         <span>
           {record.type === "invoice" ? (
-            <Avatar size="small" icon={<ShoppingCartOutlined />} style={{ backgroundColor: "#1890ff" }} />
+            <Avatar
+              size="small"
+              icon={<ShoppingCartOutlined />}
+              style={{ backgroundColor: "#1890ff" }}
+            />
           ) : (
-            <Avatar size="small" icon={<CreditCardOutlined />} style={{ backgroundColor: "#52c41a" }} />
+            <Avatar
+              size="small"
+              icon={<CreditCardOutlined />}
+              style={{ backgroundColor: "#52c41a" }}
+            />
           )}
           <span style={{ marginLeft: 8 }}>
             {record.type === "invoice" ? "Invoice" : "Payment"}
@@ -120,11 +162,14 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       key: "details",
       render: (record: RecentActivity) => (
         <>
-          {record.invoiceNumber && (
-            <div>Invoice: #{record.invoiceNumber}</div>
-          )}
+          {record.invoiceNumber && <div>Invoice: #{record.invoiceNumber}</div>}
           <div>
-            Amount: {record.currency === "USD" ? "$" : record.currency === "GHS" ? "₵" : "£"}
+            Amount:{" "}
+            {record.currency === "USD"
+              ? "$"
+              : record.currency === "GHS"
+              ? "₵"
+              : "£"}
             {record.amount.toFixed(2)}
           </div>
         </>
@@ -137,7 +182,15 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       render: (status?: string) => {
         if (!status) return <Tag color="default">Completed</Tag>;
         return (
-          <Tag color={status === "PAID" ? "green" : status === "PENDING" ? "orange" : "red"}>
+          <Tag
+            color={
+              status === "PAID"
+                ? "green"
+                : status === "PENDING"
+                ? "orange"
+                : "red"
+            }
+          >
             {status}
           </Tag>
         );
@@ -187,7 +240,10 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                   prefix={<DollarOutlined />}
                   suffix={balance?.currency || "GBP"}
                   valueStyle={{
-                    color: (balance?.totalOutstanding || 0) > 0 ? "#cf1322" : "#3f8600",
+                    color:
+                      (balance?.totalOutstanding || 0) > 0
+                        ? "#cf1322"
+                        : "#3f8600",
                   }}
                 />
               </Card>
@@ -223,7 +279,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
           <Card title="Recent Invoices">
             <Table
               columns={invoiceColumns}
-              dataSource={recentInvoices || []}
+              dataSource={recentInvoices?.data || []}
               loading={invoicesLoading}
               rowKey="id"
               pagination={false}

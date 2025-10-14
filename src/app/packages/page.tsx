@@ -35,7 +35,6 @@ import { PackageStatusPackages, ShippingMode, Package } from "@/types/package";
 // Display type for table that uses the new Package structure
 type DisplayPackage = Package & {
   customerName: string;
-  shipmentType: "SEA" | "AIR"; // Add for compatibility
   createdByName?: string;
 };
 import { useRouter } from "next/navigation";
@@ -229,7 +228,7 @@ export default function PackagesPage() {
       sorter: true,
       width: 100,
       render: (record: DisplayPackage) =>
-        record.shipmentType === ShippingMode.AIR
+        record.shippingMode === ShippingMode.AIR
           ? `${record.weight ? `${record.weight} kg` : "N/A"}`
           : `${record.cbm ? `${record.cbm} cbm` : "N/A"}`,
     },
@@ -525,12 +524,12 @@ export default function PackagesPage() {
                   <Descriptions.Item label="Shipment Type">
                     <Tag
                       color={
-                        selectedPackage.shipmentType === "AIR"
+                        selectedPackage.shippingMode === "AIR"
                           ? "blue"
                           : "green"
                       }
                     >
-                      {selectedPackage.shipmentType}
+                      {selectedPackage.shippingMode}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Consolidated">
@@ -711,7 +710,7 @@ export default function PackagesPage() {
                 dataSource={displayPackages.filter(
                   (pkg) =>
                     pkg.customer?.id === consCustomer &&
-                    pkg.shipmentType === consMode &&
+                    pkg.shippingMode === consMode &&
                     pkg.status === PackageStatusPackages.IN_WAREHOUSE
                 )}
                 rowKey="id"

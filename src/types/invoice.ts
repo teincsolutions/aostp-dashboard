@@ -1,6 +1,8 @@
 // Payment Processing types for AOSTP Logistics Management System
 
 import { ApiResponse, PaginatedResponse } from './common';
+import { Package } from './package';
+import { PackingList } from './packingList';
 
 // Invoice status enum
 export enum InvoiceStatus {
@@ -20,10 +22,7 @@ export enum PaymentMethod {
 // Currency enum
 export enum Currency {
   USD = 'USD',
-  EUR = 'EUR',
-  GBP = 'GBP',
   GHS = 'GHS',
-  NGN = 'NGN',
 }
 
 // Invoice interface (auto-generated from Packing Lists)
@@ -39,18 +38,8 @@ export interface Invoice {
     phoneNumber: string;
   };
   packingListId: string;
-  packingList: {
-    id: string;
-    name: string;
-    loadingDate: string;
-  };
-  packages: Array<{
-    id: string;
-    trackingCode: string;
-    description: string;
-    weight: number;
-    value: number;
-  }>;
+  packingList: PackingList;
+  packages: Array<Package>;
   totalAmount: number;
   paidAmount: number;
   balance: number;

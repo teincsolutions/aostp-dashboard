@@ -82,6 +82,18 @@ export const usePaymentHistory = (params: PaymentHistoryParams = {}) => {
   });
 };
 
+// Hook for fetching all payments records
+export const useAllPayments = (params: { page?: number; limit?: number; sortBy?: string; sortOrder?: string } = {}) => {
+  return useQuery({
+    queryKey: [...paymentKeys.all, "all", params],
+    queryFn: async () => {
+      const response = await paymentService.getAllPayments(params);
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
 // Hook for fetching outstanding balance
 export const useOutstandingBalance = (customerId: string) => {
   return useQuery({

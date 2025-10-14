@@ -20,7 +20,9 @@ import {
   Tag,
   Checkbox,
   Typography,
+  DatePicker,
 } from "antd";
+
 import { toast } from "sonner";
 import {
   SearchOutlined,
@@ -29,17 +31,20 @@ import {
   PrinterOutlined,
   UserOutlined,
   CalculatorOutlined,
+  FilterOutlined,
+  EyeOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
+import { InvoiceModal } from "@/components/InvoiceModal";
 import {
-  useSearchInvoices,
-  useCustomerInvoices,
-  usePaymentHistory,
-  useOutstandingBalance,
+  useAllPayments,
   usePaymentMutations,
   useExchangeRate,
 } from "@/hooks/usePayments";
+import { useCustomerInvoices } from "@/hooks/useInvoices";
 import {
   Invoice,
   PaymentCreatePayload,
@@ -50,6 +55,7 @@ import {
 import { Payment } from "@/types/invoice";
 import { columns } from "./columns";
 import { Empty } from "antd";
+import { useCustomerById } from "@/hooks/useCustomers";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -60,62 +66,71 @@ export default function PaymentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInvoices, setSelectedInvoices] = useState<Invoice[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const [isReceiptDrawerVisible, setIsReceiptDrawerVisible] = useState(false);
   const [currentPayment, setCurrentPayment] = useState<Payment | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [paymentCurrency, setPaymentCurrency] = useState<Currency>(Currency.USD);
+  const [paymentCurrency, setPaymentCurrency] = useState<Currency>(
+    Currency.USD
+  );
+
+  // Filter states for payments table
+  const [invoiceNumberFilter, setInvoiceNumberFilter] = useState("");
+  const [customerFilter, setCustomerFilter] = useState("");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
+  const [dateRange, setDateRange] = useState<[string, string] | null>(null);
 
   // Forms
   const [paymentForm] = Form.useForm();
 
   // React Query hooks
-  const { data: searchResults, isLoading: isSearching } = useSearchInvoices({
-    search: searchTerm,
-    limit: 20,
-  });
+  const { data: customerInvoices, isLoading: isLoadingCustomerInvoices } =
+    useCustomerInvoices(selectedCustomerId, {
+      page: 1,
+      limit: 10,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
+  const { data: allPaymentsData, isLoading: isLoadingAllPayments } =
+    useAllPayments({
+      page: 1,
+      limit: 10,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
 
-  const { data: customerInvoices } = useCustomerInvoices(selectedCustomerId);
-  const { data: outstandingBalance } = useOutstandingBalance(selectedCustomerId);
-  const { data: paymentHistory, isLoading: isLoadingHistory } = usePaymentHistory({
-    customerId: selectedCustomerId,
-    limit: 10,
-  });
-
-  const {
-    makePayment,
-    generateReceipt,
-    isProcessingPayment,
-  } = usePaymentMutations();
+  const { makePayment, generateReceipt, isProcessingPayment } =
+    usePaymentMutations();
+  const { data: customerData } = useCustomerById(selectedCustomerId);
 
   const { data: exchangeRate } = useExchangeRate(Currency.USD, paymentCurrency);
-
-  // Handlers
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    setSelectedCustomerId("");
-    setSelectedInvoices([]);
-  };
 
   const handleCustomerSelect = (customerId: string) => {
     setSelectedCustomerId(customerId);
     setSelectedInvoices([]);
   };
 
-
   const handleSelectAllInvoices = (checked: boolean) => {
     if (checked && customerInvoices?.data) {
-      setSelectedInvoices(customerInvoices.data.filter(inv => inv.status !== InvoiceStatus.PAID));
+      setSelectedInvoices(
+        customerInvoices.data.filter((inv) => inv.status !== InvoiceStatus.PAID)
+      );
     } else {
       setSelectedInvoices([]);
     }
   };
 
   const calculateTotalSelected = () => {
-    return selectedInvoices.reduce((total, invoice) => total + invoice.balance, 0);
+    return selectedInvoices.reduce(
+      (total, invoice) => total + invoice.balance,
+      0
+    );
   };
 
-  const handlePaymentSubmit = async (values: PaymentCreatePayload & { amount: string }) => {
+  const handlePaymentSubmit = async (
+    values: PaymentCreatePayload & { amount: string }
+  ) => {
     if (selectedInvoices.length === 0) {
       toast.error("Please select at least one invoice to pay");
       return;
@@ -125,14 +140,16 @@ export default function PaymentsPage() {
     const amount = parseFloat(values.amount);
 
     if (amount > totalSelected) {
-      toast.error("Payment amount cannot exceed the total balance of selected invoices");
+      toast.error(
+        "Payment amount cannot exceed the total balance of selected invoices"
+      );
       return;
     }
 
     try {
       const paymentData: PaymentCreatePayload = {
         customerId: selectedCustomerId,
-        invoiceIds: selectedInvoices.map(inv => inv.id),
+        invoiceIds: selectedInvoices.map((inv) => inv.id),
         amount: amount,
         currency: values.currency,
         paymentMethod: values.paymentMethod,
@@ -160,20 +177,20 @@ export default function PaymentsPage() {
       setTimeout(() => {
         setIsReceiptDrawerVisible(true);
       }, 500);
-
     } catch (error) {
       toast.error("Failed to process payment");
     }
   };
-
 
   const handlePrintReceipt = () => {
     // Placeholder for print functionality
     message.info("Print functionality would be implemented here");
   };
 
-  const currentInvoices = customerInvoices?.data || searchResults?.data || [];
-  const unpaidInvoices = currentInvoices.filter(inv => inv.status !== InvoiceStatus.PAID);
+  const currentInvoices = customerInvoices?.data || [];
+  const unpaidInvoices = currentInvoices.filter(
+    (inv: Invoice) => inv.status !== InvoiceStatus.PAID
+  );
 
   return (
     <AuthGuard>
@@ -196,225 +213,286 @@ export default function PaymentsPage() {
           {/* Search Section */}
           <Card className="mb-6">
             <div className="flex flex-col gap-4 md:flex-row md:gap-4 mb-4">
-              <Input
-                placeholder="Search by customer name, phone, or package tracking ID..."
-                prefix={<SearchOutlined />}
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="max-w-md"
-                allowClear
+              <CustomerSearchSelect
+                placeholder="Search and select customer"
+                onSelect={handleCustomerSelect}
+                showAddNew={true}
               />
-              {searchResults?.data && searchResults.data.length > 0 && (
-                <Select
-                  placeholder="Select customer"
-                  className="w-full md:w-1/3"
-                  onChange={handleCustomerSelect}
-                  allowClear
-                  showSearch
-                  optionFilterProp="children"
+              {selectedCustomerId && (
+                <Button
+                  type="link"
+                  icon={<EyeOutlined />}
+                  onClick={() => setIsInvoiceModalVisible(true)}
                 >
-                  {searchResults.data.map((invoice) => (
-                    <Option key={invoice.customerId} value={invoice.customerId}>
-                      {invoice.customer.firstName} {invoice.customer.lastName} - {invoice.customer.phoneNumber}
-                    </Option>
-                  ))}
-                </Select>
+                  View All Invoices
+                </Button>
               )}
             </div>
           </Card>
 
           {/* Statistics Cards */}
           {selectedCustomerId && (
-            <Row gutter={[16, 16]} className="mb-6">
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Total Outstanding"
-                    value={outstandingBalance?.totalOutstanding || 0}
-                    prefix={<DollarOutlined />}
-                    precision={2}
-                    suffix={outstandingBalance?.currency}
+            <>
+              <Row gutter={[16, 16]} className="mb-6">
+                <Col xs={24} sm={12} md={6}>
+                  <Card>
+                    <Statistic
+                      title="Invoice Count"
+                      value={customerInvoices?.meta.total || 0}
+                      prefix={<FileTextOutlined />}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Card>
+                    <Statistic
+                      title="Selected Amount"
+                      value={calculateTotalSelected()}
+                      prefix={<DollarOutlined />}
+                      precision={2}
+                      valueStyle={{ color: "#1890ff" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Card>
+                    <Statistic
+                      title="Unpaid Invoices"
+                      value={unpaidInvoices.length}
+                      prefix={<UserOutlined />}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Card>
+                    <Statistic
+                      title="Total Selected"
+                      value={selectedInvoices.length}
+                      prefix={<CalculatorOutlined />}
+                      valueStyle={{ color: "#52c41a" }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+
+              {/* Invoices Table */}
+              <Card className="mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <Title level={4}>
+                    ({customerData?.customerCode}) {customerData?.firstName}{" "}
+                    {customerData?.lastName}&apos;s Invoices
+                  </Title>
+                  {unpaidInvoices.length > 0 && (
+                    <Space>
+                      <Checkbox
+                        onChange={(e) =>
+                          handleSelectAllInvoices(e.target.checked)
+                        }
+                        disabled={unpaidInvoices.length === 0}
+                      >
+                        Select All Unpaid ({unpaidInvoices.length})
+                      </Checkbox>
+                      <Text type="secondary">
+                        Selected: {selectedInvoices.length} invoices
+                      </Text>
+                    </Space>
+                  )}
+                </div>
+
+                <Table
+                  dataSource={currentInvoices}
+                  loading={isLoadingCustomerInvoices}
+                  rowKey="id"
+                  scroll={{ x: true }}
+                  pagination={{
+                    pageSize: 10,
+                    showTotal: (total, range) =>
+                      `${range[0]}-${range[1]} of ${total} invoices`,
+                  }}
+                  rowSelection={{
+                    selectedRowKeys: selectedInvoices.map((inv) => inv.id),
+                    onChange: (selectedRowKeys) => {
+                      const selected = currentInvoices.filter(
+                        (inv) =>
+                          selectedRowKeys.includes(inv.id) &&
+                          inv.status !== InvoiceStatus.PAID
+                      );
+                      setSelectedInvoices(selected);
+                    },
+                    getCheckboxProps: (record) => ({
+                      disabled: record.status === InvoiceStatus.PAID,
+                    }),
+                  }}
+                >
+                  <Table.Column
+                    title="Invoice #"
+                    dataIndex="invoiceNumber"
+                    key="invoiceNumber"
+                    render={(invoiceNumber: string) => (
+                      <Text strong style={{ fontFamily: "monospace" }}>
+                        {invoiceNumber}
+                      </Text>
+                    )}
                   />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Invoice Count"
-                    value={outstandingBalance?.invoiceCount || 0}
-                    prefix={<FileTextOutlined />}
+                  <Table.Column
+                    title="Packages"
+                    dataIndex="packages"
+                    key="packages"
+                    render={(packages: Array<{ trackingCode: string }>) => (
+                      <div>
+                        <div>
+                          {packages.length} package
+                          {packages.length !== 1 ? "s" : ""}
+                        </div>
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          {packages.map((pkg) => pkg.trackingCode).join(", ")}
+                        </Text>
+                      </div>
+                    )}
                   />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Selected Amount"
-                    value={calculateTotalSelected()}
-                    prefix={<DollarOutlined />}
-                    precision={2}
-                    valueStyle={{ color: "#1890ff" }}
+                  <Table.Column
+                    title="Total Amount"
+                    dataIndex="totalAmount"
+                    key="totalAmount"
+                    render={(amount: number, record: Invoice) => (
+                      <Text strong>
+                        {record.currency} {amount?.toFixed(2)}
+                      </Text>
+                    )}
+                    align="right"
                   />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Unpaid Invoices"
-                    value={unpaidInvoices.length}
-                    prefix={<UserOutlined />}
+                  <Table.Column
+                    title="Balance"
+                    dataIndex="balance"
+                    key="balance"
+                    render={(balance: number, record: Invoice) => (
+                      <Text
+                        strong
+                        style={{ color: balance > 0 ? "#ff4d4f" : "#52c41a" }}
+                      >
+                        {record.currency} {balance?.toFixed(2)}
+                      </Text>
+                    )}
+                    align="right"
                   />
-                </Card>
-              </Col>
-            </Row>
+                  <Table.Column
+                    title="Status"
+                    dataIndex="status"
+                    key="status"
+                    render={(status: InvoiceStatus) => (
+                      <Tag
+                        color={
+                          status === InvoiceStatus.PAID
+                            ? "success"
+                            : status === InvoiceStatus.UNPAID
+                            ? "error"
+                            : status === InvoiceStatus.PARTIALLY_PAID
+                            ? "warning"
+                            : "default"
+                        }
+                      >
+                        {status?.replace("_", " ")}
+                      </Tag>
+                    )}
+                  />
+                  <Table.Column
+                    title="Due Date"
+                    dataIndex="dueDate"
+                    key="dueDate"
+                    render={(date: string) =>
+                      new Date(date).toLocaleDateString()
+                    }
+                  />
+                </Table>
+              </Card>
+            </>
           )}
 
-          {/* Invoices Table */}
-          <Card className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <Title level={4}>Customer Invoices</Title>
-              {unpaidInvoices.length > 0 && (
-                <Space>
-                  <Checkbox
-                    onChange={(e) => handleSelectAllInvoices(e.target.checked)}
-                    disabled={unpaidInvoices.length === 0}
-                  >
-                    Select All Unpaid ({unpaidInvoices.length})
-                  </Checkbox>
-                  <Text type="secondary">
-                    Selected: {selectedInvoices.length} invoices
-                  </Text>
-                </Space>
-              )}
+          {!selectedCustomerId && (
+            <Card className="mb-6">
+              <div className="text-center py-12">
+                <FileTextOutlined
+                  style={{
+                    fontSize: "48px",
+                    color: "#d9d9d9",
+                    marginBottom: "16px",
+                  }}
+                />
+                <Title level={4} style={{ color: "#999", marginBottom: "8px" }}>
+                  Select a Customer
+                </Title>
+                <Text type="secondary">
+                  Search and select a customer to view their invoices and make
+                  payments
+                </Text>
+              </div>
+            </Card>
+          )}
+
+          {/* Invoice Modal */}
+          <InvoiceModal
+            visible={isInvoiceModalVisible}
+            onClose={() => setIsInvoiceModalVisible(false)}
+            invoiceId={null} // Show all customer invoices in the modal
+          />
+
+          {/* Payment History */}
+          <Card title="All Payments" className="mt-6">
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <Input
+                placeholder="Filter by invoice number"
+                value={invoiceNumberFilter}
+                onChange={(e) => setInvoiceNumberFilter(e.target.value)}
+                allowClear
+                prefix={<SearchOutlined />}
+              />
+              <Input
+                placeholder="Filter by customer"
+                value={customerFilter}
+                onChange={(e) => setCustomerFilter(e.target.value)}
+                allowClear
+                prefix={<UserOutlined />}
+              />
+              <Select
+                placeholder="Payment status"
+                value={paymentStatusFilter}
+                onChange={setPaymentStatusFilter}
+                allowClear
+              >
+                <Option value="COMPLETED">Completed</Option>
+                <Option value="PENDING">Pending</Option>
+                <Option value="FAILED">Failed</Option>
+                <Option value="REFUNDED">Refunded</Option>
+              </Select>
+              <DatePicker.RangePicker
+                placeholder={["From date", "To date"]}
+                onChange={(dates, dateStrings) => {
+                  setDateRange(
+                    dateStrings[0] && dateStrings[1]
+                      ? [dateStrings[0], dateStrings[1]]
+                      : null
+                  );
+                }}
+                className="w-full"
+              />
             </div>
 
             <Table
-              dataSource={currentInvoices}
-              loading={isSearching}
+              columns={columns}
+              dataSource={allPaymentsData || []}
+              loading={isLoadingAllPayments}
               rowKey="id"
-              scroll={{ x: true }}
               pagination={{
                 pageSize: 10,
                 showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} of ${total} invoices`,
+                  `${range[0]}-${range[1]} of ${total} payments`,
               }}
-              rowSelection={{
-                selectedRowKeys: selectedInvoices.map(inv => inv.id),
-                onChange: (selectedRowKeys) => {
-                  const selected = currentInvoices.filter(inv =>
-                    selectedRowKeys.includes(inv.id) && inv.status !== InvoiceStatus.PAID
-                  );
-                  setSelectedInvoices(selected);
-                },
-                getCheckboxProps: (record) => ({
-                  disabled: record.status === InvoiceStatus.PAID,
-                }),
-              }}
-            >
-              <Table.Column
-                title="Invoice #"
-                dataIndex="invoiceNumber"
-                key="invoiceNumber"
-                render={(invoiceNumber: string) => (
-                  <Text strong style={{ fontFamily: 'monospace' }}>
-                    {invoiceNumber}
-                  </Text>
-                )}
-              />
-              <Table.Column
-                title="Customer"
-                key="customer"
-                render={(_, record: Invoice) => (
-                  <div>
-                    <div style={{ fontWeight: 500 }}>
-                      {record.customer.firstName} {record.customer.lastName}
-                    </div>
-                    <Text type="secondary" style={{ fontSize: '12px' }}>
-                      {record.customer.phoneNumber}
-                    </Text>
-                  </div>
-                )}
-              />
-              <Table.Column
-                title="Packages"
-                dataIndex="packages"
-                key="packages"
-                render={(packages: Array<{ trackingCode: string }>) => (
-                  <div>
-                    <div>{packages.length} package{packages.length !== 1 ? 's' : ''}</div>
-                    <Text type="secondary" style={{ fontSize: '12px' }}>
-                      {packages.map(pkg => pkg.trackingCode).join(', ')}
-                    </Text>
-                  </div>
-                )}
-              />
-              <Table.Column
-                title="Total Amount"
-                dataIndex="totalAmount"
-                key="totalAmount"
-                render={(amount: number, record: Invoice) => (
-                  <Text strong>
-                    {record.currency} {amount?.toLocaleString()}
-                  </Text>
-                )}
-                align="right"
-              />
-              <Table.Column
-                title="Balance"
-                dataIndex="balance"
-                key="balance"
-                render={(balance: number, record: Invoice) => (
-                  <Text strong style={{ color: balance > 0 ? '#ff4d4f' : '#52c41a' }}>
-                    {record.currency} {balance?.toLocaleString()}
-                  </Text>
-                )}
-                align="right"
-              />
-              <Table.Column
-                title="Status"
-                dataIndex="status"
-                key="status"
-                render={(status: InvoiceStatus) => (
-                  <Tag
-                    color={
-                      status === InvoiceStatus.PAID ? 'success' :
-                      status === InvoiceStatus.UNPAID ? 'error' :
-                      status === InvoiceStatus.PARTIALLY_PAID ? 'warning' : 'default'
-                    }
-                  >
-                    {status?.replace('_', ' ')}
-                  </Tag>
-                )}
-              />
-              <Table.Column
-                title="Due Date"
-                dataIndex="dueDate"
-                key="dueDate"
-                render={(date: string) => new Date(date).toLocaleDateString()}
-              />
-            </Table>
+              locale={{ emptyText: <Empty description="No payments found" /> }}
+              scroll={{ x: true }}
+              size="middle"
+            />
           </Card>
-
-          {/* Payment History */}
-          {selectedCustomerId && (
-            <Card>
-              <Title level={4} className="mb-4">Recent Payment History</Title>
-              <Table
-                columns={columns}
-                dataSource={paymentHistory?.data || []}
-                loading={isLoadingHistory}
-                rowKey="id"
-                pagination={{
-                  pageSize: 5,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} of ${total} payments`,
-                }}
-                locale={{ emptyText: <Empty description="No data" /> }}
-                scroll={{ x: true }}
-                size="middle"
-              />
-            </Card>
-          )}
 
           {/* Payment Modal */}
           <Modal
@@ -426,7 +504,7 @@ export default function PaymentsPage() {
             }}
             footer={null}
             width="95%"
-            style={{ maxWidth: 600, margin: '16px auto' }}
+            style={{ maxWidth: 600, margin: "16px auto" }}
           >
             <Form
               form={paymentForm}
@@ -444,8 +522,8 @@ export default function PaymentsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>Total Balance:</span>
-                  <strong style={{ color: '#1890ff' }}>
-                    USD {calculateTotalSelected().toLocaleString()}
+                  <strong style={{ color: "#1890ff" }}>
+                    USD {calculateTotalSelected().toFixed(2)}
                   </strong>
                 </div>
               </Card>
@@ -460,11 +538,13 @@ export default function PaymentsPage() {
                       const amount = parseFloat(value);
                       const total = calculateTotalSelected();
                       if (amount > total) {
-                        return Promise.reject(new Error("Amount cannot exceed total balance"));
+                        return Promise.reject(
+                          new Error("Amount cannot exceed total balance")
+                        );
                       }
                       return Promise.resolve();
-                    }
-                  }
+                    },
+                  },
                 ]}
               >
                 <Input
@@ -480,14 +560,13 @@ export default function PaymentsPage() {
                   <Form.Item
                     name="currency"
                     label="Currency"
-                    rules={[{ required: true, message: "Please select currency" }]}
+                    rules={[
+                      { required: true, message: "Please select currency" },
+                    ]}
                   >
                     <Select placeholder="Select currency">
                       <Option value={Currency.USD}>USD</Option>
-                      <Option value={Currency.EUR}>EUR</Option>
-                      <Option value={Currency.GBP}>GBP</Option>
                       <Option value={Currency.GHS}>GHS</Option>
-                      <Option value={Currency.NGN}>NGN</Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -495,12 +574,21 @@ export default function PaymentsPage() {
                   <Form.Item
                     name="paymentMethod"
                     label="Payment Method"
-                    rules={[{ required: true, message: "Please select payment method" }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select payment method",
+                      },
+                    ]}
                   >
                     <Select placeholder="Select payment method">
                       <Option value={PaymentMethod.CASH}>Cash</Option>
-                      <Option value={PaymentMethod.BANK_TRANSFER}>Bank Transfer</Option>
-                      <Option value={PaymentMethod.MOBILE_MONEY}>Mobile Money</Option>
+                      <Option value={PaymentMethod.BANK_TRANSFER}>
+                        Bank Transfer
+                      </Option>
+                      <Option value={PaymentMethod.MOBILE_MONEY}>
+                        Mobile Money
+                      </Option>
                       <Option value={PaymentMethod.CARD}>Card</Option>
                     </Select>
                   </Form.Item>
@@ -517,7 +605,11 @@ export default function PaymentsPage() {
 
               <Form.Item>
                 <Space>
-                  <Button type="primary" htmlType="submit" loading={isProcessingPayment}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isProcessingPayment}
+                  >
                     Process Payment
                   </Button>
                   <Button
@@ -557,27 +649,33 @@ export default function PaymentsPage() {
                 <Card className="mb-4">
                   <Descriptions column={1} bordered size="small">
                     <Descriptions.Item label="Receipt Number">
-                      <strong>{currentPayment.receipt?.receiptNumber || 'N/A'}</strong>
+                      <strong>
+                        {currentPayment.receipt?.receiptNumber || "N/A"}
+                      </strong>
                     </Descriptions.Item>
                     <Descriptions.Item label="Payment Code">
                       <strong>{currentPayment.paymentCode}</strong>
                     </Descriptions.Item>
                     <Descriptions.Item label="Customer">
-                      {currentPayment.customer.firstName} {currentPayment.customer.lastName}
+                      {currentPayment.customer.firstName}{" "}
+                      {currentPayment.customer.lastName}
                     </Descriptions.Item>
                     <Descriptions.Item label="Phone">
                       {currentPayment.customer.phoneNumber}
                     </Descriptions.Item>
                     <Descriptions.Item label="Payment Method">
-                      <Tag>{currentPayment.paymentMethod?.replace('_', ' ')}</Tag>
+                      <Tag>
+                        {currentPayment.paymentMethod?.replace("_", " ")}
+                      </Tag>
                     </Descriptions.Item>
                     <Descriptions.Item label="Amount Paid">
-                      <strong style={{ color: '#52c41a' }}>
-                        {currentPayment.currency} {currentPayment.amount?.toLocaleString()}
+                      <strong style={{ color: "#52c41a" }}>
+                        {currentPayment.currency}{" "}
+                        {currentPayment.amount?.toLocaleString()}
                       </strong>
                     </Descriptions.Item>
                     <Descriptions.Item label="Reference">
-                      {currentPayment.reference || 'N/A'}
+                      {currentPayment.reference || "N/A"}
                     </Descriptions.Item>
                     <Descriptions.Item label="Processed At">
                       {new Date(currentPayment.processedAt).toLocaleString()}
@@ -598,8 +696,14 @@ export default function PaymentsPage() {
                           title={`Invoice ${invoice.invoiceNumber}`}
                           description={
                             <div>
-                              <div>Total: {invoice.currency} {invoice.totalAmount?.toLocaleString()}</div>
-                              <div>Balance: {invoice.currency} {invoice.balance?.toLocaleString()}</div>
+                              <div>
+                                Total: {invoice.currency}{" "}
+                                {invoice.totalAmount?.toLocaleString()}
+                              </div>
+                              <div>
+                                Balance: {invoice.currency}{" "}
+                                {invoice.balance?.toLocaleString()}
+                              </div>
                             </div>
                           }
                         />

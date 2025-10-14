@@ -9,8 +9,6 @@ export interface ApiResponse<T = unknown> {
 export interface PaginationMeta {
   currentPage?: number;
   totalPages?: number;
-  totalItems?: number;
-  pageSize?: number;
   total?: number;
   page?: number;
   limit?: number;

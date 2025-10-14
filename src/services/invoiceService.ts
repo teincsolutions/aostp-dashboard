@@ -23,12 +23,12 @@ export const getInvoice = async (invoiceId: string): Promise<Invoice> => {
 
 export const getInvoicesByCustomer = async (
   customerId: string,
-  limit?: number
-): Promise<Invoice[]> => {
+  params?: { page?: number; limit?: number; sortBy?: string; sortOrder?: string }
+): Promise<PaginatedResponse<Invoice>> => {
   const res = await apiService.get(`/invoices/customer/${customerId}`, {
-    params: { limit }
+    params
   });
-  return res.data?.data || [];
+  return res.data;
 };
 
 export const getInvoicePdf = async (invoiceId: string): Promise<{ url: string }> => {

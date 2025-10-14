@@ -273,7 +273,7 @@ export default function WarehousePage() {
                 pagination={{
                   current: warehousesPage,
                   pageSize: warehousesLimit,
-                  total: warehousesData?.meta?.totalItems || 0,
+                  total: warehousesData?.meta?.total || 0,
                   showSizeChanger: true,
                   onChange: (page, size) => {
                     setWarehousesPage(page);

@@ -23,6 +23,7 @@ import {
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { InvoiceModal } from "@/components/InvoiceModal";
 import { useInvoices } from "@/hooks/useInvoices";
 import { Invoice, InvoiceStatus } from "@/types/invoice";
 
@@ -35,6 +36,9 @@ export default function InvoicesPage() {
   const [customerId, setCustomerId] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [invoiceModalInvoiceId, setInvoiceModalInvoiceId] = useState<
+    string | null
+  >(null);
 
   // React Query hooks
   const { data: invoices, isLoading } = useInvoices({
@@ -61,15 +65,11 @@ export default function InvoicesPage() {
   };
 
   const handleViewInvoice = (invoiceId: string) => {
-    message.info(
-      `View invoice ${invoiceId} - this would open a modal or navigate to detail page`
-    );
+    setInvoiceModalInvoiceId(invoiceId);
   };
 
   const handleDownloadInvoice = (invoiceId: string) => {
-    message.info(
-      `Download invoice ${invoiceId} - this would trigger file download`
-    );
+    setInvoiceModalInvoiceId(invoiceId);
   };
 
   // Table columns
@@ -104,23 +104,23 @@ export default function InvoicesPage() {
     },
     {
       title: "Packages",
-      dataIndex: "totalPackages",
-      key: "totalPackages",
-    },
-    {
-      title: "Total USD",
-      dataIndex: "totalAmount",
-      key: "totalAmount",
-      render: (amount: number, record: Invoice) =>
-        record.currency === "USD" ? `$${amount?.toFixed(2)}` : "-",
+      render: (_: any, record: Invoice) =>
+        record.packingList?.totalPackages || 0,
+      key: "packages",
       align: "right" as const,
     },
     {
-      title: "Total GHS",
+      title: "Total",
       dataIndex: "totalAmount",
       key: "totalAmount",
-      render: (amount: number, record: Invoice) =>
-        record.currency === "GHS" ? `₵${amount?.toFixed(2)}` : "-",
+      render: (amount: number, record: Invoice) => `${amount?.toFixed(2)}`,
+      align: "right" as const,
+    },
+    {
+      title: "Balance",
+      dataIndex: "balance",
+      key: "balance",
+      render: (amount: number, record: Invoice) => `${amount?.toFixed(2)}`,
       align: "right" as const,
     },
     {
@@ -324,6 +324,13 @@ export default function InvoicesPage() {
               }}
             />
           </Card>
+
+          {/* Invoice Modal */}
+          <InvoiceModal
+            visible={!!invoiceModalInvoiceId}
+            onClose={() => setInvoiceModalInvoiceId(null)}
+            invoiceId={invoiceModalInvoiceId}
+          />
         </div>
       </AppLayout>
     </AuthGuard>

@@ -411,7 +411,7 @@ export default function ContainersPage() {
               pagination={{
                 current: currentPage,
                 pageSize,
-                total: containers?.meta?.totalItems || 0,
+                total: containers?.meta?.total || 0,
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) =>

@@ -84,7 +84,9 @@ export default function PackageIntakePage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
 
   // Receipt modal
-  const [receiptModalPackageId, setReceiptModalPackageId] = useState<string | null>(null);
+  const [receiptModalPackageId, setReceiptModalPackageId] = useState<
+    string | null
+  >(null);
 
   // Get current user, global warehouse selection, and data
   const user = useAuthStore((state) => state.user);
@@ -96,7 +98,7 @@ export default function PackageIntakePage() {
 
   // Customer invoices - fetch when customer is selected
   const { data: customerInvoices, isLoading: invoicesLoading } =
-    useCustomerInvoices(selectedCustomerId, 5);
+    useCustomerInvoices(selectedCustomerId, { limit: 5 });
 
   // Update form field when warehouse selection changes from header
   useEffect(() => {
@@ -112,7 +114,7 @@ export default function PackageIntakePage() {
 
   // Handler for QR/Barcode scan simulation
   const handleScanTrackingCode = () => {
-    // TODO: 
+    // TODO:
     toast.info("Tracking code scanned successfully");
   };
 
@@ -358,9 +360,11 @@ export default function PackageIntakePage() {
                         <div className="text-center py-4">
                           Loading invoices...
                         </div>
-                      ) : customerInvoices && customerInvoices.length > 0 ? (
+                      ) : (customerInvoices &&
+                          customerInvoices?.meta?.total) ||
+                        0 > 0 ? (
                         <div className="space-y-2">
-                          {customerInvoices
+                          {customerInvoices?.data
                             .slice(0, 5)
                             .map((invoice, index) => (
                               <div
@@ -385,7 +389,8 @@ export default function PackageIntakePage() {
                                     className={`text-sm px-2 py-1 rounded ${
                                       invoice.status === InvoiceStatus.PAID
                                         ? "bg-green-100 text-green-800"
-                                        : invoice.status === InvoiceStatus.UNPAID
+                                        : invoice.status ===
+                                          InvoiceStatus.UNPAID
                                         ? "bg-red-100 text-red-800"
                                         : "bg-yellow-100 text-yellow-800"
                                     }`}
@@ -625,7 +630,10 @@ export default function PackageIntakePage() {
             <Title level={4}>Recent Intakes</Title>
             <Table
               columns={packageIntakeColumns}
-              dataSource={recentIntakes.map(item => ({ ...item, onViewReceipt: (id: string) => setReceiptModalPackageId(id) }))}
+              dataSource={recentIntakes.map((item) => ({
+                ...item,
+                onViewReceipt: (id: string) => setReceiptModalPackageId(id),
+              }))}
               rowKey="id"
               loading={recentIntakesLoading}
               pagination={{

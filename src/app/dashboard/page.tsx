@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Button, Table, Skeleton, Empty, notification } from "antd";
+import { Card, Button, Table, Skeleton, Empty } from "antd";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useDashboard } from "@/hooks/useDashboard";

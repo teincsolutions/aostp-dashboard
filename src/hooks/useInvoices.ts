@@ -1,10 +1,22 @@
-import { useQuery } from '@tanstack/react-query';
-import { getInvoices, getInvoicePdf, getInvoicesByCustomer } from '@/services/invoiceService';
+import { useQuery } from "@tanstack/react-query";
+import {
+  getInvoices,
+  getInvoicePdf,
+  getInvoicesByCustomer,
+} from "@/services/invoiceService";
 
-export const useCustomerInvoices = (customerId: string, limit: number = 5) => {
+export const useCustomerInvoices = (
+  customerId: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
+  }
+) => {
   return useQuery({
-    queryKey: ['customer-invoices', customerId, limit],
-    queryFn: () => getInvoicesByCustomer(customerId, limit),
+    queryKey: ["customer-invoices", customerId, params],
+    queryFn: () => getInvoicesByCustomer(customerId, params),
     enabled: !!customerId,
   });
 };
@@ -16,14 +28,14 @@ export const useInvoices = (params?: {
   status?: string;
 }) => {
   return useQuery({
-    queryKey: ['invoices', params],
+    queryKey: ["invoices", params],
     queryFn: () => getInvoices(params),
   });
 };
 
 export const useInvoicePdf = (invoiceId?: string) => {
   return useQuery({
-    queryKey: ['invoice-pdf', invoiceId],
+    queryKey: ["invoice-pdf", invoiceId],
     queryFn: () => getInvoicePdf(invoiceId!),
     enabled: !!invoiceId,
   });
