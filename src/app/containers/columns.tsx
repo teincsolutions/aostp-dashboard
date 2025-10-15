@@ -34,14 +34,6 @@ export const getContainerColumns = (
     sorter: true,
   },
   {
-    title: 'Vessel/Flight',
-    dataIndex: 'vesselFlight',
-    key: 'vesselFlight',
-    render: (vesselFlight: string) => (
-      <span style={{ fontFamily: 'monospace' }}>{vesselFlight || 'N/A'}</span>
-    ),
-  },
-  {
     title: 'Container Type',
     dataIndex: 'containerType',
     key: 'containerType',
@@ -107,9 +99,9 @@ export const getContainerColumns = (
     ],
   },
   {
-    title: 'Total Packages',
-    dataIndex: 'totalPackages',
-    key: 'totalPackages',
+    title: 'Packing Lists',
+    dataIndex: 'packingListTotal',
+    key: 'packingListTotal',
     render: (count: number) => count || 0,
     sorter: true,
   },
