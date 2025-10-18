@@ -48,8 +48,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         </Button>,
       ]}
       width="80vw"
-      bodyStyle={{ height: '70vh', padding: 0 }}
-      destroyOnClose // Clean up when closed
+      styles={{ body: { height: '70vh', padding: 0 } }}
+      destroyOnHidden // Clean up when closed
     >
       {receiptLoading ? (
         <div className="flex items-center justify-center h-full">

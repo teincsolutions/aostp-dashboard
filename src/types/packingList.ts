@@ -23,7 +23,7 @@ export interface PackingList {
   eta: string;
   loadingDate: string;
   status: PackingListStatus;
-  totalPackages: number | null;
+  totalPackages: number;
   totalCBM: number | null;
   totalWeight: number | null;
   notes: string | null;

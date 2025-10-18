@@ -1,5 +1,6 @@
 import { apiService } from "./api";
 import { ApiResponse } from "@/types/common";
+import { ExchangeRate } from "@/types/exchangeRate";
 import {
   PaymentSearchParams,
   PaymentHistoryParams,
@@ -95,8 +96,8 @@ export const paymentService = {
   },
 
   // Get exchange rate from system settings
-  async getExchangeRate(fromCurrency: string, toCurrency: string): Promise<ApiResponse<{ rate: number }>> {
-    const response = await apiService.get<ApiResponse<{ rate: number }>>(`/settings/exchange-rate`, {
+  async getExchangeRate(fromCurrency: string, toCurrency: string): Promise<ExchangeRate[]> {
+    const response = await apiService.get<ExchangeRate[]>(`/settings/exchange-rate`, {
       params: { from: fromCurrency, to: toCurrency },
     });
     return response.data;

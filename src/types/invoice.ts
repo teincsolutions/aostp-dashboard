@@ -105,6 +105,7 @@ export interface Receipt {
 // Payment create payload
 export interface PaymentCreatePayload {
   customerId: string;
+  exchangeRateId: string | null;
   invoiceIds: string[];
   amount: number;
   currency: Currency;

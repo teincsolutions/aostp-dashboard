@@ -171,16 +171,3 @@ export const usePaymentMutations = () => {
     receiptError: generateReceiptMutation.error,
   };
 };
-
-// Hook for getting exchange rate
-export const useExchangeRate = (fromCurrency: string, toCurrency: string) => {
-  return useQuery({
-    queryKey: ["exchangeRate", fromCurrency, toCurrency],
-    queryFn: async () => {
-      const response = await paymentService.getExchangeRate(fromCurrency, toCurrency);
-      return response.data;
-    },
-    enabled: !!fromCurrency && !!toCurrency && fromCurrency !== toCurrency,
-    staleTime: 30 * 60 * 1000, // 30 minutes (exchange rates don't change frequently)
-  });
-};

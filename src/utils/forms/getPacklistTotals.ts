@@ -1,7 +1,5 @@
-import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { ShippingMode, ShippingRate } from "@/types/exchangeRate";
 import { Package } from "@/types/package";
-import { PackingList } from "@/types/packingList";
 
 export interface PackageWithCalculations extends Package {
   calculatedAmount?: number;

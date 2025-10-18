@@ -97,17 +97,6 @@ const PackingListCreatePage: React.FC = () => {
     }
   };
 
-  const handleFinalize = async () => {
-    if (!packingList) return;
-    try {
-      await finalizePackingList.mutateAsync(packingList.id);
-      toast.success(`Packing list finalized successfully`);
-      setSelectedPackageIds([]);
-    } catch (error) {
-      handleError(error);
-    }
-  };
-
   const handleAddPackage = (packageId: string) => {
     if (!selectedPackageIds.includes(packageId)) {
       setSelectedPackageIds((prev) => [...prev, packageId]);
@@ -463,11 +452,9 @@ const PackingListCreatePage: React.FC = () => {
                     >
                       <Button
                         type="primary"
-                        size="large"
+
                         loading={isFinalizing}
-                        disabled={
-                          !packingList || selectedPackageIds.length === 0
-                        }
+                        disabled={!packingList}
                       >
                         Finalize Packing List
                       </Button>
@@ -510,11 +497,7 @@ const PackingListCreatePage: React.FC = () => {
                     }
                   }}
                   loading={loading || isCreating}
-                  disabled={
-                    isCreating ||
-                    isFinalizing ||
-                    packingList?.totalPackages === 0
-                  }
+                  disabled={isCreating}
                   icon={<RightOutlined />}
                   iconPosition="end"
                 >

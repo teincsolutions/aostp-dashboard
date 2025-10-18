@@ -11,10 +11,7 @@ import {
   deletePackage,
   generateReceipt,
 } from "@/services/packageService";
-import {
-  CreatePackagePayload,
-  UpdatePackagePayload,
-} from "@/types/package";
+import { CreatePackagePayload, UpdatePackagePayload } from "@/types/package";
 
 export function useGetPackage(id: string) {
   return useQuery({
@@ -35,7 +32,13 @@ export function usePackageIntake() {
     refetch: refetchRecentIntakes,
   } = useQuery({
     queryKey: ["recentIntakes"],
-    queryFn: () => getRecentIntakes({ page: 1, limit: 10, sortBy: "createdAt", sortOrder: "desc" }),
+    queryFn: () =>
+      getRecentIntakes({
+        page: 1,
+        limit: 10,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      }),
     placeholderData: { data: [], total: 0 },
   });
 
@@ -84,11 +87,17 @@ export function usePackageIntake() {
     status: updatePackageStatus,
     error: updatePackageError,
   } = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdatePackagePayload }) =>
-      updatePackageIntake(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: UpdatePackagePayload;
+    }) => updatePackageIntake(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recentIntakes"] });
       queryClient.invalidateQueries({ queryKey: ["package"] });
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
     },
   });
 

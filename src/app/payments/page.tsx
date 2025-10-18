@@ -42,7 +42,6 @@ import { InvoiceModal } from "@/components/InvoiceModal";
 import {
   useAllPayments,
   usePaymentMutations,
-  useExchangeRate,
 } from "@/hooks/usePayments";
 import { useCustomerInvoices } from "@/hooks/useInvoices";
 import {
@@ -56,6 +55,8 @@ import { Payment } from "@/types/invoice";
 import { columns } from "./columns";
 import { Empty } from "antd";
 import { useCustomerById } from "@/hooks/useCustomers";
+import { Package } from "@/types/package";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -104,7 +105,7 @@ export default function PaymentsPage() {
     usePaymentMutations();
   const { data: customerData } = useCustomerById(selectedCustomerId);
 
-  const { data: exchangeRate } = useExchangeRate(Currency.USD, paymentCurrency);
+  const { activeRate } = useExchangeRate();
 
   const handleCustomerSelect = (customerId: string) => {
     setSelectedCustomerId(customerId);
@@ -149,6 +150,7 @@ export default function PaymentsPage() {
     try {
       const paymentData: PaymentCreatePayload = {
         customerId: selectedCustomerId,
+        exchangeRateId: activeRate ? activeRate.id : null,
         invoiceIds: selectedInvoices.map((inv) => inv.id),
         amount: amount,
         currency: values.currency,
@@ -335,17 +337,13 @@ export default function PaymentsPage() {
                     )}
                   />
                   <Table.Column
-                    title="Packages"
-                    dataIndex="packages"
-                    key="packages"
-                    render={(packages: Array<{ trackingCode: string }>) => (
+                    title="Package"
+                    dataIndex="package"
+                    key="package"
+                    render={(_package: Package) => (
                       <div>
-                        <div>
-                          {packages.length} package
-                          {packages.length !== 1 ? "s" : ""}
-                        </div>
                         <Text type="secondary" style={{ fontSize: "12px" }}>
-                          {packages.map((pkg) => pkg.trackingCode).join(", ")}
+                          {_package?.trackingCode ? _package.trackingCode : "N/A"}
                         </Text>
                       </div>
                     )}

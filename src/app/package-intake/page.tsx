@@ -590,18 +590,18 @@ export default function PackageIntakePage() {
                     >
                       <Button icon={<UploadOutlined />}>Select Photos</Button>
                     </Upload>
-                    <Modal
-                      open={preview.visible}
-                      footer={null}
-                      onCancel={() => setPreview({ visible: false, url: "" })}
-                    >
-                      <Image
-                        alt="Preview"
-                        style={{ width: "100%" }}
-                        src={preview.url}
-                      />
-                    </Modal>
                   </Form.Item>
+                  <Modal
+                    open={preview.visible}
+                    footer={null}
+                    onCancel={() => setPreview({ visible: false, url: "" })}
+                  >
+                    <Image
+                      alt="Preview"
+                      style={{ width: "100%" }}
+                      src={preview.url}
+                    />
+                  </Modal>
                 </Card>
               </div>
             </div>

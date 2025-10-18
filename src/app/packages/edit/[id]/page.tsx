@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import {
   Form,
   Input,
@@ -8,24 +8,20 @@ import {
   Select,
   Upload,
   Button,
-  DatePicker,
   Typography,
   Card,
-  message,
+  Spin,
   Modal,
   Image,
-  Spin,
 } from "antd";
 import { toast } from "sonner";
-import { UploadOutlined } from "@ant-design/icons";
 import { CustomerModal } from "@/components/CustomerModal";
-import { Form as AntdForm } from "antd";
 import { useGetPackage, usePackageIntake } from "@/hooks/usePackageIntake";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
 import { UpdatePackagePayload } from "@/types/package";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import type { RcFile, UploadFile } from "antd/es/upload/interface";
+import type { UploadFile } from "antd/es/upload/interface";
 import { CustomerCreatePayload } from "@/types/customer";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
@@ -50,13 +46,13 @@ const validateMessages = {
 };
 
 interface PackageEditPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function PackageEditPage({ params }: PackageEditPageProps) {
-  const { id } = params;
+  const { id } = use(params);
   const router = useRouter();
   const [form] = Form.useForm();
   const [photoList, setPhotoList] = useState<
@@ -514,6 +510,17 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                     }}
                   ></Upload>
                 </Card>
+                <Modal
+                  open={preview.visible}
+                  footer={null}
+                  onCancel={() => setPreview({ visible: false, url: "" })}
+                >
+                  <Image
+                    alt="Preview"
+                    style={{ width: "100%" }}
+                    src={preview.url}
+                  />
+                </Modal>
               </div>
             </div>
 
