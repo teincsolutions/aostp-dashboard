@@ -42,6 +42,8 @@ import { ContainerCreateModal } from "@/components/ContainerModals";
 import { Role } from "@/types/user";
 import { handleError } from "@/utils/forms/errorUtils";
 import { PackageAssignmentPanel } from "@/components/PackageAssignmentPanel";
+import { useCities } from "@/hooks/useCities";
+import { City } from "@/types/exchangeRate";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -82,16 +84,23 @@ const PackingListCreatePage: React.FC = () => {
     isCreating,
   } = usePackingListMutations();
 
-  const handleAssignPackages = () => {
+  // Cities for dropdown
+  const { data: citiesData, isLoading: citiesLoading } = useCities({
+    sortBy: "name",
+    sortOrder: "asc",
+  });
+
+  const handleAssignPackages = async () => {
     if (!packingList) return;
 
     try {
-      addPackagesToPackingList.mutateAsync({
+      const pklist = await addPackagesToPackingList.mutateAsync({
         id: packingList.id,
         packageIds: selectedPackageIds,
       });
       toast.success(`${selectedPackageIds.length} packages added successfully`);
       setSelectedPackageIds([]);
+      if (pklist.data) setPackingList(pklist.data);
     } catch (error) {
       handleError(error);
     }
@@ -164,9 +173,7 @@ const PackingListCreatePage: React.FC = () => {
       } as PackingListCreatePayload;
       await createPackingList.mutateAsync(createPayload);
     } catch (error: any) {
-      toast.error(
-        error.response?.data?.message || "Failed to create packing list"
-      );
+      handleError(error);
     }
   };
 
@@ -258,24 +265,7 @@ const PackingListCreatePage: React.FC = () => {
                       <Input placeholder="e.g., PL-2025-001" />
                     </Form.Item>
                   </Col>
-                  <Col xs={24} lg={12}>
-                    <Form.Item
-                      name="destinationCity"
-                      label="Destination City"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please enter destination city",
-                        },
-                      ]}
-                    >
-                      <Input placeholder="e.g., Accra, Tema" />
-                    </Form.Item>
-                  </Col>
-                </Row>
-
-                <Row gutter={16}>
-                  <Col xs={24} lg={12}>
+                  <Col xs={24} lg={6}>
                     <Form.Item
                       name="loadingDate"
                       label="Loading Date"
@@ -289,7 +279,7 @@ const PackingListCreatePage: React.FC = () => {
                       <DatePicker className="w-full" />
                     </Form.Item>
                   </Col>
-                  <Col xs={24} lg={12}>
+                  <Col xs={24} lg={6}>
                     <Form.Item
                       name="eta"
                       label="Estimated Time of Arrival"
@@ -312,16 +302,8 @@ const PackingListCreatePage: React.FC = () => {
                       <DatePicker className="w-full" />
                     </Form.Item>
                   </Col>
-                  <Col xs={24} lg={12}>
-                    <Form.Item name="notes" label="Notes">
-                      <Input.TextArea rows={2} />
-                    </Form.Item>
-                  </Col>
                 </Row>
 
-                <Title level={4} style={{ marginTop: 24 }}>
-                  Container Selection
-                </Title>
                 <Row gutter={16}>
                   <Col xs={20} lg={8}>
                     <Form.Item
@@ -351,7 +333,7 @@ const PackingListCreatePage: React.FC = () => {
                         {activeContainers.map((container) => (
                           <Option key={container.id} value={container.id}>
                             {container.containerNumber} -{" "}
-                            {container.destinationCity} (
+                            {container?.destinationCity?.name} (
                             {container.containerType})
                           </Option>
                         ))}
@@ -369,6 +351,12 @@ const PackingListCreatePage: React.FC = () => {
                       <span className="hidden lg:block">Create New</span>
                     </Button>
                   </Col>
+
+                  <Col xs={24} lg={12}>
+                    <Form.Item name="notes" label="Notes">
+                      <Input.TextArea rows={2} />
+                    </Form.Item>
+                  </Col>
                 </Row>
               </Form>
             )}
@@ -377,7 +365,7 @@ const PackingListCreatePage: React.FC = () => {
               // Step 2: Package Assignment
               <div className="space-y-4">
                 <PackageAssignmentPanel
-                  packingList={packingList}
+                  packingListId={packingList?.id || ""}
                   selectedPackageIds={selectedPackageIds}
                   isRemovingPackages={isRemovingPackages}
                   handleAddPackage={handleAddPackage}
@@ -398,7 +386,8 @@ const PackingListCreatePage: React.FC = () => {
                     </Col>
                     <Col xs={24} sm={12}>
                       <Text strong>Destination City:</Text>{" "}
-                      {packingList?.destinationCity}
+                      {packingList?.container?.destinationCity.name},
+                      {packingList?.container?.destinationCity.country}
                     </Col>
                   </Row>
                   <Row gutter={16} className="mt-2">
@@ -452,7 +441,6 @@ const PackingListCreatePage: React.FC = () => {
                     >
                       <Button
                         type="primary"
-
                         loading={isFinalizing}
                         disabled={!packingList}
                       >
@@ -490,7 +478,7 @@ const PackingListCreatePage: React.FC = () => {
                 <Button
                   type="primary"
                   onClick={() => {
-                    if (currentStep === 0) {
+                    if (currentStep === 0 && !packingList) {
                       handleCreatePackingList();
                     } else {
                       handleNext();

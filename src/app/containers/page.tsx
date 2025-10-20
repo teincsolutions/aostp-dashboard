@@ -48,6 +48,8 @@ import {
   ContainerStatusUpdateModal,
 } from "@/components/ContainerModals";
 import { handleError } from "@/utils/forms/errorUtils";
+import { useCities } from "@/hooks/useCities";
+import { City } from "@/types/exchangeRate";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -124,6 +126,14 @@ export default function ContainersPage() {
     isLoading: isLoadingStatistics,
     error: statisticsError,
   } = useContainerStatistics(viewingContainer?.id || "");
+
+  const { data: citiesData } = useCities({ limit: 100 });
+  const cities = citiesData?.data || [];
+
+  const getCityName = (cityId: string) => {
+    const city = cities.find(c => c.id === cityId);
+    return city ? `${city.name}, ${city.country}` : cityId;
+  };
 
   const {
     createContainer,
@@ -240,7 +250,8 @@ export default function ContainersPage() {
     handleExportManifest,
     isDeleting,
     isUpdatingStatus,
-    isExporting
+    isExporting,
+    cities
   );
 
   // Statistics
@@ -376,22 +387,32 @@ export default function ContainersPage() {
                   </Option>
                 ))}
               </Select>
-              <Input
+              <Select
                 placeholder="Departure city"
                 value={departureCityFilter}
-                onChange={(e) =>
-                  handleFilterChange(setDepartureCityFilter)(e.target.value)
-                }
+                onChange={handleFilterChange(setDepartureCityFilter)}
                 allowClear
-              />
-              <Input
+                showSearch
+              >
+                {cities.map((city: City) => (
+                  <Option key={city.id} value={city.id}>
+                    {city.name}, {city.country}
+                  </Option>
+                ))}
+              </Select>
+              <Select
                 placeholder="Destination city"
                 value={destinationCityFilter}
-                onChange={(e) =>
-                  handleFilterChange(setDestinationCityFilter)(e.target.value)
-                }
+                onChange={handleFilterChange(setDestinationCityFilter)}
                 allowClear
-              />
+                showSearch
+              >
+                {cities.map((city: City) => (
+                  <Option key={city.id} value={city.id}>
+                    {city.name}, {city.country}
+                  </Option>
+                ))}
+              </Select>
               <RangePicker
                 placeholder={["From date", "To date"]}
                 value={dateRange}
@@ -560,8 +581,8 @@ export default function ContainersPage() {
                 <Card title="Container Details">
                   <div className="space-y-2">
                     <div>
-                      <strong>Route:</strong> {viewingContainer?.departureCity}{" "}
-                      → {viewingContainer?.destinationCity}
+                      <strong>Route:</strong> {getCityName(viewingContainer?.departureCityId || "")}{" "}
+                      → {getCityName(viewingContainer?.destinationCityId || "")}
                     </div>
                     <div>
                       <strong>Loading Date:</strong>{" "}

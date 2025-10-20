@@ -17,6 +17,8 @@ import {
   ContainerStatus,
   ContainerType,
 } from "@/types/container";
+import { useCities } from "@/hooks/useCities";
+import { City } from "@/types/exchangeRate";
 
 const { Option } = Select;
 
@@ -34,6 +36,8 @@ const ContainerCreateModal: React.FC<ContainerCreateModalProps> = ({
   loading = false,
 }) => {
   const [form] = Form.useForm();
+  const { data: citiesData } = useCities({ limit: 100 }); // Get cities
+  const cities = citiesData?.data || [];
 
   const handleClose = () => {
     form.resetFields();
@@ -96,30 +100,42 @@ const ContainerCreateModal: React.FC<ContainerCreateModalProps> = ({
         <Row gutter={16}>
           <Col xs={24} sm={12}>
             <Form.Item
-              name="departureCity"
+              name="departureCityId"
               label="Departure City"
               rules={[
                 {
                   required: true,
-                  message: "Please enter departure city",
+                  message: "Please select departure city",
                 },
               ]}
             >
-              <Input />
+              <Select placeholder="Select departure city" showSearch>
+                {cities.map((city: City) => (
+                  <Option key={city.id} value={city.id}>
+                    {city.name}, {city.country}
+                  </Option>
+                ))}
+              </Select>
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
-              name="destinationCity"
+              name="destinationCityId"
               label="Destination City"
               rules={[
                 {
                   required: true,
-                  message: "Please enter destination city",
+                  message: "Please select destination city",
                 },
               ]}
             >
-              <Input />
+              <Select placeholder="Select destination city" showSearch>
+                {cities.map((city: City) => (
+                  <Option key={city.id} value={city.id}>
+                    {city.name}, {city.country}
+                  </Option>
+                ))}
+              </Select>
             </Form.Item>
           </Col>
 

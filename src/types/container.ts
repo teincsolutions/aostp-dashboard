@@ -1,16 +1,16 @@
 // Container status enum - follows the flow: Planned → Loaded → Shipped → Arrived → Closed
 export enum ContainerStatus {
-  PLANNED = 'PLANNED',
-  LOADED = 'LOADED',
-  SHIPPED = 'SHIPPED',
-  ARRIVED = 'ARRIVED',
-  CLOSED = 'CLOSED',
+  PLANNED = "PLANNED",
+  LOADED = "LOADED",
+  SHIPPED = "SHIPPED",
+  ARRIVED = "ARRIVED",
+  CLOSED = "CLOSED",
 }
 
 // Container type enum for Packing List filtering
 export enum ContainerType {
-  CONTAINER = 'CONTAINER', // Sea freight
-  BAG = 'BAG', // Air freight
+  CONTAINER = "CONTAINER", // Sea freight
+  BAG = "BAG", // Air freight
 }
 
 // Base Container interface
@@ -19,8 +19,10 @@ export interface Container {
   containerNumber: string;
   vesselFlight?: string; // Vessel name or flight number
   loadingDate: string;
-  departureCity: string;
-  destinationCity: string;
+  departureCityId: string;
+  destinationCityId: string;
+  departureCity: City;
+  destinationCity: City;
   eta: string;
   containerType: ContainerType;
   status: ContainerStatus;
@@ -48,8 +50,8 @@ export interface ContainerCreatePayload {
   containerNumber: string;
   vesselFlight?: string;
   loadingDate: string;
-  departureCity: string;
-  destinationCity: string;
+  departureCityId: string;
+  destinationCityId: string;
   eta: string;
   containerType: ContainerType;
   status: ContainerStatus;
@@ -61,8 +63,8 @@ export interface ContainerUpdatePayload {
   containerNumber?: string;
   vesselFlight?: string;
   loadingDate?: string;
-  departureCity?: string;
-  destinationCity?: string;
+  departureCityId?: string;
+  destinationCityId?: string;
   eta?: string;
   status?: ContainerStatus;
   notes?: string;
@@ -114,19 +116,19 @@ export interface GetContainersParams {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   search?: string;
   status?: ContainerStatus;
-  departureCity?: string;
-  destinationCity?: string;
+  departureCityId?: string;
+  destinationCityId?: string;
   dateFrom?: string;
   dateTo?: string;
 }
 
 // Export format options
 export enum ExportFormat {
-  PDF = 'PDF',
-  EXCEL = 'EXCEL',
+  PDF = "PDF",
+  EXCEL = "EXCEL",
 }
 
 // Container service response types
@@ -144,16 +146,19 @@ export interface ContainerStatisticsResponse {
   correlationId: string;
 }
 
-export interface ContainerManifestResponse extends ApiResponse<ContainerManifest> {
+export interface ContainerManifestResponse
+  extends ApiResponse<ContainerManifest> {
   correlationId: string;
 }
 
-export interface ContainerExportResponse extends ApiResponse<{
-  downloadUrl: string;
-  expiresAt: string;
-}> {
+export interface ContainerExportResponse
+  extends ApiResponse<{
+    downloadUrl: string;
+    expiresAt: string;
+  }> {
   correlationId: string;
 }
 
 // Import required types from common
-import { ApiResponse, PaginatedResponse } from './common';
+import { ApiResponse, PaginatedResponse } from "./common";
+import { City } from "./exchangeRate";

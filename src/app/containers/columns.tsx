@@ -9,8 +9,14 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import type { Container } from '@/types/container';
 import { ContainerStatus, ExportFormat } from '@/types/container';
+import { City } from '@/types/exchangeRate';
 
 const { Text } = Typography;
+
+const getCityName = (cityId: string, cities: City[]) => {
+  const city = cities.find(c => c.id === cityId);
+  return city ? `${city.name}, ${city.country}` : cityId;
+};
 
 export const getContainerColumns = (
   onEditContainer: (container: Container) => void,
@@ -20,7 +26,8 @@ export const getContainerColumns = (
   onExportManifest: (id: string, format: ExportFormat) => void,
   isDeleting: boolean,
   isUpdatingStatus: boolean,
-  isExporting: boolean
+  isExporting: boolean,
+  cities: City[] = []
 ): ColumnsType<Container> => [
   {
     title: 'Container Number',
@@ -55,15 +62,20 @@ export const getContainerColumns = (
     sorter: true,
   },
   {
-    title: 'Destination',
-    dataIndex: 'destinationCity',
-    key: 'destinationCity',
-    render: (destination: string) => (
-      <span style={{ fontWeight: 'bold' }}>{destination}</span>
+    title: 'Departure',
+    dataIndex: 'departureCityId',
+    key: 'departureCityId',
+    render: (cityId: string) => (
+      <span>{getCityName(cityId, cities)}</span>
     ),
-    filters: [
-      { text: 'Filter by destination', value: 'destinationCity' },
-    ],
+  },
+  {
+    title: 'Destination',
+    dataIndex: 'destinationCityId',
+    key: 'destinationCityId',
+    render: (cityId: string) => (
+      <span style={{ fontWeight: 'bold' }}>{getCityName(cityId, cities)}</span>
+    ),
   },
   {
     title: 'ETA',

@@ -3,6 +3,7 @@
 import { ApiResponse, PaginatedResponse } from "./common";
 import { Container } from "./container";
 import { Customer } from "./customer";
+import { City } from "./exchangeRate";
 import { Invoice } from "./invoice";
 import { Package } from "./package";
 
@@ -19,7 +20,7 @@ export interface PackingList {
   name: string;
   containerId: string;
   warehouseId: string;
-  destinationCity: string;
+  destinationCity: City;
   eta: string;
   loadingDate: string;
   status: PackingListStatus;
@@ -39,7 +40,7 @@ export interface PackingList {
 export interface PackingListCreatePayload {
   name: string;
   containerId?: string;
-  destinationCity: string;
+  destinationCityId: string;
   loadingDate: string;
   eta?: string;
   notes?: string;
@@ -50,7 +51,7 @@ export interface PackingListCreatePayload {
 export interface PackingListUpdatePayload {
   name?: string;
   containerId?: string;
-  destinationCity?: string;
+  destinationCityId?: string;
   loadingDate?: string;
   eta?: string;
   notes?: string;

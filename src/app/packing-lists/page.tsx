@@ -60,6 +60,7 @@ import dayjs from "dayjs";
 import { on } from "events";
 import { getPacklistTotals } from "@/utils/forms/getPacklistTotals";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { useCities } from "@/hooks/useCities";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -84,10 +85,10 @@ export default function PackingListsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-const containerTypeMap = {
-  CONTAINER: ShippingMode.SEA,
-  BAG: ShippingMode.AIR,
-};
+  const containerTypeMap = {
+    CONTAINER: ShippingMode.SEA,
+    BAG: ShippingMode.AIR,
+  };
   // Forms
   const [editForm] = Form.useForm();
 
@@ -105,6 +106,14 @@ const containerTypeMap = {
 
   const { data: activeContainers = [] } = useActiveContainers();
 
+  const { data: citiesData } = useCities({ limit: 100 });
+  const cities = citiesData?.data || [];
+
+  const getCityName = (cityId: string) => {
+    const city = cities.find(c => c.id === cityId);
+    return city ? `${city.name}, ${city.country}` : cityId;
+  };
+
   const {
     updatePackingList,
     deletePackingList,
@@ -121,16 +130,20 @@ const containerTypeMap = {
     detailsPackingList?.id || ""
   );
 
-    const { useCurrentActiveRates } = useShippingRates();
-    const { activeRate } = useExchangeRate();
+  const { useCurrentActiveRates } = useShippingRates();
+  const { activeRate } = useExchangeRate();
 
-    const shippingMode =
-      containerTypeMap[detailsPackingList?.container?.containerType || "BAG"];
-    // Get current shipping rate for calculations
-    const { data: currentShippingRates } = useCurrentActiveRates(shippingMode);
+  const shippingMode =
+    containerTypeMap[detailsPackingList?.container?.containerType || "BAG"];
+  // Get current shipping rate for calculations
+  const { data: currentShippingRates } = useCurrentActiveRates(shippingMode);
 
   const packageListTotals = useMemo(() => {
-    return getPacklistTotals(detailsPackingList?.packages || [], currentShippingRates, activeRate?.rate);
+    return getPacklistTotals(
+      detailsPackingList?.packages || [],
+      currentShippingRates,
+      activeRate?.rate
+    );
   }, [detailsPackingList, currentShippingRates, activeRate]);
 
   // Use all active containers
@@ -455,7 +468,7 @@ const containerTypeMap = {
                       {filteredContainers?.map((container) => (
                         <Option key={container.id} value={container.id}>
                           {container.containerNumber} -{" "}
-                          {container.destinationCity} ({container.status})
+                          {getCityName(container.destinationCityId || "")} ({container.status})
                         </Option>
                       ))}
                     </Select>
@@ -546,7 +559,7 @@ const containerTypeMap = {
                     </span>
                   </Descriptions.Item>
                   <Descriptions.Item label="Destination City">
-                    {packingListDetails.destinationCity || "N/A"}
+                    {packingListDetails.container?.destinationCity?.name || "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Loading Date">
                     {packingListDetails.loadingDate

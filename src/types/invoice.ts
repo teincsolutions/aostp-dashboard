@@ -41,6 +41,7 @@ export interface Invoice {
   packingList: PackingList;
   packages: Array<Package>;
   totalAmount: number;
+  localAmount: number;
   paidAmount: number;
   balance: number;
   currency: Currency;

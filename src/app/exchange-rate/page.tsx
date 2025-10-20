@@ -148,13 +148,15 @@ export default function RateManagementPage() {
   const validateShippingRateDateOverlap = (
     effectiveFrom: dayjs.Dayjs,
     shippingMode: ShippingMode,
+    cityId: string,
     airShippingType?: AirShippingType
   ): { isValid: boolean; message?: string } => {
     const selectedDate = effectiveFrom.toISOString();
 
-    // Filter rates for the same mode/type combination
+    // Filter rates for the same mode/type/city combination
     const relevantRates = allShippingRates.filter((rate) => {
       if (rate.shippingMode !== shippingMode) return false;
+      if (rate.cityId !== cityId) return false;
       if (
         shippingMode === ShippingMode.AIR &&
         rate.airShippingType !== airShippingType
@@ -174,7 +176,7 @@ export default function RateManagementPage() {
           : "SEA";
         return {
           isValid: false,
-          message: `Date overlaps with existing ${conflictType} rate effective from ${dayjs(
+          message: `Date overlaps with existing ${conflictType} rate for ${rate.city.name} (${rate.city.country}) effective from ${dayjs(
             rate.effectiveFrom
           ).format("YYYY-MM-DD HH:mm")}`,
         };
@@ -609,6 +611,7 @@ export default function RateManagementPage() {
                                 validateShippingRateDateOverlap(
                                   effectiveFrom,
                                   values.shippingMode,
+                                  values.cityId,
                                   values.airShippingType
                                 );
 
@@ -630,6 +633,7 @@ export default function RateManagementPage() {
                               await setShippingRate(payload);
                               toast.success("Shipping rate set successfully");
                               resetForm();
+                              
                             } catch (error: any) {
                               const fieldErrors = getServerValidationErrors(error);
                               if (fieldErrors) {

@@ -112,7 +112,7 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
       ]}
     >
       <PackageAssignmentPanel
-        packingList={packingList}
+        packingListId={packingList?.id || ""}
         selectedPackageIds={selectedPackageIds}
         isRemovingPackages={isRemovingPackages}
         handleAddPackage={handleAddPackage}

@@ -55,9 +55,12 @@ const LoginPage: React.FC = () => {
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
         await login(values);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Login error:", error);
-        setFieldError("general", error instanceof Error ? error.message : "An error occurred");
+        setFieldError(
+          "general",
+          error?.response ? error?.response?.data?.message : "An error occurred"
+        );
       } finally {
         setSubmitting(false);
       }
@@ -77,7 +80,10 @@ const LoginPage: React.FC = () => {
           token: values.twoFactorToken,
         });
       } catch (error) {
-        setFieldError("twoFactorToken", error instanceof Error ? error.message : "An error occurred");
+        setFieldError(
+          "twoFactorToken",
+          error instanceof Error ? error.message : "An error occurred"
+        );
       } finally {
         setSubmitting(false);
       }

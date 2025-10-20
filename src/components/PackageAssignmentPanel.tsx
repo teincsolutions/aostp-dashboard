@@ -4,6 +4,7 @@ import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
 import { Package } from "@/types/package";
 import { ShippingMode } from "@/types/exchangeRate";
 import {
+  usePackingList,
   useUnassignedPackages,
 } from "@/hooks/usePackingLists";
 import { useShippingRates } from "@/hooks/useShippingRates";
@@ -13,14 +14,14 @@ import {
   getPacklistTotals,
   PackageWithCalculations,
 } from "@/utils/forms/getPacklistTotals";
-import { PackingList, PackingListStatus } from "@/types/packingList";
+import { PackingListStatus } from "@/types/packingList";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const { Text } = Typography;
 
 
 interface PackageAssignmentProps {
-  packingList?: PackingList;
+  packingListId: string;
   selectedPackageIds: string[];
   handleAddPackage: (id: string) => void;
   handleRemovePackage: (id: string) => void;
@@ -32,24 +33,26 @@ const containerTypeMap = {
 };
 
 export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
-  packingList,
+  packingListId,
   selectedPackageIds,
   handleAddPackage,
   handleRemovePackage,
   isRemovingPackages,
 }) => {
+   const { data: packingListData } = usePackingList(packingListId || "");
+
   const [unassignedPage, setUnassignedPage] = useState(1);
 
   const { data: paginatedUnassignedPackages } = useUnassignedPackages({
     page: unassignedPage,
     shippingMode:
-      containerTypeMap[packingList?.container?.containerType || "BAG"],
+      containerTypeMap[packingListData?.container?.containerType || "BAG"],
   });
   const { useCurrentActiveRates } = useShippingRates();
   const { activeRate } = useExchangeRate();
-
+ 
   const shippingMode =
-    containerTypeMap[packingList?.container?.containerType || "BAG"];
+    containerTypeMap[packingListData?.container?.containerType || "BAG"];
   // Get current shipping rate for calculations
   const { data: currentShippingRates } = useCurrentActiveRates(shippingMode);
 
@@ -132,7 +135,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
           icon={<MinusOutlined />}
           loading={isRemovingPackages}
           onClick={() => handleRemovePackage(record.id)}
-          disabled={packingList?.status === PackingListStatus.FINALIZED}
+          disabled={packingListData?.status === PackingListStatus.FINALIZED}
           size="small"
         >
           Remove
@@ -276,7 +279,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   return (
     <div className="space-y-4">
       {selectedPackages.length > 0 &&
-        packingList?.status === PackingListStatus.DRAFT && (
+        packingListData?.status === PackingListStatus.DRAFT && (
           <Alert
             message="Selected Packages Summary"
             description={
@@ -313,9 +316,9 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
         {/* Assigned Packages */}
         <div>
           <Text strong className="text-lg mb-2 block">
-            Assigned Packages ({packingList?.totalPackages})
+            Assigned Packages ({packingListData?.totalPackages})
           </Text>
-          {packingList?.status === "FINALIZED" && (
+          {packingListData?.status === "FINALIZED" && (
             <Alert
               message="This packing list is finalized. You cannot modify assigned packages."
               type="warning"
@@ -323,10 +326,10 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               className="mb-2"
             />
           )}
-          {packingList?.packages && packingList.packages.length > 0 ? (
+          {packingListData?.packages && packingListData.packages.length > 0 ? (
             <Table
               columns={assignedPackageColumns}
-              dataSource={packingList?.packages || []}
+              dataSource={packingListData?.packages || []}
               rowKey="id"
               pagination={{
                 pageSize: 10,
@@ -342,7 +345,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
         </div>
 
         {/* Available Packages */}
-        {packingList?.status === PackingListStatus.DRAFT && (
+        {packingListData?.status === PackingListStatus.DRAFT && (
           <div>
             <Text strong className="text-lg mb-2 block">
               Available Packages ({paginatedUnassignedPackages?.length || 0})
@@ -366,7 +369,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
         )}
 
         {/* Selected Packages */}
-        {packingList?.status === PackingListStatus.DRAFT && (
+        {packingListData?.status === PackingListStatus.DRAFT && (
           <div>
             <Text strong className="text-lg mb-2 block">
               Selected Packages ({selectedPackageIds.length})

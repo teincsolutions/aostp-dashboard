@@ -9,6 +9,8 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type { PackingList } from "@/types/packingList";
 import { PackingListStatus } from "@/types/packingList";
+import { City } from "@/types/exchangeRate";
+import { Container } from "@/types/container";
 export const packingListStatusColors = {
   [PackingListStatus.DRAFT]: "default",
   [PackingListStatus.POSTED]: "green",
@@ -47,9 +49,11 @@ export const getPackingListColumns = (
   },
   {
     title: "Destination City",
-    dataIndex: "destinationCity",
-    key: "destinationCity",
-    render: (city: string) => <span>{city || "N/A"}</span>,
+    dataIndex: "container",
+    key: "container",
+    render: (container: Container) => (
+      <span>{`${container?.destinationCity?.name}, ${container?.destinationCity?.country}` || "N/A"}</span>
+    ),
   },
   {
     title: "Container",
@@ -74,7 +78,9 @@ export const getPackingListColumns = (
     key: "status",
     render: (status: PackingListStatus) => {
       return (
-        <Tag color={packingListStatusColors[status]}>{status?.replace("_", " ")}</Tag>
+        <Tag color={packingListStatusColors[status]}>
+          {status?.replace("_", " ")}
+        </Tag>
       );
     },
     filters: [
