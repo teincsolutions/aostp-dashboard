@@ -1,7 +1,7 @@
 // src/app/payments/columns.tsx
 import { ColumnsType } from 'antd/es/table';
-import { Payment } from '@/types/invoice';
 import { Tooltip } from 'antd';
+import { Payment } from '@/types/payment';
 
 export const columns: ColumnsType<Payment> = [
   {

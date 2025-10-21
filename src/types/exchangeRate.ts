@@ -3,14 +3,15 @@
 export interface ExchangeRate {
   id: string;
   fromCurrency: string; // e.g. "USD"
-  toCurrency: string;   // e.g. "GHS"
+  toCurrency: string; // e.g. "GHS"
   rate: number;
   effectiveFrom: string; // ISO DateTime
-  effectiveTo?: string;  // ISO DateTime, optional
+  effectiveTo?: string; // ISO DateTime, optional
   isActive: boolean;
   setBy: {
     id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     role: string;
   };
@@ -20,7 +21,7 @@ export interface ExchangeRate {
 
 export interface ExchangeRateCreatePayload {
   fromCurrency: string; // always "USD"
-  toCurrency: string;   // always "GHS"
+  toCurrency: string; // always "GHS"
   rate: number;
   effectiveFrom: string; // ISO DateTime
 }

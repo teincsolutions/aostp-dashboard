@@ -12,6 +12,7 @@ import {
   OutstandingBalanceResponse,
   PaymentStats,
 } from "@/types/invoice";
+import { Payment } from "@/types/payment";
 
 // Payment processing service functions
 export const paymentService = {
@@ -70,8 +71,8 @@ export const paymentService = {
   },
 
   // Process a new payment
-  async makePayment(paymentData: PaymentCreatePayload): Promise<PaymentResponse> {
-    const response = await apiService.post<PaymentResponse>("/payments", paymentData);
+  async makePayment(paymentData: PaymentCreatePayload): Promise<Payment> {
+    const response = await apiService.post<Payment>("/payments", paymentData);
     return response.data;
   },
 

@@ -62,6 +62,6 @@ export const handleError = (err: any) => {
   } else if (response?.data?.message) {
     toast.error(response.data.message);
   } else {
-    toast.error("Failed to add customer");
+    toast.error("Failed to process the request. Please try again.");
   }
 };

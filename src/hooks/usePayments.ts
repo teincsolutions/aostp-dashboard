@@ -4,11 +4,8 @@ import {
   PaymentSearchParams,
   PaymentHistoryParams,
   PaymentCreatePayload,
-  Invoice,
-  Payment,
-  OutstandingBalance,
-  PaymentStats,
 } from "@/types/invoice";
+import { Payment } from "@/types/payment";
 
 // Query keys for React Query
 export const paymentKeys = {
@@ -126,8 +123,7 @@ export const usePaymentMutations = () => {
   // Make payment mutation
   const makePaymentMutation = useMutation({
     mutationFn: async (paymentData: PaymentCreatePayload) => {
-      const response = await paymentService.makePayment(paymentData);
-      return response.data;
+      return await paymentService.makePayment(paymentData);
     },
     onSuccess: (data) => {
       // Invalidate relevant queries
@@ -160,7 +156,6 @@ export const usePaymentMutations = () => {
 
   return {
     makePayment: makePaymentMutation.mutateAsync,
-    generateReceipt: generateReceiptMutation.mutateAsync,
 
     // Loading states
     isProcessingPayment: makePaymentMutation.isPending,

@@ -110,7 +110,7 @@ export default function PackingListsPage() {
   const cities = citiesData?.data || [];
 
   const getCityName = (cityId: string) => {
-    const city = cities.find(c => c.id === cityId);
+    const city = cities.find((c) => c.id === cityId);
     return city ? `${city.name}, ${city.country}` : cityId;
   };
 
@@ -468,7 +468,8 @@ export default function PackingListsPage() {
                       {filteredContainers?.map((container) => (
                         <Option key={container.id} value={container.id}>
                           {container.containerNumber} -{" "}
-                          {getCityName(container.destinationCityId || "")} ({container.status})
+                          {getCityName(container.destinationCityId || "")} (
+                          {container.status})
                         </Option>
                       ))}
                     </Select>
@@ -482,14 +483,6 @@ export default function PackingListsPage() {
                     <DatePicker className="w-full" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
-                  <Form.Item name="destinationCity" label="Destination City">
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="eta" label="Estimated Time of Arrival">
                     <DatePicker className="w-full" />
@@ -559,7 +552,8 @@ export default function PackingListsPage() {
                     </span>
                   </Descriptions.Item>
                   <Descriptions.Item label="Destination City">
-                    {packingListDetails.container?.destinationCity?.name || "N/A"}
+                    {packingListDetails.container?.destinationCity?.name ||
+                      "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Loading Date">
                     {packingListDetails.loadingDate

@@ -3,6 +3,7 @@
 import { ApiResponse, PaginatedResponse } from './common';
 import { Package } from './package';
 import { PackingList } from './packingList';
+import { Payment } from './payment';
 
 // Invoice status enum
 export enum InvoiceStatus {
@@ -48,32 +49,6 @@ export interface Invoice {
   exchangeRate: number;
   status: InvoiceStatus;
   dueDate: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Payment interface
-export interface Payment {
-  id: string;
-  paymentCode: string;
-  customerId: string;
-  customer: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber: string;
-  };
-  amount: number;
-  currency: Currency;
-  exchangeRate: number;
-  paymentMethod: PaymentMethod;
-  reference?: string;
-  invoiceIds: string[];
-  invoices: Invoice[];
-  receipt?: Receipt;
-  processedBy: string;
-  processedAt: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,5 +1,9 @@
+import { ExchangeRate } from "./exchangeRate";
+import { Invoice } from "./invoice";
+
 export interface Payment {
   id: string;
+  customerId: string;
   amount: number;
   currency: string;
   status: string;
@@ -9,7 +13,9 @@ export interface Payment {
   processedAt: string;
   processedBy: string;
   paymentCode: string;
+  exchangeRate?: ExchangeRate;
   customer: {
+    id: string;
     firstName: string;
     lastName: string;
     phoneNumber: string;
@@ -17,5 +23,7 @@ export interface Payment {
   receipt?: {
     receiptNumber: string;
   };
-  invoices: import("./invoice").Invoice[];
+  createdAt: string;
+  updatedAt: string;
+  invoices: Invoice[];
 }

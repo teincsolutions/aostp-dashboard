@@ -13,15 +13,13 @@ import {
   Empty,
   Spin,
   Result,
-  notification,
   Row,
   Col,
   Statistic,
   Tag,
-  Divider,
 } from "antd";
 import { apiService } from "@/services/api";
-import { Invoice, Payment } from "@/types/invoice";
+import { Invoice } from "@/types/invoice";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 

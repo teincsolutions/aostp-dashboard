@@ -21,7 +21,8 @@ export const exchangeRateColumns: ColumnsType<ExchangeRate> = [
     title: "Set By",
     dataIndex: "setBy",
     key: "setBy",
-    render: (setBy: ExchangeRate["setBy"]) => setBy?.name || "-",
+    render: (setBy: ExchangeRate["setBy"]) =>
+      `${setBy?.firstName} ${setBy?.lastName}` || "-",
   },
   {
     title: "Created At",
@@ -37,7 +38,11 @@ export const exchangeRateColumns: ColumnsType<ExchangeRate> = [
         {!record.isActive && (
           <Button
             danger
-            onClick={() => window.confirm("Are you sure you want to delete this exchange rate?") && window.location.reload()}
+            onClick={() =>
+              window.confirm(
+                "Are you sure you want to delete this exchange rate?"
+              ) && window.location.reload()
+            }
             // Note: Need to pass delete function from component
           >
             Delete

@@ -51,12 +51,13 @@ import {
   PaymentMethod,
   Currency,
 } from "@/types/invoice";
-import { Payment } from "@/types/invoice";
 import { columns } from "./columns";
 import { Empty } from "antd";
 import { useCustomerById } from "@/hooks/useCustomers";
 import { Package } from "@/types/package";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { handleError } from "@/utils/forms/errorUtils";
+import { Payment } from "@/types/payment";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -101,7 +102,7 @@ export default function PaymentsPage() {
       sortOrder: "desc",
     });
 
-  const { makePayment, generateReceipt, isProcessingPayment } =
+  const { makePayment, isProcessingPayment } =
     usePaymentMutations();
   const { data: customerData } = useCustomerById(selectedCustomerId);
 
@@ -161,26 +162,13 @@ export default function PaymentsPage() {
 
       const payment = await makePayment(paymentData);
       toast.success("Payment processed successfully");
-
-      // Generate receipt automatically
-      try {
-        await generateReceipt(payment.id);
-        toast.success("Receipt generated successfully");
-      } catch (error) {
-        message.warning("Payment processed but receipt generation failed");
-      }
-
-      setIsPaymentModalVisible(false);
       paymentForm.resetFields();
       setSelectedInvoices([]);
       setCurrentPayment(payment);
-
-      // Show receipt
-      setTimeout(() => {
-        setIsReceiptDrawerVisible(true);
-      }, 500);
+      setIsPaymentModalVisible(false);
+      setIsReceiptDrawerVisible(true);
     } catch (error) {
-      toast.error("Failed to process payment");
+      handleError(error);
     }
   };
 

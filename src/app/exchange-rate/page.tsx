@@ -90,7 +90,6 @@ export default function RateManagementPage() {
     isSetSuccess: isShippingSetSuccess,
     resetSet: resetShippingSet,
     deactivateShippingRate,
-    updateShippingRate,
   } = useShippingRates();
 
   // Pagination states
@@ -123,28 +122,6 @@ export default function RateManagementPage() {
     }
   }, [allShippingRatesQuery.data]);
 
-  // Date overlap validation functions
-  const validateExchangeRateDateOverlap = (
-    effectiveFrom: dayjs.Dayjs
-  ): { isValid: boolean; message?: string } => {
-    const activeRates = allExchangeRates.filter((rate) => rate.isActive);
-    const selectedDate = effectiveFrom.toISOString();
-
-    // Check if there's an active rate that would conflict
-    for (const rate of activeRates) {
-      if (rate.effectiveFrom <= selectedDate) {
-        return {
-          isValid: false,
-          message: `Date overlaps with existing active rate effective from ${dayjs(
-            rate.effectiveFrom
-          ).format("YYYY-MM-DD HH:mm")}`,
-        };
-      }
-    }
-
-    return { isValid: true };
-  };
-
   const validateShippingRateDateOverlap = (
     effectiveFrom: dayjs.Dayjs,
     shippingMode: ShippingMode,
@@ -176,7 +153,9 @@ export default function RateManagementPage() {
           : "SEA";
         return {
           isValid: false,
-          message: `Date overlaps with existing ${conflictType} rate for ${rate.city.name} (${rate.city.country}) effective from ${dayjs(
+          message: `Date overlaps with existing ${conflictType} rate for ${
+            rate.city.name
+          } (${rate.city.country}) effective from ${dayjs(
             rate.effectiveFrom
           ).format("YYYY-MM-DD HH:mm")}`,
         };
@@ -212,7 +191,7 @@ export default function RateManagementPage() {
 
   // Notification handlers
   if (setExchangeError) {
-    toast.error(`Failed to set exchange rate: ${setExchangeError.message}`  );
+    toast.error(`Failed to set exchange rate: ${setExchangeError.message}`);
     resetExchangeSet();
   }
   if (setExchangeSuccess) {
@@ -273,21 +252,23 @@ export default function RateManagementPage() {
     {
       title: "Actions",
       key: "actions",
-      render: (record: ExchangeRate) => (
-        <Space size="middle">
-          {!record.isActive && (
+      render: (record: ExchangeRate) =>
+        !record.isActive && (
+          <Space>
             <Popconfirm
               title="Delete Exchange Rate"
               description="Are you sure you want to delete this exchange rate?"
-              onConfirm={() => deleteExchangeRate(record.id)}
+              onConfirm={() => {
+                
+                deleteExchangeRate(record.id);
+              }}
               okText="Yes"
               cancelText="No"
             >
               <Button danger>Delete</Button>
             </Popconfirm>
-          )}
-        </Space>
-      ),
+          </Space>
+        ),
     },
   ];
 
@@ -352,7 +333,7 @@ export default function RateManagementPage() {
       ),
     },
     {
-      title:"Actions",
+      title: "Actions",
       key: "actions",
       render: (_: any, record: ShippingRate) => (
         <Space size="middle">
@@ -364,15 +345,15 @@ export default function RateManagementPage() {
               okText="Yes"
               cancelText="No"
             >
-              <Button size="small" danger>Deactivate</Button>
+              <Button type="primary" size="small" danger>
+                Deactivate
+              </Button>
             </Popconfirm>
           ) : null}
         </Space>
       ),
-    }
+    },
   ];
-
-  
 
   return (
     <AuthGuard requiredRoles={ROLES_ALLOWED}>
@@ -402,14 +383,17 @@ export default function RateManagementPage() {
                               {activeRate.rate}
                             </div>
                             <div>
-                              <span className="font-semibold">Effective From:</span>{" "}
+                              <span className="font-semibold">
+                                Effective From:
+                              </span>{" "}
                               {dayjs(activeRate.effectiveFrom).format(
                                 "YYYY-MM-DD HH:mm"
                               )}
                             </div>
                             <div>
                               <span className="font-semibold">Set By:</span>{" "}
-                              {activeRate.setBy?.name}
+                              {activeRate?.setBy?.firstName}{" "}
+                              {activeRate?.setBy?.lastName}
                             </div>
                           </div>
                         ) : (
@@ -424,18 +408,11 @@ export default function RateManagementPage() {
                             effectiveFrom: "",
                           }}
                           validationSchema={exchangeRateValidationSchema}
-                          onSubmit={async (values, { setErrors, resetForm }) => {
+                          onSubmit={async (
+                            values,
+                            { setErrors, resetForm }
+                          ) => {
                             try {
-                              // Validate date overlap before submission
-                              const effectiveFrom = dayjs(values.effectiveFrom);
-                              const overlapValidation =
-                                validateExchangeRateDateOverlap(effectiveFrom);
-
-                              if (!overlapValidation.isValid) {
-                                toast.error(overlapValidation.message);
-                                return;
-                              }
-
                               const payload: ExchangeRateCreatePayload = {
                                 rate: Number(values.rate),
                                 effectiveFrom: dayjs(
@@ -444,11 +421,12 @@ export default function RateManagementPage() {
                                 fromCurrency: "USD",
                                 toCurrency: "GHS",
                               };
-                              await setActiveRate(payload);
+                              setActiveRate(payload);
                               toast.success("Exchange rate set successfully");
                               resetForm();
                             } catch (error: any) {
-                              const fieldErrors = getServerValidationErrors(error);
+                              const fieldErrors =
+                                getServerValidationErrors(error);
                               if (fieldErrors) {
                                 setErrors(fieldErrors);
                               } else {
@@ -460,14 +438,21 @@ export default function RateManagementPage() {
                             }
                           }}
                         >
-                          {({ errors, touched, setFieldValue, isSubmitting }) => (
+                          {({
+                            errors,
+                            touched,
+                            setFieldValue,
+                            isSubmitting,
+                          }) => (
                             <FormikForm className="flex flex-col gap-4">
                               <Form.Item
                                 label="Rate (USD → GHS)"
                                 validateStatus={
                                   errors.rate && touched.rate ? "error" : ""
                                 }
-                                help={errors.rate && touched.rate ? errors.rate : ""}
+                                help={
+                                  errors.rate && touched.rate ? errors.rate : ""
+                                }
                               >
                                 <Field name="rate">
                                   {({ field }: any) => (
@@ -476,7 +461,9 @@ export default function RateManagementPage() {
                                       min={0.0001}
                                       step={0.0001}
                                       style={{ width: "100%" }}
-                                      onChange={(val) => setFieldValue("rate", val)}
+                                      onChange={(val) =>
+                                        setFieldValue("rate", val)
+                                      }
                                       placeholder="e.g., 11.50"
                                     />
                                   )}
@@ -577,11 +564,15 @@ export default function RateManagementPage() {
                                   </div>
                                   <div className="text-sm text-gray-500">
                                     Effective:{" "}
-                                    {dayjs(rate.effectiveFrom).format("YYYY-MM-DD")}
+                                    {dayjs(rate.effectiveFrom).format(
+                                      "YYYY-MM-DD"
+                                    )}
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="font-bold">${rate.ratePerUnit}</div>
+                                  <div className="font-bold">
+                                    ${rate.ratePerUnit}
+                                  </div>
                                   <div className="text-sm">{rate.currency}</div>
                                 </div>
                               </div>
@@ -603,7 +594,10 @@ export default function RateManagementPage() {
                             effectiveFrom: "",
                           }}
                           validationSchema={shippingRateValidationSchema}
-                          onSubmit={async (values, { setErrors, resetForm }) => {
+                          onSubmit={async (
+                            values,
+                            { setErrors, resetForm }
+                          ) => {
                             try {
                               // Validate date overlap before submission
                               const effectiveFrom = dayjs(values.effectiveFrom);
@@ -633,9 +627,9 @@ export default function RateManagementPage() {
                               await setShippingRate(payload);
                               toast.success("Shipping rate set successfully");
                               resetForm();
-                              
                             } catch (error: any) {
-                              const fieldErrors = getServerValidationErrors(error);
+                              const fieldErrors =
+                                getServerValidationErrors(error);
                               if (fieldErrors) {
                                 setErrors(fieldErrors);
                               } else {
@@ -675,7 +669,10 @@ export default function RateManagementPage() {
                                       onChange={(val) => {
                                         setFieldValue("shippingMode", val);
                                         if (val === ShippingMode.SEA) {
-                                          setFieldValue("airShippingType", undefined);
+                                          setFieldValue(
+                                            "airShippingType",
+                                            undefined
+                                          );
                                         }
                                       }}
                                       value={values.shippingMode}
@@ -696,12 +693,14 @@ export default function RateManagementPage() {
                                 <Form.Item
                                   label="Air Shipping Type"
                                   validateStatus={
-                                    errors.airShippingType && touched.airShippingType
+                                    errors.airShippingType &&
+                                    touched.airShippingType
                                       ? "error"
                                       : ""
                                   }
                                   help={
-                                    errors.airShippingType && touched.airShippingType
+                                    errors.airShippingType &&
+                                    touched.airShippingType
                                       ? errors.airShippingType
                                       : ""
                                   }
@@ -731,7 +730,9 @@ export default function RateManagementPage() {
                                         >
                                           Battery Goods
                                         </Select.Option>
-                                        <Select.Option value={AirShippingType.PHONES}>
+                                        <Select.Option
+                                          value={AirShippingType.PHONES}
+                                        >
                                           Phones
                                         </Select.Option>
                                       </Select>
@@ -746,7 +747,9 @@ export default function RateManagementPage() {
                                   errors.cityId && touched.cityId ? "error" : ""
                                 }
                                 help={
-                                  errors.cityId && touched.cityId ? errors.cityId : ""
+                                  errors.cityId && touched.cityId
+                                    ? errors.cityId
+                                    : ""
                                 }
                               >
                                 <Field name="cityId">
@@ -760,12 +763,18 @@ export default function RateManagementPage() {
                                       filterOption={(input, option) =>
                                         (option?.children as unknown as string)
                                           ?.toLowerCase()
-                                          .includes(input.toLowerCase()) || false
+                                          .includes(input.toLowerCase()) ||
+                                        false
                                       }
-                                      onChange={(val) => setFieldValue("cityId", val)}
+                                      onChange={(val) =>
+                                        setFieldValue("cityId", val)
+                                      }
                                     >
                                       {citiesData?.data?.map((city: City) => (
-                                        <Select.Option key={city.id} value={city.id}>
+                                        <Select.Option
+                                          key={city.id}
+                                          value={city.id}
+                                        >
                                           {city.name}, {city.country}
                                         </Select.Option>
                                       ))}
@@ -777,7 +786,9 @@ export default function RateManagementPage() {
                                 label="Currency"
                                 required
                                 validateStatus={
-                                  errors.currency && touched.currency ? "error" : ""
+                                  errors.currency && touched.currency
+                                    ? "error"
+                                    : ""
                                 }
                                 help={
                                   errors.currency && touched.currency
@@ -795,8 +806,12 @@ export default function RateManagementPage() {
                                         setFieldValue("currency", val)
                                       }
                                     >
-                                      <Select.Option value="GHS">GHS</Select.Option>
-                                      <Select.Option value="USD">USD</Select.Option>
+                                      <Select.Option value="GHS">
+                                        GHS
+                                      </Select.Option>
+                                      <Select.Option value="USD">
+                                        USD
+                                      </Select.Option>
                                     </Select>
                                   )}
                                 </Field>

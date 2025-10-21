@@ -51,6 +51,8 @@ export function usePackageIntake() {
     mutationFn: (payload: CreatePackagePayload) => createPackage(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recentIntakes"] });
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      queryClient.invalidateQueries({ queryKey: ["package"] });
     },
   });
 

@@ -386,8 +386,8 @@ const PackingListCreatePage: React.FC = () => {
                     </Col>
                     <Col xs={24} sm={12}>
                       <Text strong>Destination City:</Text>{" "}
-                      {packingList?.container?.destinationCity.name},
-                      {packingList?.container?.destinationCity.country}
+                      {packingList?.container?.destinationCity?.name},
+                      {packingList?.container?.destinationCity?.country}
                     </Col>
                   </Row>
                   <Row gutter={16} className="mt-2">
