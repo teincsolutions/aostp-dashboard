@@ -104,6 +104,19 @@ export const useOutstandingBalance = (customerId: string) => {
   });
 };
 
+// Hook for fetching payment by id
+export const usePaymentDetail = (id: string) => {
+  return useQuery({
+    queryKey: paymentKeys.detail(id),
+    queryFn: async () => {
+      const response = await paymentService.getPaymentById(id);
+      return response.data;
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
 // Hook for fetching payment statistics
 export const usePaymentStats = (params: { dateFrom?: string; dateTo?: string; customerId?: string } = {}) => {
   return useQuery({

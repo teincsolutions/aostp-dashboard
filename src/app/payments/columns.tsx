@@ -5,8 +5,10 @@ import { Payment } from "@/types/payment";
 
 export const getPaymentColumns = ({
   handleDelete,
+  handleView,
 }: {
   handleDelete: (id: string) => void;
+  handleView: (payment: Payment) => void;
 }) => {
   const columns: ColumnsType<Payment> = [
     {
@@ -32,8 +34,7 @@ export const getPaymentColumns = ({
       title: "Amount",
       key: "amount",
       width: 120,
-      render: (_, record) =>
-        `${record.currency} ${record.amount.toLocaleString()}`,
+      render: (_, record) => `${record.currency} ${record.amount.toFixed(2)}`,
     },
     {
       title: "Date",
@@ -56,6 +57,9 @@ export const getPaymentColumns = ({
       width: 100,
       render: (_, record) => (
         <Space size="middle">
+          <Button type="link" onClick={() => handleView(record)}>
+            View
+          </Button>
           <Popconfirm
             title="Are you sure you want to delete this payment?"
             onConfirm={() => handleDelete(record.id)}

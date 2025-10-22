@@ -31,15 +31,17 @@ import {
   PrinterOutlined,
   UserOutlined,
   CalculatorOutlined,
-  FilterOutlined,
   EyeOutlined,
-  DownloadOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import { InvoiceModal } from "@/components/InvoiceModal";
-import { useAllPayments, usePaymentMutations } from "@/hooks/usePayments";
+import {
+  useAllPayments,
+  usePaymentMutations,
+  usePaymentDetail,
+} from "@/hooks/usePayments";
 import { useCustomerInvoices } from "@/hooks/useInvoices";
 import {
   Invoice,
@@ -55,7 +57,6 @@ import { Package } from "@/types/package";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { handleError } from "@/utils/forms/errorUtils";
 import { Payment } from "@/types/payment";
-import { get } from "lodash";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -70,11 +71,6 @@ export default function PaymentsPage() {
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const [isReceiptDrawerVisible, setIsReceiptDrawerVisible] = useState(false);
   const [currentPayment, setCurrentPayment] = useState<Payment | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [paymentCurrency, setPaymentCurrency] = useState<Currency>(
-    Currency.USD
-  );
-
   // Filter states for payments table
   const [invoiceNumberFilter, setInvoiceNumberFilter] = useState("");
   const [customerFilter, setCustomerFilter] = useState("");
@@ -102,6 +98,9 @@ export default function PaymentsPage() {
 
   const { makePayment, isProcessingPayment, deletePayment } =
     usePaymentMutations();
+
+  // Hook for single payment detail - to be used when viewing
+  const { data: paymentDetail } = usePaymentDetail(currentPayment?.id || "");
 
   const { data: customerData } = useCustomerById(selectedCustomerId);
 
@@ -467,13 +466,17 @@ export default function PaymentsPage() {
 
             <Table
               columns={getPaymentColumns({
-                handleDelete: async(id: string) => {
+                handleDelete: async (id: string) => {
                   try {
                     await deletePayment(id);
                     toast.success("Payment deleted successfully");
                   } catch (error) {
                     handleError(error);
                   }
+                },
+                handleView: (payment) => {
+                  setCurrentPayment(payment);
+                  setIsReceiptDrawerVisible(true);
                 },
               })}
               dataSource={allPaymentsData || []}
@@ -667,7 +670,7 @@ export default function PaymentsPage() {
                     <Descriptions.Item label="Amount Paid">
                       <strong style={{ color: "#52c41a" }}>
                         {currentPayment.currency}{" "}
-                        {currentPayment.amount?.toLocaleString()}
+                        {currentPayment.amount?.toFixed(2)}
                       </strong>
                     </Descriptions.Item>
                     <Descriptions.Item label="Reference">
@@ -677,7 +680,8 @@ export default function PaymentsPage() {
                       {new Date(currentPayment.processedAt).toLocaleString()}
                     </Descriptions.Item>
                     <Descriptions.Item label="Processed By">
-                      {currentPayment.processedBy.firstName} {currentPayment.processedBy.lastName}
+                      {currentPayment.processedBy.firstName}{" "}
+                      {currentPayment.processedBy.lastName}
                     </Descriptions.Item>
                   </Descriptions>
                 </Card>
@@ -685,7 +689,7 @@ export default function PaymentsPage() {
                 <Card title="Invoice Details" size="small">
                   <List
                     size="small"
-                    dataSource={currentPayment.invoices}
+                    dataSource={paymentDetail?.invoices}
                     renderItem={(invoice: Invoice) => (
                       <List.Item>
                         <List.Item.Meta
@@ -694,11 +698,11 @@ export default function PaymentsPage() {
                             <div>
                               <div>
                                 Total: {invoice.currency}{" "}
-                                {invoice.totalAmount?.toLocaleString()}
+                                {invoice.totalAmount?.toFixed(2)}
                               </div>
                               <div>
                                 Balance: {invoice.currency}{" "}
-                                {invoice.balance?.toLocaleString()}
+                                {invoice.balance?.toFixed(2)}
                               </div>
                             </div>
                           }
