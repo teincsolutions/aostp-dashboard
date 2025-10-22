@@ -39,10 +39,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import { InvoiceModal } from "@/components/InvoiceModal";
-import {
-  useAllPayments,
-  usePaymentMutations,
-} from "@/hooks/usePayments";
+import { useAllPayments, usePaymentMutations } from "@/hooks/usePayments";
 import { useCustomerInvoices } from "@/hooks/useInvoices";
 import {
   Invoice,
@@ -51,13 +48,14 @@ import {
   PaymentMethod,
   Currency,
 } from "@/types/invoice";
-import { columns } from "./columns";
+import { getPaymentColumns } from "./columns";
 import { Empty } from "antd";
 import { useCustomerById } from "@/hooks/useCustomers";
 import { Package } from "@/types/package";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { handleError } from "@/utils/forms/errorUtils";
 import { Payment } from "@/types/payment";
+import { get } from "lodash";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -102,8 +100,9 @@ export default function PaymentsPage() {
       sortOrder: "desc",
     });
 
-  const { makePayment, isProcessingPayment } =
+  const { makePayment, isProcessingPayment, deletePayment } =
     usePaymentMutations();
+
   const { data: customerData } = useCustomerById(selectedCustomerId);
 
   const { activeRate } = useExchangeRate();
@@ -331,7 +330,9 @@ export default function PaymentsPage() {
                     render={(_package: Package) => (
                       <div>
                         <Text type="secondary" style={{ fontSize: "12px" }}>
-                          {_package?.trackingCode ? _package.trackingCode : "N/A"}
+                          {_package?.trackingCode
+                            ? _package.trackingCode
+                            : "N/A"}
                         </Text>
                       </div>
                     )}
@@ -465,7 +466,16 @@ export default function PaymentsPage() {
             </div>
 
             <Table
-              columns={columns}
+              columns={getPaymentColumns({
+                handleDelete: async(id: string) => {
+                  try {
+                    await deletePayment(id);
+                    toast.success("Payment deleted successfully");
+                  } catch (error) {
+                    handleError(error);
+                  }
+                },
+              })}
               dataSource={allPaymentsData || []}
               loading={isLoadingAllPayments}
               rowKey="id"
@@ -667,7 +677,7 @@ export default function PaymentsPage() {
                       {new Date(currentPayment.processedAt).toLocaleString()}
                     </Descriptions.Item>
                     <Descriptions.Item label="Processed By">
-                      {currentPayment.processedBy}
+                      {currentPayment.processedBy.firstName} {currentPayment.processedBy.lastName}
                     </Descriptions.Item>
                   </Descriptions>
                 </Card>

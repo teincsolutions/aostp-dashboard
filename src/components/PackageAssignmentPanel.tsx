@@ -296,13 +296,12 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                 </Col>
                 <Col span={6}>
                   <Space>
-                    {totals?.usdTotal ||
-                      (0 > 0 && (
-                        <Text strong>USD: ${totals?.usdTotal.toFixed(2)}</Text>
-                      ))}
-                    {totals?.ghsTotal || (0 > 0 && (
-                        <Text strong>GHS: ₵{totals?.ghsTotal.toFixed(2)}</Text>
-                      ))}
+                    {totals?.usdTotal && (
+                      <Text strong>USD: ${totals?.usdTotal.toFixed(2)}</Text>
+                    )}
+                    {totals?.ghsTotal && (
+                      <Text strong>GHS: ₵{totals?.ghsTotal.toFixed(2)}</Text>
+                    )}
                   </Space>
                 </Col>
               </Row>
@@ -394,18 +393,16 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={3} colSpan={4}>
                     <Space>
-                      {totals?.usdTotal ||
-                        (0 > 0 && (
-                          <Text strong>
-                            USD: ${totals?.usdTotal.toFixed(2)}
-                          </Text>
-                        ))}
-                      {totals?.ghsTotal ||
-                        (0 > 0 && (
-                          <Text strong>
-                            GHS: ₵{totals?.ghsTotal.toFixed(2)}
-                          </Text>
-                        ))}
+                      {totals?.usdTotal && (
+                        <Text strong>
+                          USD: ${totals?.usdTotal.toFixed(2)}
+                        </Text>
+                      )}
+                      {totals?.ghsTotal && (
+                        <Text strong>
+                          GHS: ₵{totals?.ghsTotal.toFixed(2)}
+                        </Text>
+                      )}
                     </Space>
                   </Table.Summary.Cell>
                 </Table.Summary.Row>

@@ -103,4 +103,9 @@ export const paymentService = {
     });
     return response.data;
   },
+
+  // Delete a payment by ID
+  async deletePayment(id: string): Promise<void> {
+    return await apiService.delete(`/payments/${id}`);
+  },
 };

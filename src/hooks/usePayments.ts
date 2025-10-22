@@ -154,9 +154,21 @@ export const usePaymentMutations = () => {
     },
   });
 
+  const deletePaymentMutation = useMutation({
+    mutationFn: async (paymentId: string) => {
+      return await paymentService.deletePayment(paymentId);
+    },
+    onSuccess: (_, paymentId) => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: paymentKeys.history({}) });
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all }); // Invalidate all balances
+      queryClient.invalidateQueries({ queryKey: paymentKeys.detail(paymentId) });
+    },
+  });
+
   return {
     makePayment: makePaymentMutation.mutateAsync,
-
+    deletePayment: deletePaymentMutation.mutateAsync,
     // Loading states
     isProcessingPayment: makePaymentMutation.isPending,
     isGeneratingReceipt: generateReceiptMutation.isPending,
@@ -164,5 +176,6 @@ export const usePaymentMutations = () => {
     // Error states
     paymentError: makePaymentMutation.error,
     receiptError: generateReceiptMutation.error,
+    deleteError: deletePaymentMutation.error,
   };
 };

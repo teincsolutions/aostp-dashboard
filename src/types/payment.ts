@@ -11,7 +11,12 @@ export interface Payment {
   paymentMethod: string;
   reference?: string;
   processedAt: string;
-  processedBy: string;
+  processedBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
   paymentCode: string;
   exchangeRate?: ExchangeRate;
   customer: {
