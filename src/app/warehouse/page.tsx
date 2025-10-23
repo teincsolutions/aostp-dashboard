@@ -1,7 +1,23 @@
-'use client';
+"use client";
 
 import { useState } from "react";
-import { Table, Empty, Result, Button, DatePicker, Select, Input, Space, Modal, Form, message, Tabs, Popconfirm, Row, Col } from "antd";
+import {
+  Table,
+  Empty,
+  Result,
+  Button,
+  DatePicker,
+  Select,
+  Input,
+  Space,
+  Modal,
+  Form,
+  message,
+  Tabs,
+  Popconfirm,
+  Row,
+  Col,
+} from "antd";
 import type {
   TablePaginationConfig,
   FilterValue,
@@ -9,12 +25,21 @@ import type {
   TableCurrentDataSource,
 } from "antd/es/table/interface";
 import { columns } from "@/app/warehouse/columns";
-import { useWarehousePackages, useWarehouses, useWarehouseMutations } from "@/hooks/useWarehouse";
+import {
+  useWarehousePackages,
+  useWarehouses,
+  useWarehouseMutations,
+} from "@/hooks/useWarehouse";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useAuthStore } from "@/store/authStore";
-import { WarehousePackage, WarehouseCreatePayload, WarehouseUpdatePayload, Warehouse } from "@/types/warehouse";
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import {
+  WarehousePackage,
+  WarehouseCreatePayload,
+  WarehouseUpdatePayload,
+  Warehouse,
+} from "@/types/warehouse";
+import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import { toast } from "sonner";
 import { GetWarehousePackagesParams } from "@/services/warehouseService";
 
@@ -29,34 +54,45 @@ export default function WarehousePage() {
   const [activeTab, setActiveTab] = useState("1");
 
   // Warehouse packages filters
-  const [packageFilters, setPackageFilters] = useState<GetWarehousePackagesParams>({
-    warehouseId: undefined,
-    status: undefined,
-    daysThreshold: 0,
-    dateFrom: undefined,
-    dateTo: undefined,
-    search: "",
-    page: 1,
-    limit: 10,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  });
+  const [packageFilters, setPackageFilters] =
+    useState<GetWarehousePackagesParams>({
+      warehouseId: undefined,
+      status: undefined,
+      daysThreshold: 0,
+      dateFrom: undefined,
+      dateTo: undefined,
+      search: "",
+      page: 1,
+      limit: 10,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
 
   // Warehouse CRUD state
   const [warehousesPage, setWarehousesPage] = useState(1);
   const [warehousesLimit] = useState(10);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
+  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(
+    null
+  );
 
   // Forms
   const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
   // React Query hooks
-  const { data: packagesData, isLoading: packagesLoading, isError: packagesError, error: packagesErrorMsg } = useWarehousePackages(packageFilters);
-  const { data: warehousesData, isLoading: warehousesLoading } = useWarehouses({ page: warehousesPage, limit: warehousesLimit });
- 
+  const {
+    data: packagesData,
+    isLoading: packagesLoading,
+    isError: packagesError,
+    error: packagesErrorMsg,
+  } = useWarehousePackages(packageFilters);
+  const { data: warehousesData, isLoading: warehousesLoading } = useWarehouses({
+    page: warehousesPage,
+    limit: warehousesLimit,
+  });
+
   const {
     createWarehouse,
     updateWarehouse,
@@ -118,8 +154,11 @@ export default function WarehousePage() {
     }
   };
 
-  const handleToggleWarehouseStatus = async (id: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  const handleToggleWarehouseStatus = async (
+    id: string,
+    currentStatus: string
+  ) => {
+    const newStatus = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
     try {
       await updateWarehouseStatus({ id, status: newStatus });
       toast.success(`Warehouse ${newStatus.toLowerCase()} successfully`);
@@ -154,7 +193,10 @@ export default function WarehousePage() {
     extra: TableCurrentDataSource<WarehousePackage>
   ) => {
     let status: string | undefined = undefined;
-    if (Array.isArray(filters.status) && typeof filters.status[0] === "string") {
+    if (
+      Array.isArray(filters.status) &&
+      typeof filters.status[0] === "string"
+    ) {
       status = filters.status[0] as string;
     }
     setPackageFilters((prev) => ({
@@ -182,34 +224,34 @@ export default function WarehousePage() {
   // Warehouse table columns
   const warehouseColumns = [
     {
-      title: 'Warehouse ID',
-      dataIndex: 'warehouseId',
-      key: 'warehouseId',
+      title: "Warehouse ID",
+      dataIndex: "warehouseId",
+      key: "warehouseId",
       render: (id: string) => <strong>{id}</strong>,
     },
     {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      title: 'Location',
-      dataIndex: 'location',
-      key: 'location',
+      title: "Location",
+      dataIndex: "location",
+      key: "location",
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
       render: (status: string) => (
-        <span style={{ color: status === 'ACTIVE' ? '#52c41a' : '#ff4d4f' }}>
+        <span style={{ color: status === "ACTIVE" ? "#52c41a" : "#ff4d4f" }}>
           {status}
         </span>
       ),
     },
     {
-      title: 'Actions',
-      key: 'actions',
+      title: "Actions",
+      key: "actions",
       render: (_: any, record: Warehouse) => (
         <Space>
           <Button type="link" onClick={() => handleEditWarehouse(record)}>
@@ -217,9 +259,11 @@ export default function WarehousePage() {
           </Button>
           <Button
             type="link"
-            onClick={() => handleToggleWarehouseStatus(record.id, record.status)}
+            onClick={() =>
+              handleToggleWarehouseStatus(record.id, record.status)
+            }
           >
-            {record.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+            {record.status === "ACTIVE" ? "Deactivate" : "Activate"}
           </Button>
           <Popconfirm
             title="Are you sure you want to delete this warehouse?"
@@ -227,7 +271,9 @@ export default function WarehousePage() {
             okText="Yes"
             cancelText="No"
           >
-            <Button type="link" danger>Delete</Button>
+            <Button type="link" danger>
+              Delete
+            </Button>
           </Popconfirm>
         </Space>
       ),
@@ -263,7 +309,6 @@ export default function WarehousePage() {
           </div>
 
           <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          
             <TabPane tab="Warehouse Locations" key="1">
               <Table
                 columns={warehouseColumns}
@@ -279,33 +324,55 @@ export default function WarehousePage() {
                     setWarehousesPage(page);
                   },
                 }}
-                locale={{ emptyText: <Empty description="No warehouses found" /> }}
+                locale={{
+                  emptyText: <Empty description="No warehouses found" />,
+                }}
                 scroll={{ x: true }}
               />
             </TabPane>
-              <TabPane tab="Packages in Warehouse" key="2">
+            <TabPane tab="Packages in Warehouse" key="2">
               <Space wrap className="mb-4">
                 <Input.Search
                   placeholder="Search Tracking # / Customer"
                   allowClear
-                  onSearch={(v) => setPackageFilters(prev => ({ ...prev, search: v, page: 1 }))}
+                  onSearch={(v) =>
+                    setPackageFilters((prev) => ({
+                      ...prev,
+                      search: v,
+                      page: 1,
+                    }))
+                  }
                   style={{ width: 220 }}
                 />
                 <Select
                   placeholder="Warehouse"
                   allowClear
                   style={{ width: 140 }}
-                  onChange={(v) => setPackageFilters(prev => ({ ...prev, warehouseId: v, page: 1 }))}
+                  onChange={(v) =>
+                    setPackageFilters((prev) => ({
+                      ...prev,
+                      warehouseId: v,
+                      page: 1,
+                    }))
+                  }
                 >
-                  {warehousesData?.data?.map(w => (
-                    <Option key={w.id} value={w.warehouseId}>{w.name} ({w.warehouseId})</Option>
+                  {warehousesData?.data?.map((w) => (
+                    <Option key={w.id} value={w.id}>
+                      {w.name} ({w.warehouseId})
+                    </Option>
                   ))}
                 </Select>
                 <Select
                   placeholder="Status"
                   allowClear
                   style={{ width: 140 }}
-                  onChange={(v) => setPackageFilters(prev => ({ ...prev, status: v, page: 1 }))}
+                  onChange={(v) =>
+                    setPackageFilters((prev) => ({
+                      ...prev,
+                      status: v,
+                      page: 1,
+                    }))
+                  }
                 >
                   <Option value="RECEIVED">Received</Option>
                   <Option value="ASSIGNED">Assigned</Option>
@@ -315,30 +382,40 @@ export default function WarehousePage() {
                   placeholder="Days Min"
                   type="number"
                   style={{ width: 100 }}
-                  onChange={(e) => setPackageFilters(prev => ({
-                    ...prev,
-                    daysInWarehouseFrom: e.target.value ? Number(e.target.value) : undefined,
-                    page: 1
-                  }))}
+                  onChange={(e) =>
+                    setPackageFilters((prev) => ({
+                      ...prev,
+                      daysInWarehouseFrom: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                      page: 1,
+                    }))
+                  }
                 />
                 <Input
                   placeholder="Days Max"
                   type="number"
                   style={{ width: 100 }}
-                  onChange={(e) => setPackageFilters(prev => ({
-                    ...prev,
-                    daysInWarehouseTo: e.target.value ? Number(e.target.value) : undefined,
-                    page: 1
-                  }))}
+                  onChange={(e) =>
+                    setPackageFilters((prev) => ({
+                      ...prev,
+                      daysInWarehouseTo: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                      page: 1,
+                    }))
+                  }
                 />
-                <RangePicker onChange={(dates, dateStrings) => {
-                  setPackageFilters(prev => ({
-                    ...prev,
-                    dateFrom: dateStrings[0] || undefined,
-                    dateTo: dateStrings[1] || undefined,
-                    page: 1
-                  }));
-                }} />
+                <RangePicker
+                  onChange={(dates, dateStrings) => {
+                    setPackageFilters((prev) => ({
+                      ...prev,
+                      dateFrom: dateStrings[0] || undefined,
+                      dateTo: dateStrings[1] || undefined,
+                      page: 1,
+                    }));
+                  }}
+                />
               </Space>
               <Table
                 columns={columns}
@@ -364,7 +441,6 @@ export default function WarehousePage() {
                 />
               )}
             </TabPane>
-
           </Tabs>
 
           {/* Create Warehouse Modal */}
@@ -388,7 +464,12 @@ export default function WarehousePage() {
                   <Form.Item
                     name="name"
                     label="Warehouse Name"
-                    rules={[{ required: true, message: "Please enter warehouse name" }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter warehouse name",
+                      },
+                    ]}
                   >
                     <Input placeholder="e.g., Main Warehouse" />
                   </Form.Item>
@@ -397,24 +478,26 @@ export default function WarehousePage() {
                   <Form.Item
                     name="location"
                     label="Location"
-                    rules={[{ required: true, message: "Please enter location" }]}
+                    rules={[
+                      { required: true, message: "Please enter location" },
+                    ]}
                   >
                     <Input placeholder="e.g., Accra, Tema" />
                   </Form.Item>
                 </Col>
               </Row>
 
-
-
               <Form.Item>
                 <Space>
                   <Button type="primary" htmlType="submit" loading={isCreating}>
                     Create Warehouse
                   </Button>
-                  <Button onClick={() => {
-                    setIsCreateModalVisible(false);
-                    createForm.resetFields();
-                  }}>
+                  <Button
+                    onClick={() => {
+                      setIsCreateModalVisible(false);
+                      createForm.resetFields();
+                    }}
+                  >
                     Cancel
                   </Button>
                 </Space>
@@ -451,17 +534,19 @@ export default function WarehousePage() {
                   </Form.Item>
                 </Col>
               </Row>
-        
+
               <Form.Item>
                 <Space>
                   <Button type="primary" htmlType="submit" loading={isUpdating}>
                     Update Warehouse
                   </Button>
-                  <Button onClick={() => {
-                    setIsEditModalVisible(false);
-                    setEditingWarehouse(null);
-                    editForm.resetFields();
-                  }}>
+                  <Button
+                    onClick={() => {
+                      setIsEditModalVisible(false);
+                      setEditingWarehouse(null);
+                      editForm.resetFields();
+                    }}
+                  >
                     Cancel
                   </Button>
                 </Space>

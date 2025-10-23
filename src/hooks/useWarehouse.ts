@@ -10,7 +10,10 @@ import {
   updateWarehouseDays,
   GetWarehousePackagesParams,
 } from "@/services/warehouseService";
-import {WarehouseCreatePayload, WarehouseUpdatePayload } from "@/types/warehouse";
+import {
+  WarehouseCreatePayload,
+  WarehouseUpdatePayload,
+} from "@/types/warehouse";
 
 export const useWarehousePackages = (params: GetWarehousePackagesParams) => {
   return useQuery({
@@ -31,7 +34,12 @@ export const useUpdatePackageStatus = () => {
 };
 
 // Warehouse CRUD hooks
-export const useWarehouses = (params?: { page?: number; limit?: number; status?: string; search?: string }) => {
+export const useWarehouses = (params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+}) => {
   return useQuery({
     queryKey: ["warehouses", params],
     queryFn: () => getWarehouses(params),

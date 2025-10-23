@@ -1,5 +1,7 @@
 // Warehouse package types for AOSTP Logistics Management
 
+import { Package } from "./package";
+
 export interface Warehouse {
   id: string;
   name: string;
@@ -20,15 +22,8 @@ export interface WarehouseUpdatePayload {
   location?: string;
 }
 
-export interface WarehousePackage {
+export interface WarehousePackage extends Package {
   id: string;
-  trackingNumber: string;
-  customerName: string;
-  warehouseLocation: string;
-  daysInWarehouse: number;
-  status: string;
-  createdAt: string;
-  updatedAt?: string;
 }
 
 export interface WarehouseAgingSummary {

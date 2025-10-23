@@ -255,6 +255,14 @@ export default function PackageIntakePage() {
         photos: uploadedPhotos,
       };
 
+      // Add weight and cbm based on shipping mode
+      if (values.weight !== undefined) {
+        payload.weight = values.weight;
+      }
+      if (values.cbm !== undefined) {
+        payload.cbm = values.cbm;
+      }
+
       // Only add airShippingType if shippingMode is AIR and value exists
       if (values.shippingMode === "AIR" && values.airShippingType) {
         payload.airShippingType = values.airShippingType;
@@ -468,30 +476,50 @@ export default function PackageIntakePage() {
                     />
                   </Form.Item>
 
-                  <Form.Item
-                    label="Shipping Mode"
-                    name="shippingMode"
-                    rules={[{ required: true }]}
-                  >
-                    <Select
-                      className="w-full"
-                      onChange={(value) => {
-                        // Clear airShippingType when switching to SEA
-                        if (value === "SEA") {
-                          form.setFieldsValue({ airShippingType: "" });
-                        }
-                      }}
-                    >
-                      <Option value="SEA">SEA</Option>
-                      <Option value="AIR">AIR</Option>
-                    </Select>
-                  </Form.Item>
+  <Form.Item
+    label="Shipping Mode"
+    name="shippingMode"
+    rules={[{ required: true }]}
+  >
+    <Select
+      className="w-full"
+      onChange={(value) => {
+        // Clear airShippingType when switching to SEA
+        if (value === "SEA") {
+          form.setFieldsValue({ airShippingType: "" });
+        }
+      }}
+    >
+      <Option value="SEA">SEA</Option>
+      <Option value="AIR">AIR</Option>
+    </Select>
+  </Form.Item>
 
-                  <Form.Item
-                    shouldUpdate={(prevValues, currentValues) =>
-                      prevValues.shippingMode !== currentValues.shippingMode
-                    }
-                  >
+  {form.getFieldValue("shippingMode") === "AIR" && (
+    <Form.Item
+      label="Weight (kg)"
+      name="weight"
+      rules={[{ required: true, type: "number", min: 0.01 }]}
+    >
+      <InputNumber min={0.01} className="w-full" />
+    </Form.Item>
+  )}
+
+  {form.getFieldValue("shippingMode") === "SEA" && (
+    <Form.Item
+      label="CBM (m³)"
+      name="cbm"
+      rules={[{ required: true, type: "number", min: 0 }]}
+    >
+      <InputNumber min={0} className="w-full" />
+    </Form.Item>
+  )}
+
+  <Form.Item
+    shouldUpdate={(prevValues, currentValues) =>
+      prevValues.shippingMode !== currentValues.shippingMode
+    }
+  >
                     {({ getFieldValue }) => {
                       const shippingMode = getFieldValue("shippingMode");
                       return shippingMode === "AIR" ? (

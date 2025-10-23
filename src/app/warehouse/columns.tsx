@@ -1,26 +1,33 @@
 import { ColumnsType } from "antd/es/table";
 import { WarehousePackage } from "@/types/warehouse";
 import { Button, Tooltip } from "antd";
-import { EyeOutlined, EditOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import {
+  EyeOutlined,
+  EditOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
 
 export const columns: ColumnsType<WarehousePackage> = [
   {
     title: "Tracking #",
-    dataIndex: "trackingNumber",
-    key: "trackingNumber",
+    dataIndex: "trackingCode",
+    key: "trackingCode",
     ellipsis: true,
   },
   {
     title: "Customer",
-    dataIndex: "customerName",
-    key: "customerName",
+    dataIndex: "customerId",
+    key: "customerId",
     ellipsis: true,
+    render: (_: any, record: WarehousePackage) =>
+      `${record?.customer?.firstName} ${record?.customer?.lastName} (${record?.customer?.customerCode})`,
   },
   {
-    title: "Location",
-    dataIndex: "warehouseLocation",
-    key: "warehouseLocation",
+    title: "Warehouse",
+    dataIndex: "warehouseId",
+    key: "warehouseId",
     ellipsis: true,
+    render: (_: any, record: WarehousePackage) => record.warehouse.name,
   },
   {
     title: "Days Stored",
