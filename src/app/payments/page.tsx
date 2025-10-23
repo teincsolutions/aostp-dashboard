@@ -588,7 +588,7 @@ export default function PaymentsPage() {
                       <Option value={PaymentMethod.MOBILE_MONEY}>
                         Mobile Money
                       </Option>
-                      <Option value={PaymentMethod.CARD}>Card</Option>
+                      <Option value={PaymentMethod.CARD}>Credit Card</Option>
                     </Select>
                   </Form.Item>
                 </Col>
