@@ -65,12 +65,8 @@ export default function TrackingDetailsPage() {
   useEffect(() => {
     const fetchPackage = async () => {
       try {
-        const response = await publicApiService.get<{
-          success: boolean;
-          data: Package;
-          message?: string;
-        }>(`/packages/tracking/${trackingCode}`);
-        setPackageData(response.data.data);
+        const response = await publicApiService.get<Package>(`/packages/tracking/${trackingCode}`);
+        setPackageData(response.data);
       } catch (err: any) {
         console.error("Failed to load package:", err);
         setError(
