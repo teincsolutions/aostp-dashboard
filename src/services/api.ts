@@ -1,7 +1,4 @@
-import axios, {
-  AxiosInstance,
-  InternalAxiosRequestConfig,
-} from "axios";
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/authStore";
 import { AuthService } from "./authService";
 import { jwtDecode } from "jwt-decode";
@@ -12,7 +9,7 @@ const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 class ApiService {
   private axiosInstance: AxiosInstance;
 
-  constructor(baseUrl?: string) {
+  constructor(baseUrl?: string, publicMode: boolean = false) {
     const config = baseUrl || NEXT_PUBLIC_API_BASE_URL;
     this.axiosInstance = axios.create({
       baseURL: config,
@@ -21,7 +18,9 @@ class ApiService {
       },
     });
 
-    this.setupInterceptors();
+    if (!publicMode) {
+      this.setupInterceptors();
+    }
   }
 
   private isTokenExpired(token: string): boolean {
@@ -42,7 +41,7 @@ class ApiService {
         const accessToken = authStore.tokens?.accessToken;
 
         if (accessToken) {
-          config.headers.set('Authorization', `Bearer ${accessToken}`);
+          config.headers.set("Authorization", `Bearer ${accessToken}`);
         }
 
         return config;
@@ -63,10 +62,15 @@ class ApiService {
             const refreshToken = authStore.tokens?.refreshToken;
             if (refreshToken) {
               try {
-                const newTokens = await AuthService.refreshToken({ refreshToken });
+                const newTokens = await AuthService.refreshToken({
+                  refreshToken,
+                });
                 authStore.refreshTokens(newTokens);
                 // Retry the original request with new token
-                error.config.headers.set('Authorization', `Bearer ${newTokens.accessToken}`);
+                error.config.headers.set(
+                  "Authorization",
+                  `Bearer ${newTokens.accessToken}`
+                );
                 return this.axiosInstance.request(error.config);
               } catch {
                 authStore.logout();
@@ -86,6 +90,9 @@ class ApiService {
 
 // Singleton instance
 export const apiService = new ApiService().getInstance();
+
+// Public instance without auth headers
+export const publicApiService = new ApiService(undefined, true).getInstance();
 
 // Export the class for custom instances if needed
 export { ApiService };
