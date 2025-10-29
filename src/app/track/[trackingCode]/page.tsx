@@ -69,7 +69,7 @@ export default function TrackingDetailsPage() {
           success: boolean;
           data: Package;
           message?: string;
-        }>(`/api/v1/packages/tracking/${trackingCode}`);
+        }>(`/packages/tracking/${trackingCode}`);
         setPackageData(response.data.data);
       } catch (err: any) {
         console.error("Failed to load package:", err);
