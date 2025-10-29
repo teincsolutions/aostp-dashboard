@@ -199,14 +199,7 @@ export default function TrackingDetailsPage() {
                 />
               </div>
             </div>
-            <Button
-              type="primary"
-              icon={<PrinterOutlined />}
-              onClick={handlePrint}
-              className="print:hidden"
-            >
-              Print
-            </Button>
+            
           </div>
         </Card>
 
