@@ -3,10 +3,7 @@ import { Table, Button, Alert, Space, Typography, Row, Col } from "antd";
 import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
 import { Package } from "@/types/package";
 import { ShippingMode } from "@/types/exchangeRate";
-import {
-  usePackingList,
-  useUnassignedPackages,
-} from "@/hooks/usePackingLists";
+import { usePackingList, useUnassignedPackages } from "@/hooks/usePackingLists";
 import { useShippingRates } from "@/hooks/useShippingRates";
 import { Customer } from "@/types/customer";
 import {
@@ -18,7 +15,6 @@ import { PackingListStatus } from "@/types/packingList";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const { Text } = Typography;
-
 
 interface PackageAssignmentProps {
   packingListId: string;
@@ -39,7 +35,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   handleRemovePackage,
   isRemovingPackages,
 }) => {
-   const { data: packingListData } = usePackingList(packingListId || "");
+  const { data: packingListData } = usePackingList(packingListId || "");
 
   const [unassignedPage, setUnassignedPage] = useState(1);
 
@@ -50,7 +46,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   });
   const { useCurrentActiveRates } = useShippingRates();
   const { activeRate } = useExchangeRate();
- 
+
   const shippingMode =
     containerTypeMap[packingListData?.container?.containerType || "BAG"];
   // Get current shipping rate for calculations
@@ -78,7 +74,11 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   ]);
 
   // Calculate totals for selected packages
-  const totals = getPacklistTotals(selectedPackages, currentShippingRates, activeRate?.rate);
+  const totals = getPacklistTotals(
+    selectedPackages,
+    currentShippingRates,
+    activeRate?.rate
+  );
 
   // Assigned packages table columns
   const assignedPackageColumns = [
@@ -123,6 +123,13 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       key: "shippingMode",
       width: 80,
       render: (mode: string) => mode,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 100,
+      render: (status: string) => status || "N/A",
     },
     {
       title: "Actions",
@@ -187,6 +194,13 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       key: "shippingMode",
       width: 80,
       render: (mode: string) => mode,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 100,
+      render: (status: string) => status || "N/A",
     },
     {
       title: "Actions",
@@ -257,6 +271,13 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       width: 100,
       render: (amount: number, record: Package) =>
         amount ? `${amount.toFixed(2)}` : "0.00",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 100,
+      render: (status: string) => status || "N/A",
     },
     {
       title: "Actions",
@@ -394,14 +415,10 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                   <Table.Summary.Cell index={3} colSpan={4}>
                     <Space>
                       {totals?.usdTotal && (
-                        <Text strong>
-                          USD: ${totals?.usdTotal.toFixed(2)}
-                        </Text>
+                        <Text strong>USD: ${totals?.usdTotal.toFixed(2)}</Text>
                       )}
                       {totals?.ghsTotal && (
-                        <Text strong>
-                          GHS: ₵{totals?.ghsTotal.toFixed(2)}
-                        </Text>
+                        <Text strong>GHS: ₵{totals?.ghsTotal.toFixed(2)}</Text>
                       )}
                     </Space>
                   </Table.Summary.Cell>
@@ -412,7 +429,9 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
         )}
       </div>
 
-      {selectedPackages.some((p: PackageWithCalculations) => !p.ratePerUnit) && (
+      {selectedPackages.some(
+        (p: PackageWithCalculations) => !p.ratePerUnit
+      ) && (
         <Alert
           message="Warning"
           description="Some packages don't have matching shipping rates. Please check shipping rates configuration."
