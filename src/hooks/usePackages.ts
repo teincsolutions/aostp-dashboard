@@ -8,6 +8,7 @@ import {
   getPackageReceipt,
 } from "../services/packageService";
 import { CreatePackagePayload, Package } from "../types/package";
+import { packingListKeys } from "./usePackingLists";
 
 export const usePackages = () => {
   const queryClient = useQueryClient();
@@ -43,21 +44,10 @@ export const usePackages = () => {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       queryClient.invalidateQueries({ queryKey: ["package"] });
-
-      // Update packing list cache if packingListId is provided in variables
       if (variables.packingListId) {
-        queryClient.setQueryData(
-          ["packingLists", variables.packingListId],
-          (oldData: any) => {
-            if (!oldData) return oldData;
-            return {
-              ...oldData,
-              packages: oldData.packages?.map((pkg: Package) =>
-                pkg.id === data.id ? data : pkg
-              ),
-            };
-          }
-        );
+        queryClient.invalidateQueries({
+          queryKey: packingListKeys.detail(variables.packingListId),
+        });
       }
     },
   });
