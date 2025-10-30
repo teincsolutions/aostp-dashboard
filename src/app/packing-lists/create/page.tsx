@@ -215,7 +215,7 @@ const PackingListCreatePage: React.FC = () => {
       ]}
     >
       <AppLayout>
-        <div className="p-4 md:p-6 max-w-full md:max-w-6xl mx-auto">
+        <div className="p-4 md:p-6 max-w-full md:max-w-7xl mx-auto">
           <div className="mb-6">
             <Title level={2}>Create New Packing List</Title>
             <Text type="secondary">
