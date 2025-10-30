@@ -15,17 +15,10 @@ import { PlusOutlined, MinusOutlined, EditOutlined } from "@ant-design/icons";
 import { Package, Currency, PackageStatusPackages } from "@/types/package";
 import { ShippingMode } from "@/types/exchangeRate";
 import { usePackingList, useUnassignedPackages } from "@/hooks/usePackingLists";
-import { useShippingRates } from "@/hooks/useShippingRates";
 import { Customer } from "@/types/customer";
 import { useCities } from "@/hooks/useCities";
 import { usePackages } from "@/hooks/usePackages";
-import {
-  getPackageWithCalculations,
-  getPacklistTotals,
-  PackageWithCalculations,
-} from "@/utils/forms/getPacklistTotals";
 import { PackingListStatus } from "@/types/packingList";
-import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { packageStatusColors } from "@/app/packages/page";
 
 const { Text } = Typography;
@@ -52,53 +45,26 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   const { data: packingListData } = usePackingList(packingListId || "");
 
   const [unassignedPage, setUnassignedPage] = useState(1);
+  const shippingMode =
+    containerTypeMap[packingListData?.container?.containerType || "BAG"];
 
   const { data: paginatedUnassignedPackages } = useUnassignedPackages({
     page: unassignedPage,
-    shippingMode:
-      containerTypeMap[packingListData?.container?.containerType || "BAG"],
+    shippingMode,
   });
-  const { useCurrentActiveRates } = useShippingRates();
-  const { activeRate } = useExchangeRate();
-
   const { data: cities } = useCities();
   const { updateMutation } = usePackages();
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [tempPackage, setTempPackage] = useState<Partial<Package> | null>(null);
 
-  const shippingMode =
-    containerTypeMap[packingListData?.container?.containerType || "BAG"];
-  // Get current shipping rate for calculations
-  const { data: currentShippingRates } = useCurrentActiveRates(shippingMode);
-
   const selectedPackages = useMemo(() => {
-    const filteredPackages =
+    return (
       paginatedUnassignedPackages?.filter((pkg) =>
         selectedPackageIds.includes(pkg.id)
-      ) || [];
-
-    // Add calculations for each package
-    return filteredPackages.map((pkg) => {
-      return getPackageWithCalculations(
-        pkg,
-        shippingMode,
-        currentShippingRates || []
-      );
-    });
-  }, [
-    paginatedUnassignedPackages,
-    selectedPackageIds,
-    currentShippingRates,
-    shippingMode,
-  ]);
-
-  // Calculate totals for selected packages
-  const totals = getPacklistTotals(
-    selectedPackages,
-    currentShippingRates,
-    activeRate?.rate
-  );
+      ) || []
+    );
+  }, [paginatedUnassignedPackages, selectedPackageIds]);
 
   // Assigned packages table columns
   const assignedPackageColumns = [
@@ -124,40 +90,29 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       width: 200,
     },
     {
-      title: "Weight (kg)",
-      dataIndex: "weight",
-      key: "weight",
-      width: 100,
-      render: (weight: number | null, record: Package) => {
-        if (editingKey === record.id) {
-          return (
-            <InputNumber
-              value={tempPackage?.weight ?? weight ?? 0}
-              onChange={(v) =>
-                setTempPackage((prev) => (prev ? { ...prev, weight: v } : null))
-              }
-              min={0}
-              step={0.01}
-              style={{ width: "100%" }}
-            />
-          );
-        } else {
-          return weight ? weight.toFixed(2) : "0.00";
-        }
-      },
-    },
-    {
-      title: "CBM",
-      dataIndex: "cbm",
-      key: "cbm",
+      title: shippingMode === ShippingMode.AIR ? "Weight (kg)" : "CBM",
+      dataIndex: shippingMode === ShippingMode.AIR ? "weight" : "cbm",
+      key: "weightOrCbm",
       width: 80,
-      render: (cbm: number | null, record: Package) => {
+      render: (value: number | null, record: Package) => {
+        const isWeight = shippingMode === ShippingMode.AIR;
+        const displayValue = isWeight
+          ? value
+            ? value.toFixed(2)
+            : "0.00"
+          : value
+          ? value.toFixed(3)
+          : "0.000";
+        const tempValue = isWeight ? tempPackage?.weight : tempPackage?.cbm;
+
         if (editingKey === record.id) {
           return (
             <InputNumber
-              value={tempPackage?.cbm ?? cbm ?? 0}
+              value={tempValue ?? value ?? 0}
               onChange={(v) =>
-                setTempPackage((prev) => (prev ? { ...prev, cbm: v } : null))
+                setTempPackage((prev) =>
+                  prev ? { ...prev, [isWeight ? "weight" : "cbm"]: v } : null
+                )
               }
               min={0}
               step={0.01}
@@ -165,7 +120,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
             />
           );
         } else {
-          return cbm ? cbm.toFixed(3) : "0.000";
+          return displayValue;
         }
       },
     },
@@ -401,25 +356,19 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       width: 200,
     },
     {
-      title: "Weight (kg)",
-      dataIndex: "weight",
-      key: "weight",
-      width: 100,
-      render: (weight: number) => (weight ? weight.toFixed(2) : "0.00"),
-    },
-    {
-      title: "CBM",
-      dataIndex: "cbm",
-      key: "cbm",
+      title: shippingMode === ShippingMode.AIR ? "Weight (kg)" : "CBM",
+      dataIndex: shippingMode === ShippingMode.AIR ? "weight" : "cbm",
+      key: "weightOrCbm",
       width: 80,
-      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "0.000"),
-    },
-    {
-      title: "Mode",
-      dataIndex: "shippingMode",
-      key: "shippingMode",
-      width: 80,
-      render: (mode: string) => mode,
+      render: (value: number) => {
+        return shippingMode === ShippingMode.AIR
+          ? value
+            ? value.toFixed(2)
+            : "0.00"
+          : value
+          ? value.toFixed(3)
+          : "0.000";
+      },
     },
     {
       title: "Status",
@@ -473,40 +422,25 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       width: 150,
     },
     {
-      title: "Weight (kg)",
-      dataIndex: "weight",
-      key: "weight",
-      render: (weight: number) => (weight ? weight.toFixed(2) : "N/A"),
-      width: 100,
-    },
-    {
-      title: "CBM",
-      dataIndex: "cbm",
-      key: "cbm",
-      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "N/A"),
+      title: shippingMode === ShippingMode.AIR ? "Weight (kg)" : "CBM",
+      dataIndex: shippingMode === ShippingMode.AIR ? "weight" : "cbm",
+      key: "weightOrCbm",
       width: 80,
+      render: (value: number) => {
+        return shippingMode === ShippingMode.AIR
+          ? value
+            ? value.toFixed(2)
+            : "N/A"
+          : value
+          ? value.toFixed(3)
+          : "N/A";
+      },
     },
     {
       title: "Qty",
       dataIndex: "quantity",
       key: "quantity",
       width: 60,
-    },
-    {
-      title: "Rate",
-      dataIndex: "ratePerUnit",
-      key: "ratePerUnit",
-      width: 100,
-      render: (rate: number, record: Package) =>
-        rate ? `${rate.toFixed(2)}` : "No rate",
-    },
-    {
-      title: "Amount",
-      dataIndex: "calculatedAmount",
-      key: "calculatedAmount",
-      width: 100,
-      render: (amount: number, record: Package) =>
-        amount ? `${amount.toFixed(2)}` : "0.00",
     },
     {
       title: "Status",
@@ -545,39 +479,6 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
 
   return (
     <div className="space-y-4">
-      {selectedPackages.length > 0 &&
-        packingListData?.status === PackingListStatus.DRAFT && (
-          <Alert
-            message="Selected Packages Summary"
-            description={
-              <Row gutter={16}>
-                <Col span={4}>
-                  <Text strong>Packages:</Text> {totals?.packageCount}
-                </Col>
-                <Col span={4}>
-                  <Text strong>Total Weight:</Text>{" "}
-                  {totals?.weightTotal.toFixed(2)} kg
-                </Col>
-                <Col span={4}>
-                  <Text strong>Total CBM:</Text> {totals?.cbmTotal.toFixed(3)}
-                </Col>
-                <Col span={6}>
-                  <Space>
-                    {totals?.usdTotal && (
-                      <Text strong>USD: ${totals?.usdTotal.toFixed(2)}</Text>
-                    )}
-                    {totals?.ghsTotal && (
-                      <Text strong>GHS: ₵{totals?.ghsTotal.toFixed(2)}</Text>
-                    )}
-                  </Space>
-                </Col>
-              </Row>
-            }
-            type="info"
-            showIcon
-          />
-        )}
-
       <div className="grid grid-cols-1 gap-6">
         {/* Assigned Packages */}
         <div>
@@ -647,44 +548,10 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               pagination={false}
               scroll={{ y: 400 }}
               size="small"
-              summary={() => (
-                <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={2}>
-                    <Text strong>Totals</Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={1}>
-                    <Text strong>{totals?.weightTotal.toFixed(2)} kg</Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2}>
-                    <Text strong>{totals?.cbmTotal.toFixed(3)}</Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={3} colSpan={4}>
-                    <Space>
-                      {totals?.usdTotal && (
-                        <Text strong>USD: ${totals?.usdTotal.toFixed(2)}</Text>
-                      )}
-                      {totals?.ghsTotal && (
-                        <Text strong>GHS: ₵{totals?.ghsTotal.toFixed(2)}</Text>
-                      )}
-                    </Space>
-                  </Table.Summary.Cell>
-                </Table.Summary.Row>
-              )}
             />
           </div>
         )}
       </div>
-
-      {selectedPackages.some(
-        (p: PackageWithCalculations) => !p.ratePerUnit
-      ) && (
-        <Alert
-          message="Warning"
-          description="Some packages don't have matching shipping rates. Please check shipping rates configuration."
-          type="warning"
-          showIcon
-        />
-      )}
     </div>
   );
 };
