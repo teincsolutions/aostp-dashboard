@@ -262,7 +262,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                 onClick={() => {
                   if (editingKey && tempPackage) {
                     updateMutation.mutate(
-                      { id: editingKey, payload: tempPackage },
+                      { id: editingKey, payload: tempPackage, packingListId },
                       {
                         onSuccess: () => {
                           setEditingKey(null);

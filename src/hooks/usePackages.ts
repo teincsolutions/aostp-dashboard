@@ -32,11 +32,33 @@ export const usePackages = () => {
 
   // Mutation: Update package
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<Package> }) =>
-      updatePackage(id, payload),
-    onSuccess: () => {
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Partial<Package>;
+      packingListId?: string;
+    }) => updatePackage(id, payload),
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       queryClient.invalidateQueries({ queryKey: ["package"] });
+
+      // Update packing list cache if packingListId is provided in variables
+      if (variables.packingListId) {
+        queryClient.setQueryData(
+          ["packingLists", variables.packingListId],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            return {
+              ...oldData,
+              packages: oldData.packages?.map((pkg: Package) =>
+                pkg.id === data.id ? data : pkg
+              ),
+            };
+          }
+        );
+      }
     },
   });
 
