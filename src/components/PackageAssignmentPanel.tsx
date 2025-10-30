@@ -9,9 +9,10 @@ import {
   Col,
   InputNumber,
   Select,
+  Tag,
 } from "antd";
 import { PlusOutlined, MinusOutlined, EditOutlined } from "@ant-design/icons";
-import { Package, Currency } from "@/types/package";
+import { Package, Currency, PackageStatusPackages } from "@/types/package";
 import { ShippingMode } from "@/types/exchangeRate";
 import { usePackingList, useUnassignedPackages } from "@/hooks/usePackingLists";
 import { useShippingRates } from "@/hooks/useShippingRates";
@@ -25,6 +26,7 @@ import {
 } from "@/utils/forms/getPacklistTotals";
 import { PackingListStatus } from "@/types/packingList";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { packageStatusColors } from "@/app/packages/page";
 
 const { Text } = Typography;
 
@@ -276,8 +278,18 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       title: "Status",
       dataIndex: "status",
       key: "status",
+      filters: Object.values(PackageStatusPackages).map((status) => ({
+        text: status.replace("_", " "),
+        value: status,
+      })),
       width: 100,
-      render: (status: string) => status || "N/A",
+      render: (status: PackageStatusPackages) => {
+        return (
+          <Tag color={packageStatusColors[status] || "default"}>
+            {status.replace("_", " ")}
+          </Tag>
+        );
+      },
     },
     {
       title: "Actions",
@@ -413,8 +425,18 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       title: "Status",
       dataIndex: "status",
       key: "status",
+      filters: Object.values(PackageStatusPackages).map((status) => ({
+        text: status.replace("_", " "),
+        value: status,
+      })),
       width: 100,
-      render: (status: string) => status || "N/A",
+      render: (status: PackageStatusPackages) => {
+        return (
+          <Tag color={packageStatusColors[status] || "default"}>
+            {status.replace("_", " ")}
+          </Tag>
+        );
+      },
     },
     {
       title: "Actions",
@@ -490,8 +512,18 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       title: "Status",
       dataIndex: "status",
       key: "status",
+      filters: Object.values(PackageStatusPackages).map((status) => ({
+        text: status.replace("_", " "),
+        value: status,
+      })),
       width: 100,
-      render: (status: string) => status || "N/A",
+      render: (status: PackageStatusPackages) => {
+        return (
+          <Tag color={packageStatusColors[status] || "default"}>
+            {status.replace("_", " ")}
+          </Tag>
+        );
+      },
     },
     {
       title: "Actions",
