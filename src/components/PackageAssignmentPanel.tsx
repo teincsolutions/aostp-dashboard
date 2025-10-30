@@ -1,11 +1,23 @@
 import React, { useMemo, useState } from "react";
-import { Table, Button, Alert, Space, Typography, Row, Col } from "antd";
-import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
-import { Package } from "@/types/package";
+import {
+  Table,
+  Button,
+  Alert,
+  Space,
+  Typography,
+  Row,
+  Col,
+  InputNumber,
+  Select,
+} from "antd";
+import { PlusOutlined, MinusOutlined, EditOutlined } from "@ant-design/icons";
+import { Package, Currency } from "@/types/package";
 import { ShippingMode } from "@/types/exchangeRate";
 import { usePackingList, useUnassignedPackages } from "@/hooks/usePackingLists";
 import { useShippingRates } from "@/hooks/useShippingRates";
 import { Customer } from "@/types/customer";
+import { useCities } from "@/hooks/useCities";
+import { usePackages } from "@/hooks/usePackages";
 import {
   getPackageWithCalculations,
   getPacklistTotals,
@@ -46,6 +58,12 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   });
   const { useCurrentActiveRates } = useShippingRates();
   const { activeRate } = useExchangeRate();
+
+  const { data: cities } = useCities();
+  const { updateMutation } = usePackages();
+
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [tempPackage, setTempPackage] = useState<Partial<Package> | null>(null);
 
   const shippingMode =
     containerTypeMap[packingListData?.container?.containerType || "BAG"];
@@ -108,14 +126,144 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       dataIndex: "weight",
       key: "weight",
       width: 100,
-      render: (weight: number) => (weight ? weight.toFixed(2) : "0.00"),
+      render: (weight: number | null, record: Package) => {
+        if (editingKey === record.id) {
+          return (
+            <InputNumber
+              value={tempPackage?.weight ?? weight ?? 0}
+              onChange={(v) =>
+                setTempPackage((prev) => (prev ? { ...prev, weight: v } : null))
+              }
+              min={0}
+              step={0.01}
+              style={{ width: "100%" }}
+            />
+          );
+        } else {
+          return weight ? weight.toFixed(2) : "0.00";
+        }
+      },
     },
     {
       title: "CBM",
       dataIndex: "cbm",
       key: "cbm",
       width: 80,
-      render: (cbm: number) => (cbm ? cbm.toFixed(3) : "0.000"),
+      render: (cbm: number | null, record: Package) => {
+        if (editingKey === record.id) {
+          return (
+            <InputNumber
+              value={tempPackage?.cbm ?? cbm ?? 0}
+              onChange={(v) =>
+                setTempPackage((prev) => (prev ? { ...prev, cbm: v } : null))
+              }
+              min={0}
+              step={0.01}
+              style={{ width: "100%" }}
+            />
+          );
+        } else {
+          return cbm ? cbm.toFixed(3) : "0.000";
+        }
+      },
+    },
+    {
+      title: "Destination City",
+      dataIndex: "destinationCityId",
+      key: "destinationCityId",
+      width: 150,
+      render: (destinationCityId: string, record: Package) => {
+        if (editingKey === record.id) {
+          return (
+            <Select
+              placeholder="Select city"
+              style={{ width: "100%" }}
+              value={
+                tempPackage?.destinationCityId ?? destinationCityId ?? undefined
+              }
+              onChange={(value) =>
+                setTempPackage((prev) =>
+                  prev ? { ...prev, destinationCityId: value } : null
+                )
+              }
+              allowClear
+            >
+              {cities?.data?.map((city) => (
+                <Select.Option key={city.id} value={city.id}>
+                  {city.name}
+                </Select.Option>
+              ))}
+            </Select>
+          );
+        } else {
+          const city = cities?.data?.find((c) => c.id === destinationCityId);
+          return city ? city.name : "N/A";
+        }
+      },
+    },
+    {
+      title: "Shipping Rate",
+      dataIndex: "shippingRate",
+      key: "shippingRate",
+      width: 120,
+      render: (shippingRate: number, record: Package) => {
+        if (editingKey === record.id) {
+          return (
+            <InputNumber
+              value={tempPackage?.shippingRate ?? shippingRate ?? 0}
+              onChange={(v) =>
+                setTempPackage((prev) =>
+                  prev ? { ...prev, shippingRate: v } : null
+                )
+              }
+              min={0}
+              step={0.01}
+              style={{ width: "100%" }}
+              placeholder="0.00"
+            />
+          );
+        } else {
+          return shippingRate ? shippingRate.toFixed(2) : "0.00";
+        }
+      },
+    },
+    {
+      title: "Shipping Cost",
+      dataIndex: "shippingCost",
+      key: "shippingCost",
+      width: 120,
+      render: (shippingCost: number) =>
+        shippingCost ? shippingCost.toFixed(2) : "0.00",
+    },
+    {
+      title: "Currency",
+      dataIndex: "shippingCurrency",
+      key: "shippingCurrency",
+      width: 80,
+      render: (shippingCurrency: Currency, record: Package) => {
+        if (editingKey === record.id) {
+          return (
+            <Select
+              value={
+                tempPackage?.shippingCurrency ??
+                shippingCurrency ??
+                Currency.USD
+              }
+              onChange={(value) =>
+                setTempPackage((prev) =>
+                  prev ? { ...prev, shippingCurrency: value } : null
+                )
+              }
+              style={{ width: "100%" }}
+            >
+              <Select.Option value={Currency.USD}>USD</Select.Option>
+              <Select.Option value={Currency.GHS}>GHS</Select.Option>
+            </Select>
+          );
+        } else {
+          return shippingCurrency || Currency.USD;
+        }
+      },
     },
     {
       title: "Mode",
@@ -134,20 +282,86 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     {
       title: "Actions",
       key: "actions",
-      width: 100,
-      render: (_: any, record: Package) => (
-        <Button
-          type="link"
-          danger
-          icon={<MinusOutlined />}
-          loading={isRemovingPackages}
-          onClick={() => handleRemovePackage(record.id)}
-          disabled={packingListData?.status === PackingListStatus.FINALIZED}
-          size="small"
-        >
-          Remove
-        </Button>
-      ),
+      width: 150,
+      render: (_: any, record: Package) => {
+        if (editingKey === record.id) {
+          const isLoading = updateMutation.isPending;
+          return (
+            <Space>
+              <Button
+                type="primary"
+                size="small"
+                loading={isLoading}
+                onClick={() => {
+                  if (editingKey && tempPackage) {
+                    updateMutation.mutate(
+                      { id: editingKey, payload: tempPackage },
+                      {
+                        onSuccess: () => {
+                          setEditingKey(null);
+                          setTempPackage(null);
+                        },
+                        onError: () => {
+                          // handle error if needed
+                        },
+                      }
+                    );
+                  }
+                }}
+              >
+                Save
+              </Button>
+              <Button
+                size="small"
+                onClick={() => {
+                  setEditingKey(null);
+                  setTempPackage(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </Space>
+          );
+        } else {
+          return (
+            <Space>
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditingKey(record.id);
+                  setTempPackage({
+                    weight: record.weight,
+                    cbm: record.cbm,
+                    destinationCityId: record.destinationCityId,
+                    shippingCurrency: record.shippingCurrency || Currency.USD,
+                    shippingRate: record.shippingRate,
+                  });
+                }}
+                size="small"
+                disabled={
+                  packingListData?.status === PackingListStatus.FINALIZED
+                }
+              >
+                Edit
+              </Button>
+              <Button
+                type="link"
+                danger
+                icon={<MinusOutlined />}
+                loading={isRemovingPackages}
+                onClick={() => handleRemovePackage(record.id)}
+                disabled={
+                  packingListData?.status === PackingListStatus.FINALIZED
+                }
+                size="small"
+              >
+                Remove
+              </Button>
+            </Space>
+          );
+        }
+      },
     },
   ];
 

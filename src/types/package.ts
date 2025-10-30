@@ -82,7 +82,12 @@ export enum AirType {
   NORMAL_AIR = "NORMAL_AIR",
   EXPRESS_AIR = "EXPRESS_AIR",
   BATTERY_GOODS = "BATTERY_GOODS",
-  PHONES = "PHONES"
+  PHONES = "PHONES",
+}
+
+export enum Currency {
+  USD = "USD",
+  GHS = "GHS",
 }
 
 // Updated Package Items based on new structure
@@ -106,6 +111,10 @@ export interface PackageItem {
   customer?: Customer;
   warehouse?: Warehouse;
   correlationId?: string;
+  destinationCityId: string | null;
+  shippingCurrency: Currency;
+  shippingRate: number | null;
+  shippingCost: number | null;
 }
 
 // Updated Package interface based on new API structure
@@ -115,8 +124,8 @@ export interface Package {
   customerId: string;
   warehouseId: string;
   description: string;
-  weight: number;
-  cbm: number;
+  weight: number | null;
+  cbm: number | null;
   quantity: number;
   shippingMode: ShippingMode;
   airShippingType?: AirType | null;
@@ -145,4 +154,8 @@ export interface Package {
     email?: string;
   };
   correlationId?: string;
+  destinationCityId: string | null;
+  shippingCurrency: Currency;
+  shippingRate: number | null;
+  shippingCost: number | null;
 }
