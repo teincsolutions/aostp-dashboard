@@ -110,9 +110,16 @@ export default function InvoicesPage() {
       align: "right" as const,
     },
     {
-      title: "Total",
+      title: "Total (in USD)",
       dataIndex: "totalAmount",
       key: "totalAmount",
+      render: (amount: number, record: Invoice) => `${amount?.toFixed(2)}`,
+      align: "right" as const,
+    },
+    {
+      title: "Total (in GHS)",
+      dataIndex: "localAmount",
+      key: "localAmount",
       render: (amount: number, record: Invoice) => `${amount?.toFixed(2)}`,
       align: "right" as const,
     },
