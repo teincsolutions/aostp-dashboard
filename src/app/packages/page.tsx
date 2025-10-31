@@ -43,6 +43,8 @@ import { usePackages } from "@/hooks/usePackageManagement";
 import { usePackageManagement } from "@/hooks/usePackageManagement";
 import { Form } from "antd";
 import { ReceiptModal } from "@/components/ReceiptModal";
+import { useAuth } from "@/hooks/useAuth";
+import { Role } from "@/types/user";
 
 const { Search } = Input;
 const { useForm } = Form;
@@ -67,6 +69,7 @@ export const packageStatusColors = {
 
 export default function PackagesPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string | undefined>();
   const [shipmentType, setShippingMode] = useState<string | undefined>();
@@ -328,7 +331,10 @@ export default function PackagesPage() {
               icon={<EditOutlined />}
               size="small"
               onClick={() => handleEdit(record)}
-              disabled={record.status !== PackageStatusPackages.IN_WAREHOUSE}
+              disabled={
+                user?.role !== Role.SUPER_ADMIN &&
+                record.status !== PackageStatusPackages.IN_WAREHOUSE
+              }
             />
           </Tooltip>
 

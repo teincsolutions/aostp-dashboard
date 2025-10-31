@@ -67,6 +67,9 @@ export default function PaymentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInvoices, setSelectedInvoices] = useState<Invoice[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(
+    Currency.USD
+  );
   const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const [isReceiptDrawerVisible, setIsReceiptDrawerVisible] = useState(false);
@@ -126,6 +129,43 @@ export default function PaymentsPage() {
       (total, invoice) => total + invoice.balance,
       0
     );
+  };
+
+  const convertAmount = (
+    amount: number,
+    fromCurrency: Currency,
+    toCurrency: Currency
+  ) => {
+    if (fromCurrency === toCurrency) return amount;
+    if (!activeRate) return amount;
+
+    // Assuming activeRate is always USD to GHS
+    if (fromCurrency === Currency.USD && toCurrency === Currency.GHS) {
+      return amount * activeRate.rate;
+    } else if (fromCurrency === Currency.GHS && toCurrency === Currency.USD) {
+      return amount / activeRate.rate;
+    }
+    return amount;
+  };
+
+  const getConvertedBalance = (invoice: Invoice) => {
+    const usdBalance =
+      invoice.currency === Currency.USD
+        ? invoice.balance
+        : convertAmount(invoice.balance, invoice.currency, Currency.USD);
+    const selectedBalance =
+      selectedCurrency === Currency.USD
+        ? usdBalance
+        : convertAmount(usdBalance, Currency.USD, selectedCurrency);
+    const ghsEquivalent = convertAmount(usdBalance, Currency.USD, Currency.GHS);
+    return { selectedBalance, ghsEquivalent };
+  };
+
+  const calculateTotalSelectedConverted = () => {
+    return selectedInvoices.reduce((total, invoice) => {
+      const { selectedBalance } = getConvertedBalance(invoice);
+      return total + selectedBalance;
+    }, 0);
   };
 
   const handlePaymentSubmit = async (
@@ -207,13 +247,24 @@ export default function PaymentsPage() {
                 showAddNew={true}
               />
               {selectedCustomerId && (
-                <Button
-                  type="link"
-                  icon={<EyeOutlined />}
-                  onClick={() => setIsInvoiceModalVisible(true)}
-                >
-                  View All Invoices
-                </Button>
+                <>
+                  <Select
+                    placeholder="Select currency"
+                    value={selectedCurrency}
+                    onChange={setSelectedCurrency}
+                    style={{ minWidth: 120 }}
+                  >
+                    <Option value={Currency.USD}>USD</Option>
+                    <Option value={Currency.GHS}>GHS</Option>
+                  </Select>
+                  <Button
+                    type="link"
+                    icon={<EyeOutlined />}
+                    onClick={() => setIsInvoiceModalVisible(true)}
+                  >
+                    View All Invoices
+                  </Button>
+                </>
               )}
             </div>
           </Card>
@@ -234,8 +285,8 @@ export default function PaymentsPage() {
                 <Col xs={24} sm={12} md={6}>
                   <Card>
                     <Statistic
-                      title="Selected Amount"
-                      value={calculateTotalSelected()}
+                      title={`Selected Amount (${selectedCurrency})`}
+                      value={calculateTotalSelectedConverted()}
                       prefix={<DollarOutlined />}
                       precision={2}
                       valueStyle={{ color: "#1890ff" }}
@@ -351,14 +402,27 @@ export default function PaymentsPage() {
                     title="Balance"
                     dataIndex="balance"
                     key="balance"
-                    render={(balance: number, record: Invoice) => (
-                      <Text
-                        strong
-                        style={{ color: balance > 0 ? "#ff4d4f" : "#52c41a" }}
-                      >
-                        {record.currency} {balance?.toFixed(2)}
-                      </Text>
-                    )}
+                    render={(balance: number, record: Invoice) => {
+                      const { selectedBalance, ghsEquivalent } =
+                        getConvertedBalance(record);
+                      return (
+                        <div style={{ textAlign: "right" }}>
+                          <Text
+                            strong
+                            style={{
+                              color:
+                                selectedBalance > 0 ? "#ff4d4f" : "#52c41a",
+                            }}
+                          >
+                            {selectedCurrency} {selectedBalance?.toFixed(2)}
+                          </Text>
+                          <br />
+                          <Text type="secondary" style={{ fontSize: "12px" }}>
+                            GHS {ghsEquivalent?.toFixed(2)}
+                          </Text>
+                        </div>
+                      );
+                    }}
                     align="right"
                   />
                   <Table.Column
@@ -510,7 +574,7 @@ export default function PaymentsPage() {
               layout="vertical"
               onFinish={handlePaymentSubmit}
               initialValues={{
-                currency: Currency.USD,
+                currency: selectedCurrency,
                 paymentMethod: PaymentMethod.CASH,
               }}
             >
