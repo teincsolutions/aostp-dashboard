@@ -294,6 +294,13 @@ export default function PackagesPage() {
       },
     },
     {
+      title: "Pickup Code",
+      dataIndex: "pickupCode",
+      key: "pickupCode",
+      width: 120,
+      render: (code: string) => code || "N/A",
+    },
+    {
       title: "Received Date",
       dataIndex: "receivedDate",
       key: "receivedDate",
@@ -461,7 +468,9 @@ export default function PackagesPage() {
                   setViewModalVisible(false);
                   handleEdit(selectedPackage!);
                 }}
-                disabled={selectedPackage?.status !== PackageStatusPackages.IN_WAREHOUSE}
+                disabled={
+                  selectedPackage?.status !== PackageStatusPackages.IN_WAREHOUSE
+                }
               >
                 Edit
               </Button>,
@@ -472,7 +481,9 @@ export default function PackagesPage() {
                   setViewModalVisible(false);
                   handleDelete(selectedPackage!);
                 }}
-                disabled={selectedPackage?.status !== PackageStatusPackages.IN_WAREHOUSE}
+                disabled={
+                  selectedPackage?.status !== PackageStatusPackages.IN_WAREHOUSE
+                }
               >
                 Delete
               </Button>,
@@ -542,7 +553,12 @@ export default function PackagesPage() {
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Status">
-                    <Tag color={packageStatusColors[selectedPackage?.status] || "default"}>
+                    <Tag
+                      color={
+                        packageStatusColors[selectedPackage?.status] ||
+                        "default"
+                      }
+                    >
                       {selectedPackage?.status.replace("_", " ")}
                     </Tag>
                   </Descriptions.Item>
@@ -558,6 +574,9 @@ export default function PackagesPage() {
                     >
                       {selectedPackage.paymentStatus}
                     </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Pickup Code">
+                    {selectedPackage.pickupCode || "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Days in Warehouse">
                     {selectedPackage.daysInWarehouse} days

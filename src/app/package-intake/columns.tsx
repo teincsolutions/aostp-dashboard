@@ -5,7 +5,9 @@ import { Package, Receipt } from "@/types/package";
 import { Button, Tag } from "antd";
 import dayjs from "dayjs";
 
-export const packageIntakeColumns: ColumnsType<Package & { onViewReceipt: (id: string) => void }> = [
+export const packageIntakeColumns: ColumnsType<
+  Package & { onViewReceipt: (id: string) => void }
+> = [
   {
     title: "Tracking Code",
     dataIndex: "trackingCode",
@@ -24,7 +26,9 @@ export const packageIntakeColumns: ColumnsType<Package & { onViewReceipt: (id: s
     width: 180,
     ellipsis: true,
     render: (_, record) =>
-      record.customer ? `${record.customer.customerCode} - ${record.customer.firstName} ${record.customer.lastName}` : "N/A",
+      record.customer
+        ? `${record.customer.customerCode} - ${record.customer.firstName} ${record.customer.lastName}`
+        : "N/A",
   },
   {
     title: "Description",
@@ -45,8 +49,9 @@ export const packageIntakeColumns: ColumnsType<Package & { onViewReceipt: (id: s
     width: 140,
     render: (_, record) => {
       if (record.shippingMode === "AIR") {
-        const typeColor = record.airShippingType === "EXPRESS_AIR" ? "red" : "blue";
-        const typeText = record.airShippingType?.replace('_', ' ') || "AIR";
+        const typeColor =
+          record.airShippingType === "EXPRESS_AIR" ? "red" : "blue";
+        const typeText = record.airShippingType?.replace("_", " ") || "AIR";
         return <Tag color={typeColor}>{typeText}</Tag>;
       }
       return <Tag color="green">SEA</Tag>;
@@ -58,6 +63,13 @@ export const packageIntakeColumns: ColumnsType<Package & { onViewReceipt: (id: s
     key: "status",
     width: 110,
     render: (value: string) => <Tag>{value}</Tag>,
+  },
+  {
+    title: "Pickup Code",
+    dataIndex: "pickupCode",
+    key: "pickupCode",
+    width: 120,
+    render: (value: string) => value || "N/A",
   },
   {
     title: "Payment Status",
@@ -78,7 +90,8 @@ export const packageIntakeColumns: ColumnsType<Package & { onViewReceipt: (id: s
     dataIndex: ["receivedDate"],
     key: "receivedDate",
     width: 160,
-    render: (value: string) => value ? dayjs(value).format("YYYY-MM-DD HH:mm") : "N/A",
+    render: (value: string) =>
+      value ? dayjs(value).format("YYYY-MM-DD HH:mm") : "N/A",
   },
   {
     title: "Actions",

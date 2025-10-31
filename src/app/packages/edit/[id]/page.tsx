@@ -28,6 +28,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useWarehouseStore } from "@/store/warehouseStore";
 import { useWarehouses } from "@/hooks/useWarehouse";
 import { ShippingMode } from "@/types/exchangeRate";
+import { useCities } from "@/hooks/useCities";
+import { Currency } from "@/types/package";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -82,6 +84,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
   const [customerModalVisible, setCustomerModalVisible] = useState(false);
   const [customerModalLoading, setCustomerModalLoading] = useState(false);
   const { data: customers, isLoading: customersLoading } = useCustomers({});
+  const { data: cities, isLoading: citiesLoading } = useCities();
 
   // Fetch package data
   const { data: packageData, isLoading: packageLoading } = useGetPackage(id);
@@ -190,7 +193,12 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
         shippingMode: packageData.shippingMode,
         airShippingType: packageData.airShippingType || "",
         warehouseId: packageData.warehouseId,
+        pickupCode: packageData.pickupCode,
         notes: packageData.notes,
+        destinationCityId: packageData.destinationCityId,
+        shippingCurrency: packageData.shippingCurrency,
+        shippingRate: packageData.shippingRate,
+        shippingCost: packageData.shippingCost,
       };
 
       form.setFieldsValue(formValues);
@@ -213,7 +221,12 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
         quantity: values.quantity,
         shippingMode: values.shippingMode,
         warehouseId: values.warehouseId || "W1",
+        pickupCode: values.pickupCode || undefined,
         notes: values.notes,
+        destinationCityId: values.destinationCityId,
+        shippingCurrency: values.shippingCurrency,
+        shippingRate: values.shippingRate,
+        shippingCost: values.shippingCost,
       };
 
       // Only add airShippingType if shippingMode is AIR and value exists
@@ -384,6 +397,27 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                       className="w-full"
                     />
                   </Form.Item>
+
+                  <Form.Item label="Destination City" name="destinationCityId">
+                    <Select
+                      showSearch
+                      placeholder="Select destination city"
+                      loading={citiesLoading}
+                      options={cities?.data?.map((city) => ({
+                        value: city.id,
+                        label: city.name,
+                      }))}
+                      filterOption={(input, option) =>
+                        option?.label
+                          ? option.label
+                              .toLowerCase()
+                              .includes(input.toLowerCase())
+                          : false
+                      }
+                      allowClear
+                      className="w-full"
+                    />
+                  </Form.Item>
                   <Form.Item
                     label="Shipping Mode"
                     name="shippingMode"
@@ -464,6 +498,29 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                   >
                     <InputNumber min={1} className="w-full" />
                   </Form.Item>
+
+                  <Form.Item label="Shipping Currency" name="shippingCurrency">
+                    <Select placeholder="Select currency" className="w-full">
+                      <Option value={Currency.USD}>USD</Option>
+                      <Option value={Currency.GHS}>GHS</Option>
+                    </Select>
+                  </Form.Item>
+
+                  <Form.Item
+                    label="Shipping Rate"
+                    name="shippingRate"
+                    rules={[{ type: "number", min: 0 }]}
+                  >
+                    <InputNumber min={0} step={0.01} className="w-full" />
+                  </Form.Item>
+
+                  <Form.Item
+                    label="Shipping Cost"
+                    name="shippingCost"
+                    rules={[{ type: "number", min: 0 }]}
+                  >
+                    <InputNumber min={0} step={0.01} className="w-full" />
+                  </Form.Item>
                   <Form.Item
                     label="Warehouse"
                     name="warehouseId"
@@ -484,6 +541,18 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                         </Select.Option>
                       ))}
                     </Select>
+                  </Form.Item>
+                  <Form.Item
+                    label="Pickup Code"
+                    name="pickupCode"
+                    rules={[
+                      {
+                        pattern: /^[A-Za-z0-9]*$/,
+                        message: "Only letters and numbers allowed",
+                      },
+                    ]}
+                  >
+                    <Input placeholder="Enter pickup code" maxLength={20} />
                   </Form.Item>
                   <Form.Item label="Notes" name="notes">
                     <Input.TextArea className="w-full" />

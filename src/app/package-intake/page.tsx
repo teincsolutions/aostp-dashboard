@@ -253,6 +253,7 @@ export default function PackageIntakePage() {
         warehouseId: values.warehouseId || "W1",
         notes: values.notes,
         photos: uploadedPhotos,
+        pickupCode: values.pickupCode || undefined,
       };
 
       // Add weight and cbm based on shipping mode
@@ -368,8 +369,7 @@ export default function PackageIntakePage() {
                         <div className="text-center py-4">
                           Loading invoices...
                         </div>
-                      ) : (customerInvoices &&
-                          customerInvoices?.meta?.total) ||
+                      ) : (customerInvoices && customerInvoices?.meta?.total) ||
                         0 > 0 ? (
                         <div className="space-y-2">
                           {customerInvoices?.data
@@ -476,50 +476,50 @@ export default function PackageIntakePage() {
                     />
                   </Form.Item>
 
-  <Form.Item
-    label="Shipping Mode"
-    name="shippingMode"
-    rules={[{ required: true }]}
-  >
-    <Select
-      className="w-full"
-      onChange={(value) => {
-        // Clear airShippingType when switching to SEA
-        if (value === "SEA") {
-          form.setFieldsValue({ airShippingType: "" });
-        }
-      }}
-    >
-      <Option value="SEA">SEA</Option>
-      <Option value="AIR">AIR</Option>
-    </Select>
-  </Form.Item>
+                  <Form.Item
+                    label="Shipping Mode"
+                    name="shippingMode"
+                    rules={[{ required: true }]}
+                  >
+                    <Select
+                      className="w-full"
+                      onChange={(value) => {
+                        // Clear airShippingType when switching to SEA
+                        if (value === "SEA") {
+                          form.setFieldsValue({ airShippingType: "" });
+                        }
+                      }}
+                    >
+                      <Option value="SEA">SEA</Option>
+                      <Option value="AIR">AIR</Option>
+                    </Select>
+                  </Form.Item>
 
-  {form.getFieldValue("shippingMode") === "AIR" && (
-    <Form.Item
-      label="Weight (kg)"
-      name="weight"
-      rules={[{ required: true, type: "number", min: 0.01 }]}
-    >
-      <InputNumber min={0.01} className="w-full" />
-    </Form.Item>
-  )}
+                  {form.getFieldValue("shippingMode") === "AIR" && (
+                    <Form.Item
+                      label="Weight (kg)"
+                      name="weight"
+                      rules={[{ required: true, type: "number", min: 0.01 }]}
+                    >
+                      <InputNumber min={0.01} className="w-full" />
+                    </Form.Item>
+                  )}
 
-  {form.getFieldValue("shippingMode") === "SEA" && (
-    <Form.Item
-      label="CBM (m³)"
-      name="cbm"
-      rules={[{ required: true, type: "number", min: 0 }]}
-    >
-      <InputNumber min={0} className="w-full" />
-    </Form.Item>
-  )}
+                  {form.getFieldValue("shippingMode") === "SEA" && (
+                    <Form.Item
+                      label="CBM (m³)"
+                      name="cbm"
+                      rules={[{ required: true, type: "number", min: 0 }]}
+                    >
+                      <InputNumber min={0} className="w-full" />
+                    </Form.Item>
+                  )}
 
-  <Form.Item
-    shouldUpdate={(prevValues, currentValues) =>
-      prevValues.shippingMode !== currentValues.shippingMode
-    }
-  >
+                  <Form.Item
+                    shouldUpdate={(prevValues, currentValues) =>
+                      prevValues.shippingMode !== currentValues.shippingMode
+                    }
+                  >
                     {({ getFieldValue }) => {
                       const shippingMode = getFieldValue("shippingMode");
                       return shippingMode === "AIR" ? (
@@ -580,6 +580,19 @@ export default function PackageIntakePage() {
                       their assigned warehouse.
                     </div>
                   )}
+
+                  <Form.Item
+                    label="Pickup Code"
+                    name="pickupCode"
+                    rules={[
+                      {
+                        pattern: /^[A-Za-z0-9]+$/,
+                        message: "Only letters and numbers allowed",
+                      },
+                    ]}
+                  >
+                    <Input placeholder="Enter pickup code" maxLength={20} />
+                  </Form.Item>
 
                   <Form.Item label="Notes" name="notes">
                     <Input.TextArea

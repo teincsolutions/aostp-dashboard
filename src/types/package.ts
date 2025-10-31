@@ -44,11 +44,17 @@ export interface CreatePackagePayload {
   warehouseId: string;
   notes?: string;
   photos?: PackagePhotoInput[];
+  pickupCode?: string;
 }
 
 export type UpdatePackagePayload = Partial<
   Omit<CreatePackagePayload, "customerId" | "trackingCode">
->;
+> & {
+  destinationCityId?: string | null;
+  shippingCurrency?: Currency;
+  shippingRate?: number | null;
+  shippingCost?: number | null;
+};
 
 export interface Receipt {
   id: string;
@@ -158,4 +164,5 @@ export interface Package {
   shippingCurrency: Currency;
   shippingRate: number | null;
   shippingCost: number | null;
+  pickupCode?: string;
 }
