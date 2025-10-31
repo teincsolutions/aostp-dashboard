@@ -182,12 +182,29 @@ export default function PaymentsPage() {
       return;
     }
 
-    const totalSelected = calculateTotalSelected();
+    // Calculate total balance in the selected payment currency
+    const totalSelectedInPaymentCurrency = selectedInvoices.reduce(
+      (total, invoice) => {
+        const usdBalance =
+          invoice.currency === Currency.USD
+            ? invoice.balance
+            : convertAmount(invoice.balance, invoice.currency, Currency.USD);
+        const balanceInPaymentCurrency =
+          values.currency === Currency.USD
+            ? usdBalance
+            : convertAmount(usdBalance, Currency.USD, values.currency);
+        return total + balanceInPaymentCurrency;
+      },
+      0
+    );
+
     const amount = parseFloat(values.amount);
 
-    if (amount > totalSelected) {
+    if (amount > totalSelectedInPaymentCurrency) {
       toast.error(
-        "Payment amount cannot exceed the total balance of selected invoices"
+        `Payment amount cannot exceed the total balance of ${totalSelectedInPaymentCurrency.toFixed(
+          2
+        )} ${values.currency}`
       );
       return;
     }
@@ -699,11 +716,36 @@ export default function PaymentsPage() {
                     { required: true, message: "Please enter payment amount" },
                     {
                       validator: (_, value) => {
+                        if (!value) return Promise.resolve();
                         const amount = parseFloat(value);
-                        const total = calculateTotalSelected();
-                        if (amount > total) {
+                        // Calculate total balance in the selected payment currency
+                        const totalSelectedInPaymentCurrency =
+                          selectedInvoices.reduce((total, invoice) => {
+                            const usdBalance =
+                              invoice.currency === Currency.USD
+                                ? invoice.balance
+                                : convertAmount(
+                                    invoice.balance,
+                                    invoice.currency,
+                                    Currency.USD
+                                  );
+                            const balanceInPaymentCurrency =
+                              selectedPaymentCurrency === Currency.USD
+                                ? usdBalance
+                                : convertAmount(
+                                    usdBalance,
+                                    Currency.USD,
+                                    selectedPaymentCurrency
+                                  );
+                            return total + balanceInPaymentCurrency;
+                          }, 0);
+                        if (amount > totalSelectedInPaymentCurrency) {
                           return Promise.reject(
-                            new Error("Amount cannot exceed total balance")
+                            new Error(
+                              `Amount cannot exceed total balance of ${totalSelectedInPaymentCurrency.toFixed(
+                                2
+                              )} ${selectedPaymentCurrency}`
+                            )
                           );
                         }
                         return Promise.resolve();
