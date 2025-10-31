@@ -5,9 +5,6 @@ import { Card, Button, Table, Skeleton, Empty } from "antd";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useDashboard } from "@/hooks/useDashboard";
-import { useCustomers } from "@/hooks/useCustomers";
-import { useActiveContainers } from "@/hooks/useContainers";
-import { usePackages } from "@/hooks/usePackageManagement";
 import { columns as invoiceColumns } from "@/app/dashboard/invoices.columns";
 import { columns as agingPackageColumns } from "@/app/dashboard/aging-packages.columns";
 import { DashboardFilters } from "@/types/dashboard";
@@ -48,13 +45,7 @@ const FilterSchema = Yup.object().shape({
 
 export default function DashboardPage() {
   const [filters, setFilters] = useState<DashboardFilters>({});
-  const { kpis, charts, tables, isLoading, error } =
-    useDashboard(filters);
-
-  // Individual hooks for KPI stats
-  const { data: customerData, isLoading: customerLoading } = useCustomers({ page: 1, limit: 1 });
-  const { data: packagesData, isLoading: packagesLoading } = usePackages({ page: 1, limit: 1 });
-  const { data: activeContainersData, isLoading: activeContainersLoading } = useActiveContainers();
+  const { kpis, charts, tables, isLoading, error } = useDashboard(filters);
 
   // Error notifications
   if (
@@ -73,24 +64,24 @@ export default function DashboardPage() {
   const kpiItems = [
     {
       title: "Total Customers",
-      value: customerData?.meta?.total ?? 0,
+      value: 0,
       icon: <TeamOutlined />,
       caption: "",
-      loading: customerLoading,
+      loading: isLoading.kpis,
     },
     {
       title: "Total Packages",
-      value: packagesData?.total ?? 0,
+      value: 0,
       icon: <InboxOutlined />,
       caption: `SEA: ${kpis?.seaTotal ?? 0} | AIR: ${kpis?.airTotal ?? 0}`,
-      loading: packagesLoading,
+      loading: isLoading.kpis,
     },
     {
       title: "Active Containers",
-      value: activeContainersData?.length ?? 0,
+      value: 0,
       icon: <ContainerOutlined />,
       caption: "",
-      loading: activeContainersLoading,
+      loading: isLoading.kpis,
     },
     {
       title: "Outstanding Invoices",
