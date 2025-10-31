@@ -65,21 +65,21 @@ export default function DashboardPage() {
   const kpiItems = [
     {
       title: "Total Customers",
-      value: 0,
+      value: kpis?.customersTotal ?? 0,
       icon: <TeamOutlined />,
       caption: "",
       loading: isLoading.kpis,
     },
     {
       title: "Total Packages",
-      value: 0,
+      value: kpis?.packagesTotal ?? 0,
       icon: <InboxOutlined />,
       caption: `SEA: ${kpis?.seaTotal ?? 0} | AIR: ${kpis?.airTotal ?? 0}`,
       loading: isLoading.kpis,
     },
     {
       title: "Active Containers",
-      value: 0,
+      value: kpis?.activeContainers ?? 0,
       icon: <ContainerOutlined />,
       caption: "",
       loading: isLoading.kpis,
