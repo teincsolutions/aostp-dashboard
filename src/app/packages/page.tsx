@@ -41,6 +41,7 @@ import { useRouter } from "next/navigation";
 
 import { usePackages } from "@/hooks/usePackageManagement";
 import { usePackageManagement } from "@/hooks/usePackageManagement";
+import { useConsolidation } from "@/hooks/useConsolidation";
 import { Form } from "antd";
 import { ReceiptModal } from "@/components/ReceiptModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -115,8 +116,8 @@ export default function PackagesPage() {
   // Use new package management hooks
   const { data: packagesData, isLoading: packagesLoading } =
     usePackages(params);
-  const { deletePackageMutation, consolidatePackagesMutation } =
-    usePackageManagement();
+  const { deletePackageMutation } = usePackageManagement();
+  const { consolidatePackagesMutation } = useConsolidation();
 
   const packages = packagesData?.data || [];
   const total = packagesData?.total || 0;
@@ -771,12 +772,14 @@ export default function PackagesPage() {
                   return;
                 }
                 try {
+                  // Get tracking codes from selected packages
+                  const sourceTrackingCodes = displayPackages
+                    .filter((pkg) => selectedForConsolidate.includes(pkg.id))
+                    .map((pkg) => pkg.trackingCode);
+
                   await consolidatePackagesMutation.mutateAsync({
-                    items: selectedForConsolidate as string[],
-                    tracking_code: values.newTrackingCode,
-                    mode: consMode,
-                    customer_code: consCustomer,
-                    warehouse_id: "1", // TODO: Get from package
+                    sourceTrackingCodes,
+                    targetTrackingCode: values.newTrackingCode,
                   });
                   toast.success("Packages consolidated successfully");
                   setIsConsolidateModalVisible(false);
