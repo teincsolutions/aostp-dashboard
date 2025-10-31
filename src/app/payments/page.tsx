@@ -74,6 +74,12 @@ export default function PaymentsPage() {
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const [isReceiptDrawerVisible, setIsReceiptDrawerVisible] = useState(false);
   const [currentPayment, setCurrentPayment] = useState<Payment | null>(null);
+  const [paymentModalStep, setPaymentModalStep] = useState<"currency" | "form">(
+    "currency"
+  );
+  const [selectedPaymentCurrency, setSelectedPaymentCurrency] =
+    useState<Currency>(Currency.USD);
+  const [paymentAmount, setPaymentAmount] = useState<string>("");
   // Filter states for payments table
   const [invoiceNumberFilter, setInvoiceNumberFilter] = useState("");
   const [customerFilter, setCustomerFilter] = useState("");
@@ -205,6 +211,8 @@ export default function PaymentsPage() {
       setCurrentPayment(payment);
       setIsPaymentModalVisible(false);
       setIsReceiptDrawerVisible(true);
+      setPaymentModalStep("currency");
+      setPaymentAmount("");
     } catch (error) {
       handleError(error);
     }
@@ -559,133 +567,238 @@ export default function PaymentsPage() {
 
           {/* Payment Modal */}
           <Modal
-            title="Process Payment"
+            title={
+              paymentModalStep === "currency"
+                ? "Select Payment Currency"
+                : "Process Payment"
+            }
             open={isPaymentModalVisible}
             onCancel={() => {
               setIsPaymentModalVisible(false);
               paymentForm.resetFields();
+              setPaymentModalStep("currency");
             }}
             footer={null}
             width="95%"
             style={{ maxWidth: 600, margin: "16px auto" }}
           >
-            <Form
-              form={paymentForm}
-              layout="vertical"
-              onFinish={handlePaymentSubmit}
-              initialValues={{
-                currency: selectedCurrency,
-                paymentMethod: PaymentMethod.CASH,
-              }}
-            >
-              <Card size="small" className="mb-4">
-                <div className="flex justify-between">
-                  <span>Selected Invoices:</span>
-                  <strong>{selectedInvoices.length}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span>Total Balance:</span>
-                  <strong style={{ color: "#1890ff" }}>
-                    USD {calculateTotalSelected().toFixed(2)}
-                  </strong>
-                </div>
-              </Card>
+            {paymentModalStep === "currency" ? (
+              <div>
+                <Card size="small" className="mb-4">
+                  <div className="flex justify-between">
+                    <span>Selected Invoices:</span>
+                    <strong>{selectedInvoices.length}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Balance:</span>
+                    <div style={{ textAlign: "right" }}>
+                      <strong style={{ color: "#1890ff" }}>
+                        USD {calculateTotalSelected().toFixed(2)}
+                      </strong>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: "12px" }}>
+                        GHS{" "}
+                        {convertAmount(
+                          calculateTotalSelected(),
+                          Currency.USD,
+                          Currency.GHS
+                        ).toFixed(2)}
+                      </Text>
+                    </div>
+                  </div>
+                </Card>
 
-              <Form.Item
-                name="amount"
-                label="Payment Amount"
-                rules={[
-                  { required: true, message: "Please enter payment amount" },
-                  {
-                    validator: (_, value) => {
-                      const amount = parseFloat(value);
-                      const total = calculateTotalSelected();
-                      if (amount > total) {
-                        return Promise.reject(
-                          new Error("Amount cannot exceed total balance")
-                        );
-                      }
-                      return Promise.resolve();
-                    },
-                  },
-                ]}
+                <Form layout="vertical">
+                  <Form.Item label="Select Payment Currency">
+                    <Select
+                      value={selectedPaymentCurrency}
+                      onChange={setSelectedPaymentCurrency}
+                      size="large"
+                    >
+                      <Option value={Currency.USD}>USD - US Dollar</Option>
+                      <Option value={Currency.GHS}>GHS - Ghana Cedi</Option>
+                    </Select>
+                  </Form.Item>
+
+                  <Form.Item>
+                    <Space>
+                      <Button
+                        type="primary"
+                        onClick={() => setPaymentModalStep("form")}
+                      >
+                        Continue to Payment Details
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setIsPaymentModalVisible(false);
+                          setPaymentModalStep("currency");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </Space>
+                  </Form.Item>
+                </Form>
+              </div>
+            ) : (
+              <Form
+                form={paymentForm}
+                layout="vertical"
+                onFinish={handlePaymentSubmit}
+                initialValues={{
+                  currency: selectedPaymentCurrency,
+                  paymentMethod: PaymentMethod.CASH,
+                }}
               >
-                <Input
-                  type="number"
-                  step="0.01"
-                  prefix={<DollarOutlined />}
-                  placeholder="Enter payment amount"
-                />
-              </Form.Item>
+                <Card size="small" className="mb-4">
+                  <div className="flex justify-between">
+                    <span>Selected Invoices:</span>
+                    <strong>{selectedInvoices.length}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Balance:</span>
+                    <div style={{ textAlign: "right" }}>
+                      <strong style={{ color: "#1890ff" }}>
+                        USD {calculateTotalSelected().toFixed(2)}
+                      </strong>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: "12px" }}>
+                        GHS{" "}
+                        {convertAmount(
+                          calculateTotalSelected(),
+                          Currency.USD,
+                          Currency.GHS
+                        ).toFixed(2)}
+                      </Text>
+                    </div>
+                  </div>
+                </Card>
 
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="currency"
-                    label="Currency"
-                    rules={[
-                      { required: true, message: "Please select currency" },
-                    ]}
-                  >
-                    <Select placeholder="Select currency">
-                      <Option value={Currency.USD}>USD</Option>
-                      <Option value={Currency.GHS}>GHS</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="paymentMethod"
-                    label="Payment Method"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please select payment method",
+                <Form.Item
+                  name="amount"
+                  label={
+                    <div>
+                      Payment Amount
+                      {paymentAmount && parseFloat(paymentAmount) > 0 && (
+                        <Text
+                          type="secondary"
+                          style={{ fontSize: "12px", marginLeft: "8px" }}
+                        >
+                          (GHS{" "}
+                          {convertAmount(
+                            parseFloat(paymentAmount),
+                            selectedPaymentCurrency,
+                            Currency.GHS
+                          ).toFixed(2)}
+                          )
+                        </Text>
+                      )}
+                    </div>
+                  }
+                  rules={[
+                    { required: true, message: "Please enter payment amount" },
+                    {
+                      validator: (_, value) => {
+                        const amount = parseFloat(value);
+                        const total = calculateTotalSelected();
+                        if (amount > total) {
+                          return Promise.reject(
+                            new Error("Amount cannot exceed total balance")
+                          );
+                        }
+                        return Promise.resolve();
                       },
-                    ]}
-                  >
-                    <Select placeholder="Select payment method">
-                      <Option value={PaymentMethod.CASH}>Cash</Option>
-                      <Option value={PaymentMethod.BANK_TRANSFER}>
-                        Bank Transfer
-                      </Option>
-                      <Option value={PaymentMethod.MOBILE_MONEY}>
-                        Mobile Money
-                      </Option>
-                      <Option value={PaymentMethod.CARD}>Credit Card</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
+                    },
+                  ]}
+                >
+                  <Input
+                    type="number"
+                    step="0.01"
+                    prefix={<DollarOutlined />}
+                    placeholder="Enter payment amount"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                  />
+                </Form.Item>
 
-              <Form.Item name="reference" label="Reference (Optional)">
-                <Input placeholder="Transaction reference or receipt number" />
-              </Form.Item>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="currency"
+                      label="Currency"
+                      rules={[
+                        { required: true, message: "Please select currency" },
+                      ]}
+                    >
+                      <Select placeholder="Select currency">
+                        <Option value={Currency.USD}>USD</Option>
+                        <Option value={Currency.GHS}>GHS</Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="paymentMethod"
+                      label="Payment Method"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please select payment method",
+                        },
+                      ]}
+                    >
+                      <Select placeholder="Select payment method">
+                        <Option value={PaymentMethod.CASH}>Cash</Option>
+                        <Option value={PaymentMethod.BANK_TRANSFER}>
+                          Bank Transfer
+                        </Option>
+                        <Option value={PaymentMethod.MOBILE_MONEY}>
+                          Mobile Money
+                        </Option>
+                        <Option value={PaymentMethod.CARD}>Credit Card</Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-              <Form.Item name="notes" label="Notes (Optional)">
-                <TextArea rows={3} placeholder="Additional notes" />
-              </Form.Item>
+                <Form.Item name="reference" label="Reference (Optional)">
+                  <Input placeholder="Transaction reference or receipt number" />
+                </Form.Item>
 
-              <Form.Item>
-                <Space>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={isProcessingPayment}
-                  >
-                    Process Payment
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsPaymentModalVisible(false);
-                      paymentForm.resetFields();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
+                <Form.Item name="notes" label="Notes (Optional)">
+                  <TextArea rows={3} placeholder="Additional notes" />
+                </Form.Item>
+
+                <Form.Item>
+                  <Space>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={isProcessingPayment}
+                    >
+                      Process Payment
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setPaymentModalStep("currency");
+                        paymentForm.resetFields();
+                      }}
+                    >
+                      Back to Currency Selection
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setIsPaymentModalVisible(false);
+                        paymentForm.resetFields();
+                        setPaymentModalStep("currency");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </Space>
+                </Form.Item>
+              </Form>
+            )}
           </Modal>
 
           {/* Receipt Drawer */}

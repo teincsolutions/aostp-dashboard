@@ -23,6 +23,7 @@ import {
 } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 import { toast } from "sonner";
+import dayjs from "dayjs";
 
 const statusOptions = [
   { value: "RECEIVED", label: "Received" },
@@ -115,7 +116,9 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <Formik
               initialValues={{
-                dateRange: null as [Dayjs | null, Dayjs | null] | null,
+                dateRange: [dayjs().startOf("year"), dayjs().endOf("year")] as
+                  | [Dayjs, Dayjs]
+                  | null,
                 status: "",
               }}
               validationSchema={FilterSchema}

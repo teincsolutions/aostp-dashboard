@@ -31,8 +31,8 @@ export function useDashboard(filters: DashboardFilters) {
 
   // KPIs
   const kpisQuery = useQuery<Kpis>({
-    queryKey: ["dashboard-kpis", params],
-    queryFn: () => getKpis(params),
+    queryKey: ["dashboard-kpis"],
+    queryFn: () => getKpis(),
   });
 
   // Charts
@@ -62,7 +62,10 @@ export function useDashboard(filters: DashboardFilters) {
     queryFn: () => getRecentInvoices(params),
   });
 
-  const agingPackagesQuery = useQuery<{ rows: AgingPackageRow[]; total: number }>({
+  const agingPackagesQuery = useQuery<{
+    rows: AgingPackageRow[];
+    total: number;
+  }>({
     queryKey: ["dashboard-aging-packages", params],
     queryFn: () => getAgingPackages(params),
   });
