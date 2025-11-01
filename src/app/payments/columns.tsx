@@ -54,11 +54,11 @@ export const getPaymentColumns = ({
     {
       title: "Actions",
       key: "actions",
-      width: 100,
+      width: 120,
       render: (_, record) => (
         <Space size="middle">
           <Button type="link" onClick={() => handleView(record)}>
-            View
+            Print Receipt
           </Button>
           <Popconfirm
             title="Are you sure you want to delete this payment?"

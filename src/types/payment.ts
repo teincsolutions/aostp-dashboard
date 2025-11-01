@@ -28,6 +28,7 @@ export interface Payment {
   receipt?: {
     receiptNumber: string;
   };
+  receiptKey?: string;
   createdAt: string;
   updatedAt: string;
   invoices: Invoice[];

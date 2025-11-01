@@ -10,12 +10,21 @@ import { Payment } from "@/types/payment";
 // Query keys for React Query
 export const paymentKeys = {
   all: ["payments"] as const,
-  search: (params: PaymentSearchParams) => [...paymentKeys.all, "search", params] as const,
-  customerInvoices: (customerId: string) => [...paymentKeys.all, "customer", customerId, "invoices"] as const,
-  packageInvoices: (trackingId: string) => [...paymentKeys.all, "package", trackingId, "invoices"] as const,
-  history: (params: PaymentHistoryParams) => [...paymentKeys.all, "history", params] as const,
-  balance: (customerId: string) => [...paymentKeys.all, "balance", customerId] as const,
-  stats: (params: { dateFrom?: string; dateTo?: string; customerId?: string }) => [...paymentKeys.all, "stats", params] as const,
+  search: (params: PaymentSearchParams) =>
+    [...paymentKeys.all, "search", params] as const,
+  customerInvoices: (customerId: string) =>
+    [...paymentKeys.all, "customer", customerId, "invoices"] as const,
+  packageInvoices: (trackingId: string) =>
+    [...paymentKeys.all, "package", trackingId, "invoices"] as const,
+  history: (params: PaymentHistoryParams) =>
+    [...paymentKeys.all, "history", params] as const,
+  balance: (customerId: string) =>
+    [...paymentKeys.all, "balance", customerId] as const,
+  stats: (params: {
+    dateFrom?: string;
+    dateTo?: string;
+    customerId?: string;
+  }) => [...paymentKeys.all, "stats", params] as const,
   details: () => [...paymentKeys.all, "detail"] as const,
   detail: (id: string) => [...paymentKeys.details(), id] as const,
 } as const;
@@ -33,7 +42,10 @@ export const useSearchInvoices = (params: PaymentSearchParams = {}) => {
 };
 
 // Hook for fetching customer invoices
-export const useCustomerInvoices = (customerId: string, params: PaymentSearchParams = {}) => {
+export const useCustomerInvoices = (
+  customerId: string,
+  params: PaymentSearchParams = {}
+) => {
   return useQuery({
     queryKey: paymentKeys.customerInvoices(customerId),
     queryFn: async () => {
@@ -45,7 +57,10 @@ export const useCustomerInvoices = (customerId: string, params: PaymentSearchPar
 };
 
 // Hook for fetching customer payments
-export const useCustomerPayments = (customerId: string, params: PaymentHistoryParams = {}) => {
+export const useCustomerPayments = (
+  customerId: string,
+  params: PaymentHistoryParams = {}
+) => {
   return useQuery({
     queryKey: paymentKeys.history({ ...params, customerId }),
     queryFn: async () => {
@@ -57,7 +72,10 @@ export const useCustomerPayments = (customerId: string, params: PaymentHistoryPa
 };
 
 // Hook for fetching package invoices
-export const usePackageInvoices = (trackingId: string, params: PaymentSearchParams = {}) => {
+export const usePackageInvoices = (
+  trackingId: string,
+  params: PaymentSearchParams = {}
+) => {
   return useQuery({
     queryKey: paymentKeys.packageInvoices(trackingId),
     queryFn: async () => {
@@ -80,7 +98,14 @@ export const usePaymentHistory = (params: PaymentHistoryParams = {}) => {
 };
 
 // Hook for fetching all payments records
-export const useAllPayments = (params: { page?: number; limit?: number; sortBy?: string; sortOrder?: string } = {}) => {
+export const useAllPayments = (
+  params: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
+  } = {}
+) => {
   return useQuery({
     queryKey: [...paymentKeys.all, "all", params],
     queryFn: async () => {
@@ -118,7 +143,9 @@ export const usePaymentDetail = (id: string) => {
 };
 
 // Hook for fetching payment statistics
-export const usePaymentStats = (params: { dateFrom?: string; dateTo?: string; customerId?: string } = {}) => {
+export const usePaymentStats = (
+  params: { dateFrom?: string; dateTo?: string; customerId?: string } = {}
+) => {
   return useQuery({
     queryKey: paymentKeys.stats(params),
     queryFn: async () => {
@@ -141,8 +168,12 @@ export const usePaymentMutations = () => {
     onSuccess: (data) => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: paymentKeys.history({}) });
-      queryClient.invalidateQueries({ queryKey: paymentKeys.balance(data.customerId) });
-      queryClient.invalidateQueries({ queryKey: paymentKeys.customerInvoices(data.customerId) });
+      queryClient.invalidateQueries({
+        queryKey: paymentKeys.balance(data.customerId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: paymentKeys.customerInvoices(data.customerId),
+      });
       queryClient.invalidateQueries({ queryKey: paymentKeys.stats({}) });
       // Invalidate search results
       queryClient.invalidateQueries({ queryKey: paymentKeys.search({}) });
@@ -157,13 +188,16 @@ export const usePaymentMutations = () => {
     },
     onSuccess: (data, paymentId) => {
       // Update the payment in cache with receipt data
-      queryClient.setQueryData(paymentKeys.detail(paymentId), (oldData: Payment | undefined) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          receipt: data,
-        };
-      });
+      queryClient.setQueryData(
+        paymentKeys.detail(paymentId),
+        (oldData: Payment | undefined) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            receipt: data,
+          };
+        }
+      );
     },
   });
 
@@ -175,7 +209,9 @@ export const usePaymentMutations = () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: paymentKeys.history({}) });
       queryClient.invalidateQueries({ queryKey: paymentKeys.all }); // Invalidate all balances
-      queryClient.invalidateQueries({ queryKey: paymentKeys.detail(paymentId) });
+      queryClient.invalidateQueries({
+        queryKey: paymentKeys.detail(paymentId),
+      });
     },
   });
 
@@ -191,4 +227,13 @@ export const usePaymentMutations = () => {
     receiptError: generateReceiptMutation.error,
     deleteError: deletePaymentMutation.error,
   };
+};
+
+// Hook for fetching payment receipt
+export const usePaymentReceipt = (paymentId?: string) => {
+  return useQuery({
+    queryKey: ["payment-receipt", paymentId],
+    queryFn: () => paymentService.getPaymentReceipt(paymentId!),
+    enabled: !!paymentId,
+  });
 };
