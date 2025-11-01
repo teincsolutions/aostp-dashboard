@@ -180,27 +180,6 @@ export const usePaymentMutations = () => {
     },
   });
 
-  // Generate receipt mutation
-  const generateReceiptMutation = useMutation({
-    mutationFn: async (paymentId: string) => {
-      const response = await paymentService.generateReceipt(paymentId);
-      return response.data;
-    },
-    onSuccess: (data, paymentId) => {
-      // Update the payment in cache with receipt data
-      queryClient.setQueryData(
-        paymentKeys.detail(paymentId),
-        (oldData: Payment | undefined) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            receipt: data,
-          };
-        }
-      );
-    },
-  });
-
   const deletePaymentMutation = useMutation({
     mutationFn: async (paymentId: string) => {
       return await paymentService.deletePayment(paymentId);
@@ -220,11 +199,9 @@ export const usePaymentMutations = () => {
     deletePayment: deletePaymentMutation.mutateAsync,
     // Loading states
     isProcessingPayment: makePaymentMutation.isPending,
-    isGeneratingReceipt: generateReceiptMutation.isPending,
 
     // Error states
     paymentError: makePaymentMutation.error,
-    receiptError: generateReceiptMutation.error,
     deleteError: deletePaymentMutation.error,
   };
 };

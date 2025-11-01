@@ -115,14 +115,6 @@ export const paymentService = {
     return response.data;
   },
 
-  // Generate receipt for a payment
-  async generateReceipt(paymentId: string): Promise<ReceiptResponse> {
-    const response = await apiService.post<ReceiptResponse>(
-      `/payments/${paymentId}/receipt`
-    );
-    return response.data;
-  },
-
   // Get payment receipt URL
   async getPaymentReceipt(paymentId: string): Promise<{ url: string }> {
     const response = await apiService.get<{ url: string }>(

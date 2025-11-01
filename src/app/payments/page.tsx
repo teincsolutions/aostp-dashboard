@@ -37,11 +37,12 @@ import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import { InvoiceModal } from "@/components/InvoiceModal";
-import { PaymentReceiptModal } from "@/components/PaymentReceiptModal";
+
 import {
   useAllPayments,
   usePaymentMutations,
   usePaymentDetail,
+  usePaymentReceipt,
 } from "@/hooks/usePayments";
 import { useCustomerInvoices } from "@/hooks/useInvoices";
 import {
@@ -73,8 +74,8 @@ export default function PaymentsPage() {
   );
   const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
-  const [isReceiptModalVisible, setIsReceiptModalVisible] = useState(false);
-  const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
+  const [isReceiptDrawerVisible, setIsReceiptDrawerVisible] = useState(false);
+  const [currentPayment, setCurrentPayment] = useState<Payment | null>(null);
   const [paymentModalStep, setPaymentModalStep] = useState<"currency" | "form">(
     "currency"
   );
@@ -110,7 +111,12 @@ export default function PaymentsPage() {
     usePaymentMutations();
 
   // Hook for single payment detail - to be used when viewing
-  const { data: paymentDetail } = usePaymentDetail(currentPaymentId || "");
+  const { data: paymentDetail } = usePaymentDetail(currentPayment?.id || "");
+
+  // Hook for payment receipt
+  const { data: receiptData, isLoading: receiptLoading } = usePaymentReceipt(
+    currentPayment?.id
+  );
 
   const { data: customerData } = useCustomerById(selectedCustomerId);
 
@@ -226,13 +232,27 @@ export default function PaymentsPage() {
       toast.success("Payment processed successfully");
       paymentForm.resetFields();
       setSelectedInvoices([]);
-      setCurrentPaymentId(payment.id);
+      setCurrentPayment(payment);
       setIsPaymentModalVisible(false);
-      setIsReceiptModalVisible(true);
+      setIsReceiptDrawerVisible(true);
       setPaymentModalStep("currency");
       setPaymentAmount("");
     } catch (error) {
       handleError(error);
+    }
+  };
+
+  const handlePrintReceipt = () => {
+    if (receiptData?.url) {
+      const w = window.open(receiptData.url, "_blank");
+      if (w) {
+        w.onload = () => {
+          w.print();
+          setTimeout(() => w.close(), 500); // Close after a delay
+        };
+      } else {
+        toast.error("Failed to open receipt");
+      }
     }
   };
 
@@ -560,8 +580,8 @@ export default function PaymentsPage() {
                   }
                 },
                 handleView: (payment) => {
-                  setCurrentPaymentId(payment.id);
-                  setIsReceiptModalVisible(true);
+                  setCurrentPayment(payment);
+                  setIsReceiptDrawerVisible(true);
                 },
               })}
               dataSource={allPaymentsData || []}
@@ -839,15 +859,98 @@ export default function PaymentsPage() {
             )}
           </Modal>
 
-          {/* Payment Receipt Modal */}
-          <PaymentReceiptModal
-            visible={isReceiptModalVisible}
+          {/* Receipt Drawer */}
+          <Drawer
+            title="Payment Receipt"
+            open={isReceiptDrawerVisible}
             onClose={() => {
-              setIsReceiptModalVisible(false);
-              setCurrentPaymentId(null);
+              setIsReceiptDrawerVisible(false);
+              setCurrentPayment(null);
             }}
-            paymentId={currentPaymentId}
-          />
+            width={500}
+            extra={
+              <Button
+                type="primary"
+                icon={<PrinterOutlined />}
+                onClick={handlePrintReceipt}
+                loading={receiptLoading}
+                disabled={!receiptData}
+              >
+                Print Receipt
+              </Button>
+            }
+          >
+            {currentPayment && (
+              <div>
+                <Card className="mb-4">
+                  <Descriptions column={1} bordered size="small">
+                    <Descriptions.Item label="Receipt Number">
+                      <strong>
+                        {currentPayment.receipt?.receiptNumber || "N/A"}
+                      </strong>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Payment Code">
+                      <strong>{currentPayment.paymentCode}</strong>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Customer">
+                      {currentPayment.customer.firstName}{" "}
+                      {currentPayment.customer.lastName}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Phone">
+                      {currentPayment.customer.phoneNumber}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Payment Method">
+                      <Tag>
+                        {currentPayment.paymentMethod?.replace("_", " ")}
+                      </Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Amount Paid">
+                      <strong style={{ color: "#52c41a" }}>
+                        {currentPayment.currency}{" "}
+                        {currentPayment.amount?.toFixed(2)}
+                      </strong>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Reference">
+                      {currentPayment.reference || "N/A"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Processed At">
+                      {new Date(currentPayment.processedAt).toLocaleString()}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Processed By">
+                      {currentPayment.processedBy.firstName}{" "}
+                      {currentPayment.processedBy.lastName}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+
+                <Card title="Invoice Details" size="small">
+                  <List
+                    size="small"
+                    dataSource={paymentDetail?.invoices}
+                    renderItem={(invoice: Invoice) => (
+                      <List.Item>
+                        <List.Item.Meta
+                          title={`Invoice ${invoice.invoiceNumber}`}
+                          description={
+                            <div>
+                              <div>
+                                Total: {invoice.currency}{" "}
+                                {invoice.totalAmount?.toFixed(2)}
+                              </div>
+                              <div>
+                                Balance: {invoice.currency}{" "}
+                                {invoice.balance?.toFixed(2)}
+                              </div>
+                            </div>
+                          }
+                        />
+                      </List.Item>
+                    )}
+                  />
+                </Card>
+              </div>
+            )}
+          </Drawer>
         </div>
       </AppLayout>
     </AuthGuard>
