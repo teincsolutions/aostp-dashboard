@@ -241,11 +241,11 @@ export default function WarehousePage() {
     },
     {
       title: "Status",
-      dataIndex: "status",
+      dataIndex: "isActive",
       key: "status",
-      render: (status: string) => (
-        <span style={{ color: status === "ACTIVE" ? "#52c41a" : "#ff4d4f" }}>
-          {status}
+      render: (isActive: boolean) => (
+        <span style={{ color: isActive ? "#52c41a" : "#ff4d4f" }}>
+          {isActive ? "ACTIVE" : "INACTIVE"}
         </span>
       ),
     },

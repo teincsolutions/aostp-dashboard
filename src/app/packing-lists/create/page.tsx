@@ -16,12 +16,7 @@ import {
   Popconfirm,
 } from "antd";
 import { toast } from "sonner";
-import {
-  LeftOutlined,
-  RightOutlined,
-  PlusOutlined,
-  MinusOutlined,
-} from "@ant-design/icons";
+import { LeftOutlined, RightOutlined, PlusOutlined } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { usePackingListMutations } from "@/hooks/usePackingLists";
@@ -29,12 +24,7 @@ import {
   useActiveContainers,
   useContainerMutations,
 } from "@/hooks/useContainers";
-import {
-  PackingListCreatePayload,
-  PackageAssignment,
-  PackingList,
-} from "@/types/packingList";
-import { Package } from "@/types/package";
+import { PackingListCreatePayload, PackingList } from "@/types/packingList";
 import { ContainerCreatePayload } from "@/types/container";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
@@ -42,19 +32,10 @@ import { ContainerCreateModal } from "@/components/ContainerModals";
 import { Role } from "@/types/user";
 import { handleError } from "@/utils/forms/errorUtils";
 import { PackageAssignmentPanel } from "@/components/PackageAssignmentPanel";
-import { useCities } from "@/hooks/useCities";
-import { City } from "@/types/exchangeRate";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { Step } = Steps;
-
-type PackageAssignmentWithCalc = PackageAssignment & {
-  rate?: number;
-  calculatedAmount?: number;
-  currency?: string;
-  unitType?: string; // 'CBM' or 'KG'
-};
 
 const PackingListCreatePage: React.FC = () => {
   const router = useRouter();
@@ -83,12 +64,6 @@ const PackingListCreatePage: React.FC = () => {
     createPackingList,
     isCreating,
   } = usePackingListMutations();
-
-  // Cities for dropdown
-  const { data: citiesData, isLoading: citiesLoading } = useCities({
-    sortBy: "name",
-    sortOrder: "asc",
-  });
 
   const handleAssignPackages = async () => {
     if (!packingList) return;

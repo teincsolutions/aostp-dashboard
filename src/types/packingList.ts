@@ -27,6 +27,7 @@ export interface PackingList {
   totalPackages: number;
   totalCBM: number | null;
   totalWeight: number | null;
+  totalShippingCost: number | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string | null;

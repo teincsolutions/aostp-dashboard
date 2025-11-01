@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Table,
   Button,
@@ -38,28 +38,21 @@ import {
   usePackingListMutations,
   usePackingListSummary,
   usePackingList,
-  useUnassignedPackages,
 } from "@/hooks/usePackingLists";
 import { useActiveContainers } from "@/hooks/useContainers";
-import { useShippingRates } from "@/hooks/useShippingRates";
 import {
-  PackingListCreatePayload,
   PackingListUpdatePayload,
   PackingListStatus,
   PackingList,
-  PackingListSummary,
   ExportFormat,
   CustomerPackingSummary,
 } from "@/types/packingList";
 import { getPackingListColumns, packingListStatusColors } from "./columns";
-import { Package, ShippingMode } from "@/types/package";
+import { ShippingMode } from "@/types/package";
 import type { Dayjs } from "dayjs";
 import type { RangePickerProps } from "antd/es/date-picker";
 import { Role } from "@/types/user";
 import dayjs from "dayjs";
-import { on } from "events";
-import { getPacklistTotals } from "@/utils/forms/getPacklistTotals";
-import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useCities } from "@/hooks/useCities";
 
 const { Option } = Select;
@@ -85,10 +78,6 @@ export default function PackingListsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  const containerTypeMap = {
-    CONTAINER: ShippingMode.SEA,
-    BAG: ShippingMode.AIR,
-  };
   // Forms
   const [editForm] = Form.useForm();
 
@@ -120,7 +109,6 @@ export default function PackingListsPage() {
     exportPackingList,
     isUpdating,
     isDeleting,
-    isExporting,
   } = usePackingListMutations();
 
   const { data: packingListDetails } = usePackingList(
@@ -129,22 +117,6 @@ export default function PackingListsPage() {
   const { data: packingListSummary } = usePackingListSummary(
     detailsPackingList?.id || ""
   );
-
-  const { useCurrentActiveRates } = useShippingRates();
-  const { activeRate } = useExchangeRate();
-
-  const shippingMode =
-    containerTypeMap[detailsPackingList?.container?.containerType || "BAG"];
-  // Get current shipping rate for calculations
-  const { data: currentShippingRates } = useCurrentActiveRates(shippingMode);
-
-  const packageListTotals = useMemo(() => {
-    return getPacklistTotals(
-      detailsPackingList?.packages || [],
-      currentShippingRates,
-      activeRate?.rate
-    );
-  }, [detailsPackingList, currentShippingRates, activeRate]);
 
   // Use all active containers
   const filteredContainers = activeContainers;
@@ -656,20 +628,12 @@ export default function PackingListsPage() {
                             <Statistic
                               title="Total Shipping Cost (USD)"
                               value={`$${
-                                packageListTotals?.usdTotal?.toFixed(2) ||
-                                "0.00"
+                                packingListSummary.packingList.totalShippingCost?.toFixed(
+                                  2
+                                ) || "0.00"
                               }`}
                               valueStyle={{ color: "#faad14", fontSize: 14 }}
                               className="text-small"
-                            />
-                            <Statistic
-                              title="Total Shipping Cost (GHS)"
-                              value={`$${
-                                packageListTotals?.ghsTotal?.toFixed(2) ||
-                                "0.00"
-                              }`}
-                              className="text-small"
-                              valueStyle={{ color: "#2ffa14ff", fontSize: 14 }}
                             />
                           </Col>
                         </Row>
