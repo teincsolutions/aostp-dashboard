@@ -167,7 +167,7 @@ export const usePaymentMutations = () => {
     },
     onSuccess: (data) => {
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: paymentKeys.history({}) });
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all });
       queryClient.invalidateQueries({
         queryKey: paymentKeys.balance(data.customerId),
       });
