@@ -1,9 +1,10 @@
 // src/app/package-intake/columns.tsx
 
 import { ColumnsType } from "antd/es/table";
-import { Package, Receipt } from "@/types/package";
+import { Package, PackageStatusPackages, Receipt } from "@/types/package";
 import { Button, Tag } from "antd";
 import dayjs from "dayjs";
+import { packageStatusColors } from "../packages/page";
 
 export const packageIntakeColumns: ColumnsType<
   Package & { onViewReceipt: (id: string) => void }
@@ -61,8 +62,18 @@ export const packageIntakeColumns: ColumnsType<
     title: "Status",
     dataIndex: "status",
     key: "status",
-    width: 110,
-    render: (value: string) => <Tag>{value}</Tag>,
+    filters: Object.values(PackageStatusPackages).map((status) => ({
+      text: status.replace("_", " "),
+      value: status,
+    })),
+    width: 100,
+    render: (status: PackageStatusPackages) => {
+      return (
+        <Tag color={packageStatusColors[status] || "default"}>
+          {status.replace("_", " ")}
+        </Tag>
+      );
+    },
   },
   {
     title: "Pickup Code",

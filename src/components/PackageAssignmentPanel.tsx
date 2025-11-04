@@ -306,9 +306,6 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                   });
                 }}
                 size="small"
-                disabled={
-                  packingListData?.status === PackingListStatus.FINALIZED
-                }
               >
                 Edit
               </Button>

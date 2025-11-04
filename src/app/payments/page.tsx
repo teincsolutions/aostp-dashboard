@@ -930,7 +930,25 @@ export default function PaymentsPage() {
                     renderItem={(invoice: Invoice) => (
                       <List.Item>
                         <List.Item.Meta
-                          title={`Invoice ${invoice.invoiceNumber}`}
+                          title={
+                            <div className="flex justify-between items-center">
+                              <span>Invoice {invoice.invoiceNumber}</span>
+                              <Tag
+                                color={
+                                  invoice.status === InvoiceStatus.PAID
+                                    ? "success"
+                                    : invoice.status === InvoiceStatus.UNPAID
+                                    ? "error"
+                                    : invoice.status ===
+                                      InvoiceStatus.PARTIALLY_PAID
+                                    ? "warning"
+                                    : "default"
+                                }
+                              >
+                                {invoice.status?.replace("_", " ")}
+                              </Tag>
+                            </div>
+                          }
                           description={
                             <div>
                               <div>

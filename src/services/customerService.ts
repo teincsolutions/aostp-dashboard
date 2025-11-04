@@ -7,32 +7,39 @@ import {
   CustomerCreatePayload,
   CustomerUpdatePayload,
   CustomerStats,
+  CustomerStatsResponse,
   CustomerStatus,
 } from "@/types/customer";
 
 export const customerService = {
-  getCustomers: (params: Record<string, unknown>) =>
-    apiService.get<PaginatedResponse<Customer>>("/customers", { params }),
+  getCustomers: async (params: Record<string, unknown>) =>
+    (
+      await apiService.get<PaginatedResponse<Customer>>("/customers", {
+        params,
+      })
+    ).data,
 
-  getCustomerById: (id: string) => apiService.get<Customer>(`/customers/${id}`),
+  getCustomerById: async (id: string) =>
+    (await apiService.get<Customer>(`/customers/${id}`)).data,
 
-  getCustomerByCode: (customerCode: string) =>
-    apiService.get<Customer>(`/customers/code/${customerCode}`),
+  getCustomerByCode: async (customerCode: string) =>
+    (await apiService.get<Customer>(`/customers/code/${customerCode}`)).data,
 
-  getCustomerByPhone: (phoneNumber: string) =>
-    apiService.get<Customer>(`/customers/phone/${phoneNumber}`),
+  getCustomerByPhone: async (phoneNumber: string) =>
+    (await apiService.get<Customer>(`/customers/phone/${phoneNumber}`)).data,
 
-  getCustomerStats: (id: string) =>
-    apiService.get<CustomerStats>(`/customers/${id}/stats`),
+  getCustomerStats: async (id: string) =>
+    (await apiService.get<CustomerStatsResponse>(`/customers/${id}/stats`))
+      .data,
 
-  createCustomer: (payload: CustomerCreatePayload) =>
-    apiService.post<Customer>("/customers", payload),
+  createCustomer: async (payload: CustomerCreatePayload) =>
+    (await apiService.post<Customer>("/customers", payload)).data,
 
-  updateCustomer: (id: string, payload: CustomerUpdatePayload) =>
-    apiService.patch<Customer>(`/customers/${id}`, payload),
+  updateCustomer: async (id: string, payload: CustomerUpdatePayload) =>
+    (await apiService.patch<Customer>(`/customers/${id}`, payload)).data,
 
-  toggleCustomerStatus: (id: string, isActive: boolean) =>
-    apiService.patch<Customer>(`/customers/${id}`, { isActive }),
+  toggleCustomerStatus: async (id: string, isActive: boolean) =>
+    (await apiService.patch<Customer>(`/customers/${id}`, { isActive })).data,
 
   exportCustomers: (params: Record<string, unknown>, format: "pdf" | "excel") =>
     apiService.get<Blob>(`/customers/export`, {

@@ -495,30 +495,11 @@ export default function PackageIntakePage() {
                     </Select>
                   </Form.Item>
 
-                  {form.getFieldValue("shippingMode") === "AIR" && (
-                    <Form.Item
-                      label="Weight (kg)"
-                      name="weight"
-                      rules={[{ required: true, type: "number", min: 0.01 }]}
-                    >
-                      <InputNumber min={0.01} className="w-full" />
-                    </Form.Item>
-                  )}
-
-                  {form.getFieldValue("shippingMode") === "SEA" && (
-                    <Form.Item
-                      label="CBM (m³)"
-                      name="cbm"
-                      rules={[{ required: true, type: "number", min: 0 }]}
-                    >
-                      <InputNumber min={0} className="w-full" />
-                    </Form.Item>
-                  )}
-
                   <Form.Item
                     shouldUpdate={(prevValues, currentValues) =>
                       prevValues.shippingMode !== currentValues.shippingMode
                     }
+                    noStyle
                   >
                     {({ getFieldValue }) => {
                       const shippingMode = getFieldValue("shippingMode");
@@ -543,6 +524,36 @@ export default function PackageIntakePage() {
                             <Option value="BATTERY_GOODS">BATTERY GOODS</Option>
                             <Option value="PHONES">PHONES</Option>
                           </Select>
+                        </Form.Item>
+                      ) : null;
+                    }}
+                  </Form.Item>
+
+                  <Form.Item
+                    shouldUpdate={(prevValues, currentValues) =>
+                      prevValues.shippingMode !== currentValues.shippingMode
+                    }
+                    noStyle
+                  >
+                    {({ getFieldValue }) => {
+                      const shippingMode = getFieldValue("shippingMode");
+                      return shippingMode === "AIR" ? (
+                        <Form.Item
+                          label="Weight (kg)"
+                          name="weight"
+                          rules={[
+                            { required: true, type: "number", min: 0.01 },
+                          ]}
+                        >
+                          <InputNumber min={0.01} className="w-full" />
+                        </Form.Item>
+                      ) : shippingMode === "SEA" ? (
+                        <Form.Item
+                          label="CBM (m³)"
+                          name="cbm"
+                          rules={[{ required: true, type: "number", min: 0 }]}
+                        >
+                          <InputNumber min={0} className="w-full" />
                         </Form.Item>
                       ) : null;
                     }}

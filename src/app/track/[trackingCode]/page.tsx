@@ -30,6 +30,21 @@ import { useRouter } from "next/navigation";
 
 const { Title, Text, Paragraph } = Typography;
 
+// Utility function to mask sensitive information
+const maskEmail = (email: string) => {
+  if (!email) return "";
+  const [localPart, domain] = email.split("@");
+  if (localPart.length <= 2) return `${localPart}***@${domain}`;
+  return `${localPart.slice(0, 2)}***@${domain}`;
+};
+
+const maskPhone = (phone: string) => {
+  if (!phone) return "";
+  const cleaned = phone.replace(/\D/g, "");
+  if (cleaned.length <= 4) return `***${cleaned}`;
+  return `***${cleaned.slice(-4)}`;
+};
+
 // Status color mappings
 const statusColors = {
   IN_WAREHOUSE: "orange",
@@ -65,7 +80,9 @@ export default function TrackingDetailsPage() {
   useEffect(() => {
     const fetchPackage = async () => {
       try {
-        const response = await publicApiService.get<Package>(`/packages/tracking/${trackingCode}`);
+        const response = await publicApiService.get<Package>(
+          `/packages/tracking/${trackingCode}`
+        );
         setPackageData(response.data);
       } catch (err: any) {
         console.error("Failed to load package:", err);
@@ -192,6 +209,12 @@ export default function TrackingDetailsPage() {
                 <Paragraph copyable={{ text: trackingCode }} className="!mb-0">
                   <Text strong>Tracking Code: {trackingCode}</Text>
                 </Paragraph>
+                <Paragraph
+                  copyable={{ text: packageData.pickupCode }}
+                  className="!mb-0"
+                >
+                  <Text strong>Pickup Code: {packageData.pickupCode}</Text>
+                </Paragraph>
                 <Badge
                   color={statusColors[packageData.status] || "default"}
                   text={packageData.status?.replace("_", " ")}
@@ -199,7 +222,6 @@ export default function TrackingDetailsPage() {
                 />
               </div>
             </div>
-            
           </div>
         </Card>
 
@@ -237,19 +259,6 @@ export default function TrackingDetailsPage() {
                 <Descriptions.Item label="Received Date">
                   {dayjs(packageData.receivedDate).format("MMMM DD, YYYY")}
                 </Descriptions.Item>
-                <Descriptions.Item label="Days in Warehouse">
-                  <Text
-                    strong
-                    className={
-                      packageData.daysInWarehouse > 30 ? "text-orange-500" : ""
-                    }
-                  >
-                    {packageData.daysInWarehouse} days
-                  </Text>
-                </Descriptions.Item>
-                <Descriptions.Item label="Notes">
-                  {packageData.notes || "No notes"}
-                </Descriptions.Item>
               </Descriptions>
             </Card>
           </Col>
@@ -262,134 +271,19 @@ export default function TrackingDetailsPage() {
                   {packageData.customer?.lastName}
                 </Descriptions.Item>
                 <Descriptions.Item label="Email">
-                  {packageData.customer?.email}
+                  {maskEmail(packageData.customer?.email || "")}
                 </Descriptions.Item>
                 <Descriptions.Item label="Phone">
-                  {packageData.customer?.phoneNumber ||
-                    packageData.customer?.alternatePhone}
-                </Descriptions.Item>
-                <Descriptions.Item label="Address">
-                  {packageData.customer?.address}, {packageData.customer?.city},{" "}
-                  {packageData.customer?.country}
-                </Descriptions.Item>
-                <Descriptions.Item label="Customer Code">
-                  {packageData.customer?.customerCode}
+                  {maskPhone(
+                    packageData.customer?.phoneNumber ||
+                      packageData.customer?.alternatePhone ||
+                      ""
+                  )}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
           </Col>
         </Row>
-
-        {/* Warehouse & Logistics */}
-        <Row gutter={[24, 24]}>
-          <Col xs={24} lg={8}>
-            <Card title="Warehouse Information">
-              <Descriptions column={1} size="small">
-                <Descriptions.Item label="Warehouse">
-                  {packageData.warehouse?.name}
-                </Descriptions.Item>
-                <Descriptions.Item label="Location">
-                  {packageData.warehouse?.location}
-                </Descriptions.Item>
-              </Descriptions>
-            </Card>
-          </Col>
-
-          <Col xs={24} lg={8}>
-            <Card title="Packing List Status">
-              {packageData.packingList ? (
-                <div>
-                  <div className="mb-3">
-                    <Text strong>Name: </Text>
-                    {packageData.packingList.name}
-                  </div>
-                  <div className="mb-3">
-                    <Badge
-                      color={
-                        packingListStatusColors[
-                          packageData.packingList
-                            .status as keyof typeof packingListStatusColors
-                        ] || "default"
-                      }
-                      text={packageData.packingList.status}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <Text strong>Loading Date: </Text>
-                    {dayjs(packageData.packingList.loadingDate).format(
-                      "MM/DD/YYYY"
-                    )}
-                  </div>
-                  <div>
-                    <Text strong>ETA: </Text>
-                    {dayjs(packageData.packingList.eta).format("MM/DD/YYYY")}
-                  </div>
-                </div>
-              ) : (
-                <Text type="secondary">Not assigned to a packing list</Text>
-              )}
-            </Card>
-          </Col>
-
-          <Col xs={24} lg={8}>
-            <Card title="Container Status">
-              {packageData.packingList?.container ? (
-                <div>
-                  <div className="mb-3">
-                    <Text strong>Container Number: </Text>
-                    {packageData.packingList.container.containerNumber}
-                  </div>
-                  <div className="mb-3">
-                    <Badge
-                      color={
-                        containerStatusColors[
-                          packageData.packingList.container
-                            .status as keyof typeof containerStatusColors
-                        ] || "default"
-                      }
-                      text={packageData.packingList.container.status.replace(
-                        "_",
-                        " "
-                      )}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <Text strong>Vessel/Flight: </Text>
-                    {packageData.packingList.container.vesselFlight || "N/A"}
-                  </div>
-                  <div>
-                    <Text strong>ETA: </Text>
-                    {dayjs(packageData.packingList.container.eta).format(
-                      "MM/DD/YYYY"
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <Text type="secondary">Not assigned to a container</Text>
-              )}
-            </Card>
-          </Col>
-        </Row>
-
-        {/* Financial Information */}
-        <Card title="Financial Status">
-          <Row gutter={16}>
-            <Col xs={12} sm={6}>
-              <Statistic
-                title="Payment Status"
-                value={
-                  packageData.paymentStatus?.replace("_", " ") || "PENDING"
-                }
-                valueStyle={{
-                  color:
-                    packageData.paymentStatus === "PAID"
-                      ? "#3f8600"
-                      : "#cf1322",
-                }}
-              />
-            </Col>
-          </Row>
-        </Card>
 
         {/* Package Items */}
         {packageData.items && packageData.items.length > 0 && (

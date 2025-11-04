@@ -1,47 +1,48 @@
 // src/hooks/useCustomers.ts
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { customerService } from '@/services/customerService';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { customerService } from "@/services/customerService";
 import {
   CustomerCreatePayload,
   CustomerUpdatePayload,
-} from '@/types/customer';
+  CustomerStatsResponse,
+} from "@/types/customer";
 
 export function useCustomers(params: Record<string, unknown>) {
   return useQuery({
-    queryKey: ['customers', params],
-    queryFn: () => customerService.getCustomers(params).then(res => res.data),
+    queryKey: ["customers", params],
+    queryFn: () => customerService.getCustomers(params),
   });
 }
 
 export function useCustomerById(id: string) {
   return useQuery({
-    queryKey: ['customer', id],
-    queryFn: () => customerService.getCustomerById(id).then(res => res.data),
+    queryKey: ["customer", id],
+    queryFn: () => customerService.getCustomerById(id),
     enabled: !!id,
   });
 }
 
 export function useCustomerByCode(code: string) {
   return useQuery({
-    queryKey: ['customerCode', code],
-    queryFn: () => customerService.getCustomerByCode(code).then(res => res.data),
+    queryKey: ["customerCode", code],
+    queryFn: () => customerService.getCustomerByCode(code),
     enabled: !!code,
   });
 }
 
 export function useCustomerByPhone(phoneNumber: string) {
   return useQuery({
-    queryKey: ['customerPhone', phoneNumber],
-    queryFn: () => customerService.getCustomerByPhone(phoneNumber).then(res => res.data),
+    queryKey: ["customerPhone", phoneNumber],
+    queryFn: () => customerService.getCustomerByPhone(phoneNumber),
     enabled: !!phoneNumber,
   });
 }
 
 export function useCustomerStats(id: string) {
   return useQuery({
-    queryKey: ['customerStats', id],
-    queryFn: () => customerService.getCustomerStats(id).then(res => res.data),
+    queryKey: ["customerStats", id],
+    queryFn: () => customerService.getCustomerStats(id),
     enabled: !!id,
   });
 }
@@ -50,9 +51,9 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: CustomerCreatePayload) =>
-      customerService.createCustomer(payload).then(res => res.data),
+      customerService.createCustomer(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
   });
 }
@@ -60,10 +61,15 @@ export function useCreateCustomer() {
 export function useUpdateCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: CustomerUpdatePayload }) =>
-      customerService.updateCustomer(id, payload).then(res => res.data),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CustomerUpdatePayload;
+    }) => customerService.updateCustomer(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
   });
 }
@@ -72,9 +78,9 @@ export function useToggleCustomerStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      customerService.toggleCustomerStatus(id, isActive).then(res => res.data),
+      customerService.toggleCustomerStatus(id, isActive),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
   });
 }
@@ -82,8 +88,13 @@ export function useToggleCustomerStatus() {
 export function useExportCustomers() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ params, format }: { params: Record<string, unknown>; format: 'pdf' | 'excel' }) =>
-      customerService.exportCustomers(params, format),
+    mutationFn: ({
+      params,
+      format,
+    }: {
+      params: Record<string, unknown>;
+      format: "pdf" | "excel";
+    }) => customerService.exportCustomers(params, format),
   });
 }
 
@@ -93,33 +104,37 @@ export function useCustomerMutations() {
 
   const createCustomer = useMutation({
     mutationFn: (payload: CustomerCreatePayload) =>
-      customerService.createCustomer(payload).then(res => res.data),
+      customerService.createCustomer(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
   });
 
   const updateCustomer = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: CustomerUpdatePayload }) =>
-      customerService.updateCustomer(id, payload).then(res => res.data),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CustomerUpdatePayload;
+    }) => customerService.updateCustomer(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
   });
 
   const deleteCustomer = useMutation({
-    mutationFn: (id: string) =>
-      customerService.toggleCustomerStatus(id, false).then(res => res.data),
+    mutationFn: (id: string) => customerService.toggleCustomerStatus(id, false),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
   });
 
   const toggleCustomerStatus = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      customerService.toggleCustomerStatus(id, isActive).then(res => res.data),
+      customerService.toggleCustomerStatus(id, isActive),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
   });
 
@@ -128,9 +143,9 @@ export function useCustomerMutations() {
     updateCustomer: updateCustomer.mutateAsync,
     deleteCustomer: deleteCustomer.mutateAsync,
     toggleCustomerStatus: toggleCustomerStatus.mutateAsync,
-    isCreating: createCustomer.status === 'pending',
-    isUpdating: updateCustomer.status === 'pending',
-    isDeleting: deleteCustomer.status === 'pending',
-    isTogglingStatus: toggleCustomerStatus.status === 'pending',
+    isCreating: createCustomer.status === "pending",
+    isUpdating: updateCustomer.status === "pending",
+    isDeleting: deleteCustomer.status === "pending",
+    isTogglingStatus: toggleCustomerStatus.status === "pending",
   };
 }

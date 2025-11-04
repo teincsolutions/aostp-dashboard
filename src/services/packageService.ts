@@ -8,6 +8,7 @@ import {
   Package,
   PackageItem,
   UpdatePackagePayload,
+  PackageStatusPackages,
 } from "@/types/package";
 
 export const createPackage = async (
@@ -57,7 +58,7 @@ export const getRecentIntakes = async (params: {
   const res = await apiService.get("/packages", {
     params: {
       ...params,
-      status: "RECEIVED",
+      status: PackageStatusPackages.IN_WAREHOUSE,
     },
   });
   return { data: res.data.data, total: res.data.meta.total };
@@ -85,7 +86,9 @@ export const generateReceipt = async (packageId: string): Promise<Receipt> => {
   return res.data;
 };
 
-export const getPackageReceipt = async (packageId: string): Promise<{ url: string }> => {
+export const getPackageReceipt = async (
+  packageId: string
+): Promise<{ url: string }> => {
   const res = await apiService.get(`/packages/${packageId}/receipt`);
   return res.data;
 };

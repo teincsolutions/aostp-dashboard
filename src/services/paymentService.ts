@@ -124,8 +124,8 @@ export const paymentService = {
   },
 
   // Get payment by ID
-  async getPaymentById(id: string): Promise<PaymentResponse> {
-    const response = await apiService.get<PaymentResponse>(`/payments/${id}`);
+  async getPaymentById(id: string): Promise<Payment> {
+    const response = await apiService.get<Payment>(`/payments/${id}`);
     return response.data;
   },
 
