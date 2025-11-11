@@ -15,6 +15,7 @@ import {
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useCreateUser } from "@/hooks/useUsers";
+import { useWarehouses } from "@/hooks/useWarehouse";
 import { Role } from "@/types/user";
 import { userCreateSchema } from "@/utils/forms/userSchemas";
 import { getServerValidationErrors } from "@/utils/forms/errorUtils";
@@ -31,10 +32,19 @@ const roleOptions = [
 export default function CreateUserPage() {
   const router = useRouter();
   const createUserMutation = useCreateUser();
+  const { data: warehouses } = useWarehouses();
 
-  const handleSubmit = async (values: any, { setSubmitting, setErrors }: any) => {
+  const handleSubmit = async (
+    values: any,
+    { setSubmitting, setErrors }: any
+  ) => {
     try {
-      await createUserMutation.mutateAsync(values);
+      const payload = {
+        ...values,
+        fullName: `${values.firstName} ${values.lastName}`,
+        force2FA: values.twoFactorEnabled,
+      };
+      await createUserMutation.mutateAsync(payload);
       notification.success({ message: "User created successfully" });
       router.push("/users");
     } catch (error: unknown) {
@@ -67,6 +77,7 @@ export default function CreateUserPage() {
                 email: "",
                 password: "",
                 role: Role.OPERATIONS_CLERK,
+                warehouseId: "",
                 isActive: true,
                 twoFactorEnabled: false,
               }}
@@ -83,12 +94,17 @@ export default function CreateUserPage() {
                 submitForm,
               }) => (
                 <Form layout="vertical" onFinish={submitForm}>
-
                   <Form.Item
                     label="First Name"
                     required
-                    validateStatus={errors.firstName && touched.firstName ? "error" : ""}
-                    help={errors.firstName && touched.firstName ? errors.firstName : ""}
+                    validateStatus={
+                      errors.firstName && touched.firstName ? "error" : ""
+                    }
+                    help={
+                      errors.firstName && touched.firstName
+                        ? errors.firstName
+                        : ""
+                    }
                   >
                     <Input
                       name="firstName"
@@ -101,8 +117,12 @@ export default function CreateUserPage() {
                   <Form.Item
                     label="Last Name"
                     required
-                    validateStatus={errors.lastName && touched.lastName ? "error" : ""}
-                    help={errors.lastName && touched.lastName ? errors.lastName : ""}
+                    validateStatus={
+                      errors.lastName && touched.lastName ? "error" : ""
+                    }
+                    help={
+                      errors.lastName && touched.lastName ? errors.lastName : ""
+                    }
                   >
                     <Input
                       name="lastName"
@@ -115,8 +135,12 @@ export default function CreateUserPage() {
                   <Form.Item
                     label="Username"
                     required
-                    validateStatus={errors.username && touched.username ? "error" : ""}
-                    help={errors.username && touched.username ? errors.username : ""}
+                    validateStatus={
+                      errors.username && touched.username ? "error" : ""
+                    }
+                    help={
+                      errors.username && touched.username ? errors.username : ""
+                    }
                   >
                     <Input
                       name="username"
@@ -129,7 +153,9 @@ export default function CreateUserPage() {
                   <Form.Item
                     label="Email"
                     required
-                    validateStatus={errors.email && touched.email ? "error" : ""}
+                    validateStatus={
+                      errors.email && touched.email ? "error" : ""
+                    }
                     help={errors.email && touched.email ? errors.email : ""}
                   >
                     <Input
@@ -143,8 +169,12 @@ export default function CreateUserPage() {
 
                   <Form.Item
                     label="Password"
-                    validateStatus={errors.password && touched.password ? "error" : ""}
-                    help={errors.password && touched.password ? errors.password : ""}
+                    validateStatus={
+                      errors.password && touched.password ? "error" : ""
+                    }
+                    help={
+                      errors.password && touched.password ? errors.password : ""
+                    }
                   >
                     <Input.Password
                       name="password"
@@ -173,6 +203,31 @@ export default function CreateUserPage() {
                     </Select>
                   </Form.Item>
 
+                  <Form.Item
+                    label="Warehouse"
+                    validateStatus={
+                      errors.warehouseId && touched.warehouseId ? "error" : ""
+                    }
+                    help={
+                      errors.warehouseId && touched.warehouseId
+                        ? errors.warehouseId
+                        : ""
+                    }
+                  >
+                    <Select
+                      value={values.warehouseId}
+                      onChange={(value) => setFieldValue("warehouseId", value)}
+                      placeholder="Select warehouse"
+                      allowClear
+                    >
+                      {warehouses?.data?.map((warehouse) => (
+                        <Select.Option key={warehouse.id} value={warehouse.id}>
+                          {warehouse.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+
                   <Form.Item label="Active">
                     <Switch
                       checked={values.isActive}
@@ -183,7 +238,9 @@ export default function CreateUserPage() {
                   <Form.Item label="Two Factor Enabled">
                     <Switch
                       checked={values.twoFactorEnabled}
-                      onChange={(checked) => setFieldValue("twoFactorEnabled", checked)}
+                      onChange={(checked) =>
+                        setFieldValue("twoFactorEnabled", checked)
+                      }
                     />
                   </Form.Item>
 

@@ -25,6 +25,7 @@ export const userCreateSchema = Yup.object().shape({
   role: Yup.mixed<Role>()
     .oneOf(Object.values(Role), "Invalid role selected")
     .required("Role is required"),
+  warehouseId: Yup.string().optional(),
   isActive: Yup.boolean().required(),
   twoFactorEnabled: Yup.boolean().required(),
 });
@@ -39,12 +40,11 @@ export const userUpdateSchema = Yup.object().shape({
     .optional()
     .min(2, "Last name must be at least 2 characters")
     .max(50, "Last name must be no more than 50 characters"),
-  email: Yup.string()
-    .optional()
-    .email("Invalid email format"),
+  email: Yup.string().optional().email("Invalid email format"),
   role: Yup.mixed<Role>()
     .optional()
     .oneOf(Object.values(Role), "Invalid role selected"),
+  warehouseId: Yup.string().optional(),
 });
 
 // Schema for user password reset (if needed later)
@@ -55,5 +55,5 @@ export const userPasswordResetSchema = Yup.object().shape({
     .max(128, "Password must be no more than 128 characters"),
   confirmPassword: Yup.string()
     .required("Password confirmation is required")
-    .oneOf([Yup.ref('newPassword')], 'Passwords must match'),
+    .oneOf([Yup.ref("newPassword")], "Passwords must match"),
 });

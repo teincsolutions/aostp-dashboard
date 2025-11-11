@@ -23,6 +23,7 @@ export interface User {
   email: string;
   username: string;
   role: UserRole;
+  warehouseId?: string;
   isActive: boolean;
   twoFactorEnabled: boolean;
   createdAt: string;
@@ -50,4 +51,5 @@ export interface UserUpdatePayload {
   role?: UserRole;
   status?: UserStatus;
   twoFactorEnabled?: boolean;
+  warehouseId?: string;
 }

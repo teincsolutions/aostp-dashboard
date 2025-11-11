@@ -19,6 +19,7 @@ import { Formik, Form, Field } from "formik";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useUsers, useResetUserPassword } from "@/hooks/useUsers";
+import { useWarehouses } from "@/hooks/useWarehouse";
 import { getUserColumns } from "./columns";
 import { Role, UserStatus, User } from "@/types/user";
 import { userUpdateSchema } from "@/utils/forms/userSchemas";
@@ -39,8 +40,6 @@ const statusOptions = [
   { label: "Inactive", value: UserStatus.INACTIVE },
 ];
 
-
-
 export default function UsersPage() {
   const router = useRouter();
   const [search, setSearch] = useState<string>("");
@@ -50,6 +49,8 @@ export default function UsersPage() {
   const [limit, setLimit] = useState<number>(10);
   const [editModal, setEditModal] = useState<boolean>(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  const { data: warehouses } = useWarehouses();
 
   const { data, isLoading, refetch } = useUsers({
     page,
@@ -73,7 +74,7 @@ export default function UsersPage() {
 
   const handleToggleUserStatus = async (id: string, isActive: boolean) => {
     // TODO: implement toggle API
-    console.log('Toggle user status', id, isActive);
+    console.log("Toggle user status", id, isActive);
     toast.success("User status updated");
     refetch();
   };
@@ -211,15 +212,13 @@ export default function UsersPage() {
                 lastName: editingUser?.lastName || "",
                 email: editingUser?.email || "",
                 role: editingUser?.role || Role.OPERATIONS_CLERK,
+                warehouseId: editingUser?.warehouseId || "",
               }}
               validationSchema={userUpdateSchema}
-              onSubmit={async (
-                values,
-                { setSubmitting, setErrors }
-              ) => {
+              onSubmit={async (values, { setSubmitting, setErrors }) => {
                 try {
                   // TODO: implement update API
-                  console.log('Update user', editingUser?.id, values);
+                  console.log("Update user", editingUser?.id, values);
                   toast.success("User updated");
                   setEditModal(false);
                   setEditingUser(null);
@@ -242,14 +241,18 @@ export default function UsersPage() {
                     <label>First Name</label>
                     <Field name="firstName" as={Input} />
                     {errors.firstName && touched.firstName && (
-                      <div className="text-red-500 text-xs">{errors.firstName}</div>
+                      <div className="text-red-500 text-xs">
+                        {errors.firstName}
+                      </div>
                     )}
                   </div>
                   <div className="mb-4">
                     <label>Last Name</label>
                     <Field name="lastName" as={Input} />
                     {errors.lastName && touched.lastName && (
-                      <div className="text-red-500 text-xs">{errors.lastName}</div>
+                      <div className="text-red-500 text-xs">
+                        {errors.lastName}
+                      </div>
                     )}
                   </div>
                   <div className="mb-4">
@@ -276,6 +279,30 @@ export default function UsersPage() {
                     </Select>
                     {errors.role && touched.role && (
                       <div className="text-red-500 text-xs">{errors.role}</div>
+                    )}
+                  </div>
+                  <div className="mb-4">
+                    <label>Warehouse</label>
+                    <Select
+                      value={values.warehouseId}
+                      onChange={(v) =>
+                        handleChange({
+                          target: { name: "warehouseId", value: v },
+                        })
+                      }
+                      style={{ width: "100%" }}
+                      allowClear
+                    >
+                      {warehouses?.data?.map((warehouse) => (
+                        <Select.Option key={warehouse.id} value={warehouse.id}>
+                          {warehouse.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                    {errors.warehouseId && touched.warehouseId && (
+                      <div className="text-red-500 text-xs">
+                        {errors.warehouseId}
+                      </div>
                     )}
                   </div>
                   <Button
