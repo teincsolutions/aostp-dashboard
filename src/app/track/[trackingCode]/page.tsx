@@ -142,49 +142,59 @@ export default function TrackingDetailsPage() {
   }
 
   // Package items table columns
-  const itemsColumns = [
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
-      render: (description: string) => description || "No description",
-    },
-    {
-      title: "Quantity",
-      dataIndex: "quantity",
-      key: "quantity",
-    },
-    {
-      title: "Weight (kg)",
-      dataIndex: "weight",
-      key: "weight",
-    },
-    {
-      title: "CBM",
-      dataIndex: "cbm",
-      key: "cbm",
-    },
-    {
-      title: "Shipping Mode",
-      dataIndex: "shippingMode",
-      key: "shippingMode",
-      render: (mode: string) => (
-        <Tag color={mode === "AIR" ? "blue" : "green"}>{mode}</Tag>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => (
-        <Tag
-          color={statusColors[status as keyof typeof statusColors] || "default"}
-        >
-          {status?.replace("_", " ")}
-        </Tag>
-      ),
-    },
-  ];
+  const itemsColumns = packageData?.isConsolidated
+    ? [
+        {
+          title: "Tracking Code",
+          dataIndex: "intakeTrackingCode",
+          key: "intakeTrackingCode",
+        },
+      ]
+    : [
+        {
+          title: "Description",
+          dataIndex: "description",
+          key: "description",
+          render: (description: string) => description || "No description",
+        },
+        {
+          title: "Quantity",
+          dataIndex: "quantity",
+          key: "quantity",
+        },
+        {
+          title: "Weight (kg)",
+          dataIndex: "weight",
+          key: "weight",
+        },
+        {
+          title: "CBM",
+          dataIndex: "cbm",
+          key: "cbm",
+        },
+        {
+          title: "Shipping Mode",
+          dataIndex: "shippingMode",
+          key: "shippingMode",
+          render: (mode: string) => (
+            <Tag color={mode === "AIR" ? "blue" : "green"}>{mode}</Tag>
+          ),
+        },
+        {
+          title: "Status",
+          dataIndex: "status",
+          key: "status",
+          render: (status: string) => (
+            <Tag
+              color={
+                statusColors[status as keyof typeof statusColors] || "default"
+              }
+            >
+              {status?.replace("_", " ")}
+            </Tag>
+          ),
+        },
+      ];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 print:bg-white print:px-2">
@@ -286,19 +296,21 @@ export default function TrackingDetailsPage() {
         </Row>
 
         {/* Package Items */}
-        {packageData.items && packageData.items.length > 0 && (
-          <Card title="Package Items">
-            <Table
-              columns={itemsColumns}
-              dataSource={packageData.items}
-              rowKey="id"
-              pagination={false}
-              size="small"
-              scroll={{ x: true }}
-              locale={{ emptyText: <Empty description="No items found" /> }}
-            />
-          </Card>
-        )}
+        {packageData.isConsolidated &&
+          packageData.items &&
+          packageData.items.length > 0 && (
+            <Card title="Sub Packages">
+              <Table
+                columns={itemsColumns}
+                dataSource={packageData.items}
+                rowKey="id"
+                pagination={false}
+                size="small"
+                scroll={{ x: true }}
+                locale={{ emptyText: <Empty description="No items found" /> }}
+              />
+            </Card>
+          )}
 
         {/* Package Photos */}
         {packageData.photos && packageData.photos.length > 0 && (

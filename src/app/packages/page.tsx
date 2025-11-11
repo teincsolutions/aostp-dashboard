@@ -208,6 +208,17 @@ export default function PackagesPage() {
       key: "trackingCode",
       sorter: true,
       width: 160,
+      render: (text: string, record: DisplayPackage) => (
+        <div>
+          <span>{text}</span>
+          <span>
+            Sub Packages:
+            {record.items?.map((item) => (
+              <Tag key={item.id}>{item.intakeTrackingCode}</Tag>
+            ))}
+          </span>
+        </div>
+      ),
     },
     {
       title: "Customer",
@@ -610,37 +621,26 @@ export default function PackagesPage() {
                     </Descriptions.Item>
                   </Descriptions>
                 )}
-                {selectedPackage.items && selectedPackage.items.length > 0 && (
-                  <div style={{ marginTop: 16 }}>
-                    <h3>Items ({selectedPackage.items.length})</h3>
-                    <Table
-                      columns={[
-                        {
-                          title: "Tracking Code",
-                          dataIndex: "intakeTrackingCode",
-                          key: "intakeTrackingCode",
-                        },
-                        {
-                          title: "Description",
-                          dataIndex: "description",
-                          key: "description",
-                        },
-                        {
-                          title: "Quantity",
-                          dataIndex: "quantity",
-                          key: "quantity",
-                        },
-                        { title: "Weight", dataIndex: "weight", key: "weight" },
-                        { title: "CBM", dataIndex: "cbm", key: "cbm" },
-                        { title: "Status", dataIndex: "status", key: "status" },
-                      ]}
-                      dataSource={selectedPackage.items}
-                      rowKey="id"
-                      size="small"
-                      pagination={false}
-                    />
-                  </div>
-                )}
+                {selectedPackage.isConsolidated &&
+                  selectedPackage.items &&
+                  selectedPackage.items.length > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <h3>Sub Packages ({selectedPackage.items.length})</h3>
+                      <Table
+                        columns={[
+                          {
+                            title: "Tracking Code",
+                            dataIndex: "intakeTrackingCode",
+                            key: "intakeTrackingCode",
+                          },
+                        ]}
+                        dataSource={selectedPackage.items}
+                        rowKey="id"
+                        size="small"
+                        pagination={false}
+                      />
+                    </div>
+                  )}
                 {selectedPackage.photos &&
                   selectedPackage.photos.length > 0 && (
                     <div style={{ marginTop: 16 }}>
