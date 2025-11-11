@@ -211,12 +211,15 @@ export default function PackagesPage() {
       render: (text: string, record: DisplayPackage) => (
         <div>
           <span>{text}</span>
-          <span>
-            Sub Packages:
-            {record.items?.map((item) => (
-              <Tag key={item.id}>{item.intakeTrackingCode}</Tag>
-            ))}
-          </span>
+          <br />
+          {record.isConsolidated && (
+            <span>
+              <b>Sub Packages:</b>
+              {record.items?.map((item) => (
+                <Tag key={item.id}>{item.intakeTrackingCode}</Tag>
+              ))}
+            </span>
+          )}
         </div>
       ),
     },
