@@ -188,7 +188,7 @@ export default function AuditLogsPage() {
               loading={usersLoading}
               placeholder="Actor"
               options={users?.data?.map((u) => ({
-                label: `${u.name} (${u.email})`,
+                label: `${u.firstName} ${u.lastName} (${u.email})`,
                 value: u.id,
               }))}
               value={filters.actor}
