@@ -41,7 +41,6 @@ export default function CreateUserPage() {
     try {
       const payload = {
         ...values,
-        fullName: `${values.firstName} ${values.lastName}`,
         force2FA: values.twoFactorEnabled,
       };
       await createUserMutation.mutateAsync(payload);

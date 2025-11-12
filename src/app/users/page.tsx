@@ -18,8 +18,11 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Formik, Form, Field } from "formik";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { useUsers, useResetUserPassword } from "@/hooks/useUsers";
-import { useWarehouses } from "@/hooks/useWarehouse";
+import {
+  useUsers,
+  useResetUserPassword,
+  useUpdateUser,
+} from "@/hooks/useUsers";
 import { getUserColumns } from "./columns";
 import { Role, UserStatus, User } from "@/types/user";
 import { userUpdateSchema } from "@/utils/forms/userSchemas";
@@ -50,8 +53,6 @@ export default function UsersPage() {
   const [editModal, setEditModal] = useState<boolean>(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const { data: warehouses } = useWarehouses();
-
   const { data, isLoading, refetch } = useUsers({
     page,
     limit,
@@ -66,6 +67,7 @@ export default function UsersPage() {
   });
 
   const resetPasswordMutation = useResetUserPassword();
+  const updateUserMutation = useUpdateUser();
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
@@ -115,6 +117,19 @@ export default function UsersPage() {
     onToggleStatus: handleToggleUserStatus,
     onResetPassword: handleResetUserPassword,
   };
+
+  // Extract unique warehouses from users data for the edit form
+  const availableWarehouses = data?.data
+    ? Array.from(
+        new Map(
+          data.data
+            .filter((user) => user.warehouse)
+            .map((user) => [user.warehouse!.id, user.warehouse!])
+        ).values()
+      )
+    : [];
+
+  const columns = getUserColumns(actions);
 
   return (
     <AuthGuard requiredRoles={[Role.SUPER_ADMIN]}>
@@ -212,13 +227,21 @@ export default function UsersPage() {
                 lastName: editingUser?.lastName || "",
                 email: editingUser?.email || "",
                 role: editingUser?.role || Role.OPERATIONS_CLERK,
-                warehouseId: editingUser?.warehouseId || "",
+                warehouseId: editingUser?.warehouse?.id || undefined,
               }}
               validationSchema={userUpdateSchema}
               onSubmit={async (values, { setSubmitting, setErrors }) => {
                 try {
-                  // TODO: implement update API
-                  console.log("Update user", editingUser?.id, values);
+                  await updateUserMutation.mutateAsync({
+                    id: editingUser!.id,
+                    payload: {
+                      firstName: values.firstName,
+                      lastName: values.lastName,
+                      email: values.email,
+                      role: values.role,
+                      warehouseId: values.warehouseId || undefined,
+                    },
+                  });
                   toast.success("User updated");
                   setEditModal(false);
                   setEditingUser(null);
@@ -293,7 +316,7 @@ export default function UsersPage() {
                       style={{ width: "100%" }}
                       allowClear
                     >
-                      {warehouses?.data?.map((warehouse) => (
+                      {availableWarehouses.map((warehouse) => (
                         <Select.Option key={warehouse.id} value={warehouse.id}>
                           {warehouse.name}
                         </Select.Option>

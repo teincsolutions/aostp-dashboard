@@ -1,6 +1,7 @@
 // src/types/user.ts
 
 import { UserRole } from "./common";
+import { Warehouse } from "./warehouse";
 
 export enum Role {
   SUPER_ADMIN = "SUPER_ADMIN",
@@ -17,23 +18,22 @@ export enum UserStatus {
 
 export interface User {
   id: string;
-  firstName: string;
-  lastName: string;
-  name?: string; // computed
   email: string;
   username: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
-  warehouseId?: string;
+  warehouse: Warehouse | null;
   isActive: boolean;
   twoFactorEnabled: boolean;
   createdAt: string;
   updatedAt: string;
   lastLogin: string | null;
-  avatarUrl?: string; // Profile picture URL
 }
 
 export interface UserCreatePayload {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   username: string;
   email: string;
   phone?: string;
@@ -45,8 +45,9 @@ export interface UserCreatePayload {
 }
 
 export interface UserUpdatePayload {
+  firstName?: string;
+  lastName?: string;
   email?: string;
-  name?: string;
   password?: string;
   role?: UserRole;
   status?: UserStatus;
