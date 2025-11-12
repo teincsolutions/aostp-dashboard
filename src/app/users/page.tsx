@@ -22,7 +22,9 @@ import {
   useUsers,
   useResetUserPassword,
   useUpdateUser,
+  useToggleUserStatus,
 } from "@/hooks/useUsers";
+import { useWarehouses } from "@/hooks/useWarehouse";
 import { getUserColumns } from "./columns";
 import { Role, UserStatus, User } from "@/types/user";
 import { userUpdateSchema } from "@/utils/forms/userSchemas";
@@ -52,6 +54,8 @@ export default function UsersPage() {
   const [limit, setLimit] = useState<number>(10);
   const [editModal, setEditModal] = useState<boolean>(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [viewModal, setViewModal] = useState<boolean>(false);
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
 
   const { data, isLoading, refetch } = useUsers({
     page,
@@ -66,8 +70,16 @@ export default function UsersPage() {
         : undefined,
   });
 
+  const { data: warehousesData } = useWarehouses();
+
   const resetPasswordMutation = useResetUserPassword();
   const updateUserMutation = useUpdateUser();
+  const toggleUserStatusMutation = useToggleUserStatus();
+
+  const handleViewUser = (user: User) => {
+    setViewingUser(user);
+    setViewModal(true);
+  };
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
@@ -75,10 +87,12 @@ export default function UsersPage() {
   };
 
   const handleToggleUserStatus = async (id: string, isActive: boolean) => {
-    // TODO: implement toggle API
-    console.log("Toggle user status", id, isActive);
-    toast.success("User status updated");
-    refetch();
+    try {
+      await toggleUserStatusMutation.mutateAsync({ id, isActive });
+      toast.success("User status updated");
+    } catch (error) {
+      toast.error("Failed to update user status");
+    }
   };
 
   const handleResetUserPassword = (user: User) => {
@@ -113,21 +127,14 @@ export default function UsersPage() {
   };
 
   const actions = {
+    onView: handleViewUser,
     onEdit: handleEditUser,
     onToggleStatus: handleToggleUserStatus,
     onResetPassword: handleResetUserPassword,
   };
 
-  // Extract unique warehouses from users data for the edit form
-  const availableWarehouses = data?.data
-    ? Array.from(
-        new Map(
-          data.data
-            .filter((user) => user.warehouse)
-            .map((user) => [user.warehouse!.id, user.warehouse!])
-        ).values()
-      )
-    : [];
+  // Get all warehouses for the edit form
+  const availableWarehouses = warehousesData?.data || [];
 
   const columns = getUserColumns(actions);
 
@@ -339,6 +346,142 @@ export default function UsersPage() {
                 </Form>
               )}
             </Formik>
+          </Modal>
+
+          <Modal
+            title="View User Details"
+            open={viewModal}
+            onCancel={() => {
+              setViewModal(false);
+              setViewingUser(null);
+            }}
+            footer={[
+              <Button
+                key="edit"
+                type="primary"
+                onClick={() => {
+                  if (viewingUser) {
+                    handleEditUser(viewingUser);
+                  }
+                }}
+              >
+                Edit
+              </Button>,
+              <Button
+                key="toggle"
+                danger={viewingUser?.isActive}
+                onClick={() => {
+                  if (viewingUser) {
+                    Modal.confirm({
+                      title: viewingUser.isActive
+                        ? "Deactivate user?"
+                        : "Activate user?",
+                      onOk: () =>
+                        handleToggleUserStatus(
+                          viewingUser.id,
+                          !viewingUser.isActive
+                        ),
+                    });
+                  }
+                }}
+              >
+                {viewingUser?.isActive ? "Deactivate" : "Activate"}
+              </Button>,
+              <Button
+                key="reset"
+                onClick={() => {
+                  if (viewingUser) {
+                    handleResetUserPassword(viewingUser);
+                  }
+                }}
+              >
+                Reset Password
+              </Button>,
+            ]}
+            destroyOnHidden
+          >
+            {viewingUser && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    First Name
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {viewingUser.firstName}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Last Name
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {viewingUser.lastName}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {viewingUser.email}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Role
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {viewingUser.role}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Warehouse
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {viewingUser.warehouse?.name || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Status
+                  </label>
+                  <p
+                    className={`mt-1 text-sm ${
+                      viewingUser.isActive ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {viewingUser.isActive ? "Active" : "Inactive"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Two-Factor Authentication
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {viewingUser.twoFactorEnabled ? "Enabled" : "Disabled"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Created At
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {new Date(viewingUser.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Last Login
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {viewingUser.lastLogin
+                      ? new Date(viewingUser.lastLogin).toLocaleString()
+                      : "Never"}
+                  </p>
+                </div>
+              </div>
+            )}
           </Modal>
         </div>
       </AppLayout>

@@ -6,6 +6,7 @@ import type { MenuProps } from "antd";
 import { User, Role, UserStatus } from "@/types/user";
 
 interface UserActions {
+  onView: (user: User) => void;
   onEdit: (user: User) => void;
   onToggleStatus: (id: string, isActive: boolean) => void;
   onResetPassword: (user: User) => void;
@@ -101,6 +102,11 @@ export function getUserColumns(actions: UserActions): ColumnsType<User> {
       width: 80,
       render: (_: any, record: User) => {
         const menuItems: MenuProps["items"] = [
+          {
+            key: "view",
+            label: "View",
+            onClick: () => actions.onView(record),
+          },
           {
             key: "edit",
             label: "Edit",
