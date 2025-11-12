@@ -1,4 +1,5 @@
 // src/types/package.ts
+import { PackingList } from "./packingList";
 import { Warehouse } from "./warehouse";
 
 export interface PackagePhotoInput {
@@ -149,7 +150,7 @@ export interface Package {
   updatedAt: string;
   customer?: Customer;
   photos: PackagePhoto[];
-  packingList?: any;
+  packingList?: PackingList;
   invoice?: any;
   warehouse: Warehouse;
   items?: PackageItem[];

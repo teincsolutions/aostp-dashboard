@@ -42,6 +42,7 @@ import { useRouter } from "next/navigation";
 import { usePackages } from "@/hooks/usePackageManagement";
 import { usePackageManagement } from "@/hooks/usePackageManagement";
 import { useConsolidation } from "@/hooks/useConsolidation";
+import { useWarehouses } from "@/hooks/useWarehouse";
 import { Form } from "antd";
 import { ReceiptModal } from "@/components/ReceiptModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,6 +83,7 @@ export default function PackagesPage() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [isConsolidateModalVisible, setIsConsolidateModalVisible] =
     useState(false);
+  const [isTransferModalVisible, setIsTransferModalVisible] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<DisplayPackage | null>(
     null
   );
@@ -96,6 +98,12 @@ export default function PackagesPage() {
     React.Key[]
   >([]);
   const [consForm] = useForm();
+
+  // Transfer states
+  const [selectedForTransfer, setSelectedForTransfer] = useState<React.Key[]>(
+    []
+  );
+  const [targetWarehouse, setTargetWarehouse] = useState<string>("");
 
   // Receipt modal state
   const [receiptModalPackageId, setReceiptModalPackageId] = useState<
@@ -116,8 +124,10 @@ export default function PackagesPage() {
   // Use new package management hooks
   const { data: packagesData, isLoading: packagesLoading } =
     usePackages(params);
-  const { deletePackageMutation } = usePackageManagement();
+  const { deletePackageMutation, updatePackageMutation } =
+    usePackageManagement();
   const { consolidatePackagesMutation } = useConsolidation();
+  const { data: warehousesData } = useWarehouses();
 
   const packages = packagesData?.data || [];
   const total = packagesData?.total || 0;
@@ -390,6 +400,13 @@ export default function PackagesPage() {
                 onClick={() => setIsConsolidateModalVisible(true)}
               >
                 Consolidate Packages
+              </Button>
+              <Button
+                type="default"
+                icon={<UploadOutlined />}
+                onClick={() => setIsTransferModalVisible(true)}
+              >
+                Transfer Packages
               </Button>
               <div className="ml-auto flex gap-2">
                 <Button
@@ -809,6 +826,111 @@ export default function PackagesPage() {
               </Form.Item>
             </Form>
           </Modal>
+
+          {/* Transfer Packages Modal */}
+          <Modal
+            title="Transfer Packages"
+            open={isTransferModalVisible}
+            onCancel={() => {
+              setIsTransferModalVisible(false);
+              setSelectedForTransfer([]);
+              setTargetWarehouse("");
+            }}
+            footer={null}
+            width={1200}
+          >
+            <div style={{ marginBottom: 16 }}>
+              <Select
+                placeholder="Select Target Warehouse"
+                style={{ width: "100%" }}
+                value={targetWarehouse}
+                onChange={setTargetWarehouse}
+                allowClear
+              >
+                {warehousesData?.data?.map((warehouse) => (
+                  <Select.Option key={warehouse.id} value={warehouse.id}>
+                    {warehouse.name} ({warehouse.location})
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
+            <Table
+              dataSource={displayPackages.filter((pkg) =>
+                selectedRowKeys.includes(pkg.id)
+              )}
+              rowKey="id"
+              columns={[
+                {
+                  title: "Tracking Code",
+                  dataIndex: "trackingCode",
+                  key: "trackingCode",
+                },
+                {
+                  title: "Current Warehouse",
+                  key: "currentWarehouse",
+                  render: (record: DisplayPackage) =>
+                    record.warehouse?.name || "N/A",
+                },
+                {
+                  title: "Description",
+                  dataIndex: "description",
+                  key: "description",
+                },
+                { title: "Weight", dataIndex: "weight", key: "weight" },
+                { title: "CBM", dataIndex: "cbm", key: "cbm" },
+              ]}
+              rowSelection={{
+                selectedRowKeys: selectedForTransfer,
+                onChange: setSelectedForTransfer,
+              }}
+              pagination={{ pageSize: 5 }}
+              size="small"
+            />
+
+            <div style={{ marginTop: 16, textAlign: "right" }}>
+              <Button
+                type="primary"
+                onClick={async () => {
+                  if (!targetWarehouse) {
+                    toast.error("Please select a target warehouse");
+                    return;
+                  }
+                  if (selectedForTransfer.length === 0) {
+                    toast.error("Please select packages to transfer");
+                    return;
+                  }
+
+                  try {
+                    // Update each selected package
+                    const updatePromises = selectedForTransfer.map(
+                      (packageId) =>
+                        updatePackageMutation.mutateAsync({
+                          packageId: packageId as string,
+                          payload: { warehouseId: targetWarehouse },
+                        })
+                    );
+
+                    await Promise.all(updatePromises);
+                    toast.success(
+                      `Successfully transferred ${selectedForTransfer.length} package(s)`
+                    );
+                    setIsTransferModalVisible(false);
+                    setSelectedForTransfer([]);
+                    setTargetWarehouse("");
+                    setSelectedRowKeys([]); // Clear main table selection
+                  } catch (error) {
+                    console.error("Transfer failed:", error);
+                    toast.error("Failed to transfer packages");
+                  }
+                }}
+                disabled={!targetWarehouse || selectedForTransfer.length === 0}
+              >
+                Transfer ({selectedForTransfer.length} packages)
+              </Button>
+            </div>
+          </Modal>
+
           <ReceiptModal
             visible={!!receiptModalPackageId}
             onClose={() => setReceiptModalPackageId(null)}

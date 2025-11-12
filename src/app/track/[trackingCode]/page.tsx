@@ -269,6 +269,9 @@ export default function TrackingDetailsPage() {
                 <Descriptions.Item label="Received Date">
                   {dayjs(packageData.receivedDate).format("MMMM DD, YYYY")}
                 </Descriptions.Item>
+                <Descriptions.Item label="Packing List">
+                  {packageData.packingList?.name || "Not assigned"}
+                </Descriptions.Item>
               </Descriptions>
             </Card>
           </Col>
