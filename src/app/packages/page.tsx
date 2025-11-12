@@ -43,8 +43,11 @@ import { usePackages } from "@/hooks/usePackageManagement";
 import { usePackageManagement } from "@/hooks/usePackageManagement";
 import { useConsolidation } from "@/hooks/useConsolidation";
 import { useWarehouses } from "@/hooks/useWarehouse";
+
 import { Form } from "antd";
 import { ReceiptModal } from "@/components/ReceiptModal";
+import { TransferPackagesModal } from "@/components/TransferPackagesModal";
+import { PackingListSearchSelect } from "@/components/PackingListSearchSelect";
 import { useAuth } from "@/hooks/useAuth";
 import { Role } from "@/types/user";
 
@@ -100,10 +103,8 @@ export default function PackagesPage() {
   const [consForm] = useForm();
 
   // Transfer states
-  const [selectedForTransfer, setSelectedForTransfer] = useState<React.Key[]>(
-    []
-  );
-  const [targetWarehouse, setTargetWarehouse] = useState<string>("");
+  const [selectedPackingListId, setSelectedPackingListId] =
+    useState<string>("");
 
   // Receipt modal state
   const [receiptModalPackageId, setReceiptModalPackageId] = useState<
@@ -833,103 +834,42 @@ export default function PackagesPage() {
             open={isTransferModalVisible}
             onCancel={() => {
               setIsTransferModalVisible(false);
-              setSelectedForTransfer([]);
-              setTargetWarehouse("");
+              setSelectedPackingListId("");
             }}
             footer={null}
-            width={1200}
+            width={600}
           >
             <div style={{ marginBottom: 16 }}>
-              <Select
-                placeholder="Select Target Warehouse"
-                style={{ width: "100%" }}
-                value={targetWarehouse}
-                onChange={setTargetWarehouse}
-                allowClear
-              >
-                {warehousesData?.data?.map((warehouse) => (
-                  <Select.Option key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name} ({warehouse.location})
-                  </Select.Option>
-                ))}
-              </Select>
+              <PackingListSearchSelect
+                placeholder="Select Packing List"
+                value={selectedPackingListId}
+                onChange={setSelectedPackingListId}
+                showAddNew={false}
+              />
             </div>
 
-            <Table
-              dataSource={displayPackages.filter((pkg) =>
-                selectedRowKeys.includes(pkg.id)
-              )}
-              rowKey="id"
-              columns={[
-                {
-                  title: "Tracking Code",
-                  dataIndex: "trackingCode",
-                  key: "trackingCode",
-                },
-                {
-                  title: "Current Warehouse",
-                  key: "currentWarehouse",
-                  render: (record: DisplayPackage) =>
-                    record.warehouse?.name || "N/A",
-                },
-                {
-                  title: "Description",
-                  dataIndex: "description",
-                  key: "description",
-                },
-                { title: "Weight", dataIndex: "weight", key: "weight" },
-                { title: "CBM", dataIndex: "cbm", key: "cbm" },
-              ]}
-              rowSelection={{
-                selectedRowKeys: selectedForTransfer,
-                onChange: setSelectedForTransfer,
-              }}
-              pagination={{ pageSize: 5 }}
-              size="small"
-            />
-
-            <div style={{ marginTop: 16, textAlign: "right" }}>
+            <div style={{ textAlign: "right" }}>
               <Button
                 type="primary"
-                onClick={async () => {
-                  if (!targetWarehouse) {
-                    toast.error("Please select a target warehouse");
+                onClick={() => {
+                  if (!selectedPackingListId) {
+                    toast.error("Please select a packing list");
                     return;
                   }
-                  if (selectedForTransfer.length === 0) {
-                    toast.error("Please select packages to transfer");
-                    return;
-                  }
-
-                  try {
-                    // Update each selected package
-                    const updatePromises = selectedForTransfer.map(
-                      (packageId) =>
-                        updatePackageMutation.mutateAsync({
-                          packageId: packageId as string,
-                          payload: { warehouseId: targetWarehouse },
-                        })
-                    );
-
-                    await Promise.all(updatePromises);
-                    toast.success(
-                      `Successfully transferred ${selectedForTransfer.length} package(s)`
-                    );
-                    setIsTransferModalVisible(false);
-                    setSelectedForTransfer([]);
-                    setTargetWarehouse("");
-                    setSelectedRowKeys([]); // Clear main table selection
-                  } catch (error) {
-                    console.error("Transfer failed:", error);
-                    toast.error("Failed to transfer packages");
-                  }
+                  setIsTransferModalVisible(false);
                 }}
-                disabled={!targetWarehouse || selectedForTransfer.length === 0}
+                disabled={!selectedPackingListId}
               >
-                Transfer ({selectedForTransfer.length} packages)
+                Open Transfer Modal
               </Button>
             </div>
           </Modal>
+
+          <TransferPackagesModal
+            visible={!!selectedPackingListId}
+            onCancel={() => setSelectedPackingListId("")}
+            packingListId={selectedPackingListId}
+          />
 
           <ReceiptModal
             visible={!!receiptModalPackageId}
