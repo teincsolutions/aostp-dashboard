@@ -58,7 +58,7 @@ export const getRecentIntakes = async (params: {
   const res = await apiService.get("/packages", {
     params: {
       ...params,
-      status: PackageStatusPackages.IN_WAREHOUSE,
+      status: PackageStatusPackages.RECEIVED,
     },
   });
   return { data: res.data.data, total: res.data.meta.total };

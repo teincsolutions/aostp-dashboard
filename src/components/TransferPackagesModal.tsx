@@ -31,7 +31,7 @@ export const TransferPackagesModal: React.FC<TransferPackagesModalProps> = ({
 
   // Filter packages that are in warehouse (can be transferred)
   const transferablePackages = packages.filter(
-    (pkg) => pkg.status === PackageStatusPackages.IN_WAREHOUSE
+    (pkg) => pkg.status === PackageStatusPackages.RECEIVED
   );
 
   const handleTransfer = async () => {
@@ -127,7 +127,7 @@ export const TransferPackagesModal: React.FC<TransferPackagesModalProps> = ({
         return (
           <Tag
             color={
-              status === PackageStatusPackages.IN_WAREHOUSE
+              status === PackageStatusPackages.RECEIVED
                 ? "gold"
                 : status === PackageStatusPackages.ASSIGNED
                 ? "blue"

@@ -65,7 +65,7 @@ const shipmentTypeOptions = [
 ];
 
 export const packageStatusColors = {
-  [PackageStatusPackages.IN_WAREHOUSE]: "gold",
+  [PackageStatusPackages.RECEIVED]: "gold",
   [PackageStatusPackages.ASSIGNED]: "blue",
   [PackageStatusPackages.SHIPPED]: "purple",
   [PackageStatusPackages.ARRIVED]: "yellowgreen",
@@ -359,7 +359,7 @@ export default function PackagesPage() {
               onClick={() => handleEdit(record)}
               disabled={
                 user?.role !== Role.SUPER_ADMIN &&
-                record.status !== PackageStatusPackages.IN_WAREHOUSE
+                record.status !== PackageStatusPackages.RECEIVED
               }
             />
           </Tooltip>
@@ -371,7 +371,7 @@ export default function PackagesPage() {
               size="small"
               danger
               onClick={() => handleDelete(record)}
-              disabled={record.status !== PackageStatusPackages.IN_WAREHOUSE}
+              disabled={record.status !== PackageStatusPackages.RECEIVED}
             />
           </Tooltip>
 
@@ -508,7 +508,7 @@ export default function PackagesPage() {
                   handleEdit(selectedPackage!);
                 }}
                 disabled={
-                  selectedPackage?.status !== PackageStatusPackages.IN_WAREHOUSE
+                  selectedPackage?.status !== PackageStatusPackages.RECEIVED
                 }
               >
                 Edit
@@ -521,7 +521,7 @@ export default function PackagesPage() {
                   handleDelete(selectedPackage!);
                 }}
                 disabled={
-                  selectedPackage?.status !== PackageStatusPackages.IN_WAREHOUSE
+                  selectedPackage?.status !== PackageStatusPackages.RECEIVED
                 }
               >
                 Delete
@@ -758,7 +758,7 @@ export default function PackagesPage() {
                   (pkg) =>
                     pkg.customer?.id === consCustomer &&
                     pkg.shippingMode === consMode &&
-                    pkg.status === PackageStatusPackages.IN_WAREHOUSE
+                    pkg.status === PackageStatusPackages.RECEIVED
                 )}
                 rowKey="id"
                 columns={[

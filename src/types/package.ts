@@ -67,13 +67,12 @@ export interface Receipt {
 // Package Status enum for package-dependent logic and UI
 export enum PackageStatus {
   RECEIVED = "RECEIVED",
-  CONSOLIDATED = "CONSOLIDATED",
   RELEASED = "RELEASED",
 }
 
 // Package status for packages table
 export enum PackageStatusPackages {
-  IN_WAREHOUSE = "IN_WAREHOUSE",
+  RECEIVED = "RECEIVED",
   ASSIGNED = "ASSIGNED",
   SHIPPED = "SHIPPED",
   ARRIVED = "ARRIVED",

@@ -47,7 +47,7 @@ const maskPhone = (phone: string) => {
 
 // Status color mappings
 const statusColors = {
-  IN_WAREHOUSE: "orange",
+  RECEIVED: "orange",
   ASSIGNED: "blue",
   SHIPPED: "blue",
   ARRIVED: "purple",

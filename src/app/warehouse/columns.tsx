@@ -41,7 +41,6 @@ export const columns: ColumnsType<WarehousePackage> = [
     dataIndex: "status",
     key: "status",
     filters: [
-      { text: "In Warehouse", value: "IN_WAREHOUSE" },
       { text: "Received", value: "RECEIVED" },
       { text: "Shipped", value: "SHIPPED" },
     ],

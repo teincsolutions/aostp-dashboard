@@ -141,7 +141,7 @@ export const packingListService = {
       params: {
         ...params,
         packingListId: "", // Empty string to get unassigned packages
-        status: PackageStatusPackages.IN_WAREHOUSE,
+        status: PackageStatusPackages.RECEIVED,
       },
     });
     return response.data;
