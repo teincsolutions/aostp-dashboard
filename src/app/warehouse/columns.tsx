@@ -27,7 +27,8 @@ export const columns: ColumnsType<WarehousePackage> = [
     dataIndex: "warehouseId",
     key: "warehouseId",
     ellipsis: true,
-    render: (_: any, record: WarehousePackage) => record.warehouse.name,
+    render: (_: any, record: WarehousePackage) =>
+      record.warehouse?.name || "N/A",
   },
   {
     title: "Days Stored",

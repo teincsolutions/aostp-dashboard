@@ -425,7 +425,7 @@ export default function WarehousePage() {
                 pagination={{
                   current: packageFilters.page,
                   pageSize: packageFilters.limit,
-                  total: packagesData?.total || 0,
+                  total: packagesData?.meta?.total || 0,
                   showSizeChanger: true,
                 }}
                 onChange={handleTableChange}
