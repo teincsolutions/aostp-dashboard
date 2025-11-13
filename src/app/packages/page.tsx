@@ -440,26 +440,39 @@ export default function PackagesPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 md:max-w-4xl gap-2 flex-grow flex">
-            <Search
-              placeholder="Search Tracking Number"
-              allowClear
-              onSearch={setSearch}
-              className="cols-span-1 md:col-span-2"
-            />
-            <Select
-              placeholder="Status"
-              allowClear
-              options={statusOptions}
-              onChange={setStatus}
-              className="cols-span-1 sm:col-span-1"
-            />
-            <Select
-              placeholder="Shipment Type"
-              allowClear
-              options={shipmentTypeOptions}
-              onChange={setShippingMode}
-              className="cols-span-1 sm:col-span-1"
-            />
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">
+                Search Tracking Number
+              </label>
+              <Search
+                placeholder="Search Tracking Number"
+                allowClear
+                onSearch={setSearch}
+                className="cols-span-1 md:col-span-2"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Status</label>
+              <Select
+                placeholder="Select Status"
+                allowClear
+                options={statusOptions}
+                value={status || undefined}
+                onChange={setStatus}
+                className="cols-span-1 sm:col-span-1"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Shipment Type</label>
+              <Select
+                placeholder="Select Shipment Type"
+                allowClear
+                options={shipmentTypeOptions}
+                value={shipmentType || undefined}
+                onChange={setShippingMode}
+                className="cols-span-1 sm:col-span-1"
+              />
+            </div>
           </div>
 
           <div>
@@ -738,10 +751,21 @@ export default function PackagesPage() {
                   />
                 </Col>
                 <Col span={12}>
+                  <div style={{ marginBottom: 8 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontWeight: "500",
+                        marginBottom: 4,
+                      }}
+                    >
+                      Shipment Mode
+                    </label>
+                  </div>
                   <Select
-                    placeholder="Shipment Mode"
+                    placeholder="Select Shipment Mode"
                     style={{ width: "100%" }}
-                    value={consMode}
+                    value={consMode || undefined}
                     onChange={setConsMode}
                     allowClear
                   >

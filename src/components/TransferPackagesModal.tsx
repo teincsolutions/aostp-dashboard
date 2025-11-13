@@ -31,7 +31,7 @@ export const TransferPackagesModal: React.FC<TransferPackagesModalProps> = ({
 
   // Filter packages that are in warehouse (can be transferred)
   const transferablePackages = packages.filter(
-    (pkg) => pkg.status === PackageStatusPackages.RECEIVED
+    (pkg) => pkg.status !== PackageStatusPackages.RELEASED
   );
 
   const handleTransfer = async () => {
@@ -171,10 +171,17 @@ export const TransferPackagesModal: React.FC<TransferPackagesModalProps> = ({
       <div style={{ marginBottom: 16 }}>
         <Row gutter={16}>
           <Col span={24}>
+            <div style={{ marginBottom: 8 }}>
+              <label
+                style={{ display: "block", fontWeight: "500", marginBottom: 4 }}
+              >
+                Target Warehouse
+              </label>
+            </div>
             <Select
               placeholder="Select Target Warehouse"
               style={{ width: "100%" }}
-              value={targetWarehouse}
+              value={targetWarehouse || undefined}
               onChange={setTargetWarehouse}
               allowClear
             >
