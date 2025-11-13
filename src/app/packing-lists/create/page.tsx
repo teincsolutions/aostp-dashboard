@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Form,
   Input,
@@ -32,6 +32,7 @@ import { ContainerCreateModal } from "@/components/ContainerModals";
 import { Role } from "@/types/user";
 import { handleError } from "@/utils/forms/errorUtils";
 import { PackageAssignmentPanel } from "@/components/PackageAssignmentPanel";
+import { getPacklistTotals } from "@/utils/forms/getPacklistTotals";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
