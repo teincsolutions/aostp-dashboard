@@ -13,6 +13,7 @@ import {
   Empty,
   Row,
   Col,
+  Descriptions,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { Formik, Form, Field } from "formik";
@@ -401,86 +402,43 @@ export default function UsersPage() {
             destroyOnHidden
           >
             {viewingUser && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    First Name
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {viewingUser.firstName}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Last Name
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {viewingUser.lastName}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {viewingUser.email}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Role
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {viewingUser.role}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Warehouse
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {viewingUser.warehouse?.name || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Status
-                  </label>
-                  <p
-                    className={`mt-1 text-sm ${
+              <Descriptions title="User Information" bordered column={1}>
+                <Descriptions.Item label="First Name">
+                  {viewingUser.firstName}
+                </Descriptions.Item>
+                <Descriptions.Item label="Last Name">
+                  {viewingUser.lastName}
+                </Descriptions.Item>
+                <Descriptions.Item label="Email">
+                  {viewingUser.email}
+                </Descriptions.Item>
+                <Descriptions.Item label="Role">
+                  {viewingUser.role}
+                </Descriptions.Item>
+                <Descriptions.Item label="Warehouse">
+                  {viewingUser.warehouse?.name || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Status">
+                  <span
+                    className={
                       viewingUser.isActive ? "text-green-600" : "text-red-600"
-                    }`}
+                    }
                   >
                     {viewingUser.isActive ? "Active" : "Inactive"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Two-Factor Authentication
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {viewingUser.twoFactorEnabled ? "Enabled" : "Disabled"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Created At
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {new Date(viewingUser.createdAt).toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Last Login
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {viewingUser.lastLogin
-                      ? new Date(viewingUser.lastLogin).toLocaleString()
-                      : "Never"}
-                  </p>
-                </div>
-              </div>
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Two-Factor Authentication">
+                  {viewingUser.twoFactorEnabled ? "Enabled" : "Disabled"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Created At">
+                  {new Date(viewingUser.createdAt).toLocaleString()}
+                </Descriptions.Item>
+                <Descriptions.Item label="Last Login">
+                  {viewingUser.lastLogin
+                    ? new Date(viewingUser.lastLogin).toLocaleString()
+                    : "Never"}
+                </Descriptions.Item>
+              </Descriptions>
             )}
           </Modal>
         </div>
