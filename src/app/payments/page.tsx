@@ -181,6 +181,9 @@ export default function PaymentsPage() {
     }, 0);
   };
 
+  // Watch payment method to conditionally make reference required
+  const paymentMethod = Form.useWatch("paymentMethod", paymentForm);
+
   const handlePaymentSubmit = async (
     values: PaymentCreatePayload & { amount: string }
   ) => {
@@ -814,12 +817,29 @@ export default function PaymentsPage() {
                           Mobile Money
                         </Option>
                         <Option value={PaymentMethod.CARD}>Credit Card</Option>
+                        <Option value={PaymentMethod.DIRECT_MOMO_TRANSFER}>
+                          Direct MoMo Transfer
+                        </Option>
                       </Select>
                     </Form.Item>
                   </Col>
                 </Row>
 
-                <Form.Item name="reference" label="Reference (Optional)">
+                <Form.Item
+                  name="reference"
+                  label={`Reference ${
+                    paymentMethod === PaymentMethod.DIRECT_MOMO_TRANSFER
+                      ? "(Required)"
+                      : "(Optional)"
+                  }`}
+                  rules={[
+                    {
+                      required:
+                        paymentMethod === PaymentMethod.DIRECT_MOMO_TRANSFER,
+                      message: "Reference is required for Direct MoMo Transfer",
+                    },
+                  ]}
+                >
                   <Input placeholder="Transaction reference or receipt number" />
                 </Form.Item>
 

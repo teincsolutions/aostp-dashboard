@@ -1,29 +1,30 @@
 // Payment Processing types for AOSTP Logistics Management System
 
-import { ApiResponse, PaginatedResponse } from './common';
-import { Package } from './package';
-import { PackingList } from './packingList';
-import { Payment } from './payment';
+import { ApiResponse, PaginatedResponse } from "./common";
+import { Package } from "./package";
+import { PackingList } from "./packingList";
+import { Payment } from "./payment";
 
 // Invoice status enum
 export enum InvoiceStatus {
-  PAID = 'PAID',
-  UNPAID = 'UNPAID',
-  PARTIALLY_PAID = 'PARTIALLY_PAID',
+  PAID = "PAID",
+  UNPAID = "UNPAID",
+  PARTIALLY_PAID = "PARTIALLY_PAID",
 }
 
 // Payment method enum
 export enum PaymentMethod {
-  CASH = 'CASH',
-  BANK_TRANSFER = 'BANK_TRANSFER',
-  MOBILE_MONEY = 'MOBILE_MONEY',
-  CARD = 'CARD',
+  CASH = "CASH",
+  BANK_TRANSFER = "BANK_TRANSFER",
+  MOBILE_MONEY = "MOBILE_MONEY",
+  CARD = "CARD",
+  DIRECT_MOMO_TRANSFER = "DIRECT_MOMO_TRANSFER",
 }
 
 // Currency enum
 export enum Currency {
-  USD = 'USD',
-  GHS = 'GHS',
+  USD = "USD",
+  GHS = "GHS",
 }
 
 // Invoice interface (auto-generated from Packing Lists)
@@ -142,7 +143,8 @@ export interface ReceiptResponse extends ApiResponse<Receipt> {
   correlationId: string;
 }
 
-export interface OutstandingBalanceResponse extends ApiResponse<OutstandingBalance> {
+export interface OutstandingBalanceResponse
+  extends ApiResponse<OutstandingBalance> {
   correlationId: string;
 }
 
