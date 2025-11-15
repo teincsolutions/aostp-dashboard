@@ -89,6 +89,7 @@ export const columns: ColumnsType<NotificationLog> = [
     title: "Fail Reason",
     dataIndex: "failReason",
     key: "failReason",
+    width: 200,
     ellipsis: true,
     render: (msg?: string) => msg || "-",
   },
