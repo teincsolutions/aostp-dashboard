@@ -247,6 +247,24 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       },
     },
     {
+      title: "Payment Status",
+      dataIndex: "paymentStatus",
+      key: "paymentStatus",
+      width: 120,
+      render: (paymentStatus: string) => {
+        const colorMap: { [key: string]: string } = {
+          PENDING: "orange",
+          PAID: "green",
+          OVERDUE: "red",
+        };
+        return (
+          <Tag color={colorMap[paymentStatus] || "default"}>
+            {paymentStatus || "N/A"}
+          </Tag>
+        );
+      },
+    },
+    {
       title: "Actions",
       key: "actions",
       width: 150,
@@ -385,6 +403,24 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       },
     },
     {
+      title: "Payment Status",
+      dataIndex: "paymentStatus",
+      key: "paymentStatus",
+      width: 120,
+      render: (paymentStatus: string) => {
+        const colorMap: { [key: string]: string } = {
+          PENDING: "orange",
+          PAID: "green",
+          OVERDUE: "red",
+        };
+        return (
+          <Tag color={colorMap[paymentStatus] || "default"}>
+            {paymentStatus || "N/A"}
+          </Tag>
+        );
+      },
+    },
+    {
       title: "Actions",
       key: "actions",
       width: 100,
@@ -452,6 +488,24 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
         return (
           <Tag color={packageStatusColors[status] || "default"}>
             {status.replace("_", " ")}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Payment Status",
+      dataIndex: "paymentStatus",
+      key: "paymentStatus",
+      width: 120,
+      render: (paymentStatus: string) => {
+        const colorMap: { [key: string]: string } = {
+          PENDING: "orange",
+          PAID: "green",
+          OVERDUE: "red",
+        };
+        return (
+          <Tag color={colorMap[paymentStatus] || "default"}>
+            {paymentStatus || "N/A"}
           </Tag>
         );
       },
