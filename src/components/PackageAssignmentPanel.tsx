@@ -7,6 +7,7 @@ import {
   Typography,
   Row,
   Col,
+  Input,
   InputNumber,
   Select,
   Tag,
@@ -265,6 +266,30 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       },
     },
     {
+      title: "Pickup Code",
+      dataIndex: "pickupCode",
+      key: "pickupCode",
+      width: 120,
+      render: (pickupCode: string, record: Package) => {
+        if (editingKey === record.id) {
+          return (
+            <Input
+              value={tempPackage?.pickupCode ?? pickupCode ?? ""}
+              onChange={(e) =>
+                setTempPackage((prev) =>
+                  prev ? { ...prev, pickupCode: e.target.value } : null
+                )
+              }
+              style={{ width: "100%" }}
+              placeholder="Pickup Code"
+            />
+          );
+        } else {
+          return pickupCode || "N/A";
+        }
+      },
+    },
+    {
       title: "Actions",
       key: "actions",
       width: 150,
@@ -321,6 +346,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                     destinationCityId: record.destinationCityId,
                     shippingCurrency: record.shippingCurrency || Currency.USD,
                     shippingRate: record.shippingRate,
+                    pickupCode: record.pickupCode,
                   });
                 }}
                 size="small"
