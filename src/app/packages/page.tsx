@@ -402,6 +402,21 @@ export default function PackagesPage() {
               onClick={() => setReceiptModalPackageId(record.id)}
             />
           </Tooltip>
+
+          {/* Regenerate Invoice Button */}
+          {record.invoiceId && (
+            <Tooltip title="Regenerate Invoice PDF">
+              <Popconfirm
+                title="Regenerate Invoice PDF"
+                description="Are you sure you want to regenerate the invoice PDF?"
+                onConfirm={() => handleRegenerateInvoice(record)}
+                okText="Yes"
+                cancelText="No"
+              >
+                <Button icon={<ReloadOutlined />} size="small" />
+              </Popconfirm>
+            </Tooltip>
+          )}
         </div>
       ),
     },
