@@ -11,8 +11,14 @@ import {
   InputNumber,
   Select,
   Tag,
+  Popconfirm,
 } from "antd";
-import { PlusOutlined, MinusOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  MinusOutlined,
+  EditOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import { Package, Currency, PackageStatusPackages } from "@/types/package";
 import { ShippingMode } from "@/types/exchangeRate";
 import { usePackingList, useUnassignedPackages } from "@/hooks/usePackingLists";
@@ -21,6 +27,7 @@ import { useCities } from "@/hooks/useCities";
 import { usePackages } from "@/hooks/usePackages";
 import { PackingListStatus } from "@/types/packingList";
 import { packageStatusColors } from "@/app/packages/page";
+import { useRegenerateInvoicePdf } from "@/hooks/useInvoices";
 
 const { Text } = Typography;
 
@@ -55,6 +62,8 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   });
   const { data: cities } = useCities();
   const { updateMutation } = usePackages();
+  const { mutateAsync: regenerateInvoicePdfMutation } =
+    useRegenerateInvoicePdf();
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [tempPackage, setTempPackage] = useState<Partial<Package> | null>(null);
@@ -66,6 +75,20 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       ) || []
     );
   }, [paginatedUnassignedPackages, selectedPackageIds]);
+
+  const handleRegenerateInvoice = async (record: Package) => {
+    if (!record.invoiceId) {
+      // Handle error - no invoice associated
+      return;
+    }
+    try {
+      await regenerateInvoicePdfMutation(record.invoiceId);
+      // Handle success
+    } catch (error) {
+      console.error("Regenerate invoice failed:", error);
+      // Handle error
+    }
+  };
 
   // Assigned packages table columns
   const assignedPackageColumns = [
@@ -366,6 +389,17 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               >
                 Remove
               </Button>
+              {record.invoiceId && (
+                <Popconfirm
+                  title="Regenerate Invoice PDF"
+                  description="Are you sure you want to regenerate the invoice PDF?"
+                  onConfirm={() => handleRegenerateInvoice(record)}
+                  okText="Yes"
+                  cancelText="No"
+                >
+                  <Button type="link" icon={<ReloadOutlined />} size="small" />
+                </Popconfirm>
+              )}
             </Space>
           );
         }

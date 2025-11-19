@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getInvoices,
   getInvoicePdf,
   getInvoicesByCustomer,
+  regenerateInvoicePdf,
 } from "@/services/invoiceService";
 
 export const useCustomerInvoices = (
@@ -38,5 +39,16 @@ export const useInvoicePdf = (invoiceId?: string) => {
     queryKey: ["invoice-pdf", invoiceId],
     queryFn: () => getInvoicePdf(invoiceId!),
     enabled: !!invoiceId,
+  });
+};
+
+export const useRegenerateInvoicePdf = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (invoiceId: string) => regenerateInvoicePdf(invoiceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice-pdf"] });
+    },
   });
 };

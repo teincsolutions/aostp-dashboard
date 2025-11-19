@@ -15,6 +15,7 @@ import {
   Col,
   Tag,
   Image,
+  Popconfirm,
 } from "antd";
 import { toast } from "sonner";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
@@ -26,6 +27,7 @@ import {
   FileExcelOutlined,
   FilePdfOutlined,
   SwapOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -43,6 +45,7 @@ import { usePackages } from "@/hooks/usePackageManagement";
 import { usePackageManagement } from "@/hooks/usePackageManagement";
 import { useConsolidation } from "@/hooks/useConsolidation";
 import { useWarehouses } from "@/hooks/useWarehouse";
+import { useRegenerateInvoicePdf } from "@/hooks/useInvoices";
 
 import { Form } from "antd";
 import { ReceiptModal } from "@/components/ReceiptModal";
@@ -129,6 +132,8 @@ export default function PackagesPage() {
     usePackageManagement();
   const { consolidatePackagesMutation } = useConsolidation();
   const { data: warehousesData } = useWarehouses();
+  const { mutateAsync: regenerateInvoicePdfMutation } =
+    useRegenerateInvoicePdf();
 
   const packages = packagesData?.data || [];
   const total = packagesData?.total || 0;
@@ -203,6 +208,20 @@ export default function PackagesPage() {
       "Export PDF for:",
       toExport.map((p) => p.trackingCode)
     );
+  };
+
+  const handleRegenerateInvoice = async (record: DisplayPackage) => {
+    if (!record.invoiceId) {
+      toast.error("No invoice associated with this package");
+      return;
+    }
+    try {
+      await regenerateInvoicePdfMutation(record.invoiceId);
+      toast.success("Invoice PDF regenerated successfully");
+    } catch (error) {
+      console.error("Regenerate invoice failed:", error);
+      toast.error("Failed to regenerate invoice PDF");
+    }
   };
 
   // shipping mode color map

@@ -12,6 +12,7 @@ import {
   Col,
   Statistic,
   message,
+  Popconfirm,
 } from "antd";
 import {
   SearchOutlined,
@@ -20,11 +21,12 @@ import {
   FileTextOutlined,
   UserOutlined,
   DollarOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { InvoiceModal } from "@/components/InvoiceModal";
-import { useInvoices } from "@/hooks/useInvoices";
+import { useInvoices, useRegenerateInvoicePdf } from "@/hooks/useInvoices";
 import { Invoice, InvoiceStatus } from "@/types/invoice";
 
 const { Option } = Select;
@@ -47,6 +49,8 @@ export default function InvoicesPage() {
     customerId: customerId || undefined,
     status: statusFilter || undefined,
   });
+  const { mutateAsync: regenerateInvoicePdfMutation } =
+    useRegenerateInvoicePdf();
 
   // Handlers
   const handleSearch = (value: string) => {
@@ -70,6 +74,16 @@ export default function InvoicesPage() {
 
   const handleDownloadInvoice = (invoiceId: string) => {
     setInvoiceModalInvoiceId(invoiceId);
+  };
+
+  const handleRegenerateInvoice = async (record: Invoice) => {
+    try {
+      await regenerateInvoicePdfMutation(record.id);
+      message.success("Invoice PDF regenerated successfully");
+    } catch (error) {
+      console.error("Regenerate invoice failed:", error);
+      message.error("Failed to regenerate invoice PDF");
+    }
   };
 
   // Table columns
@@ -183,6 +197,15 @@ export default function InvoicesPage() {
           >
             Download
           </Button>
+          <Popconfirm
+            title="Regenerate Invoice PDF"
+            description="Are you sure you want to regenerate the invoice PDF?"
+            onConfirm={() => handleRegenerateInvoice(record)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="link" icon={<ReloadOutlined />} />
+          </Popconfirm>
         </Space>
       ),
     },
