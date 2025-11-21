@@ -23,6 +23,7 @@ import * as Yup from "yup";
 import { useState } from "react";
 import { ChangePasswordPayload, TwoFAVerifyPayload } from "@/types/auth";
 import { toast } from "sonner";
+import { handleError } from "@/utils/forms/errorUtils";
 
 const ProfileSchema = Yup.object().shape({
   firstName: Yup.string().required("First name required"),
@@ -177,8 +178,8 @@ export default function ProfilePage() {
                       toast.success("Password changed");
                       actions.resetForm();
                     },
-                    onError: () => {
-                      toast.error("Failed to change password");
+                    onError: (error) => {
+                      handleError(error);
                     },
                   });
                   actions.setSubmitting(false);

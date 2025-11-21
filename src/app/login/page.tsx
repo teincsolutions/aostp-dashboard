@@ -29,9 +29,11 @@ const LoginPage: React.FC = () => {
   const router = useRouter();
   const { login, twoFactorLogin, isAuthenticated } = useAuth();
   const [twoFactorMode, setTwoFactorMode] = useState(false);
+  const [redirectingLoading, setRedirectingLoading] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
+      setRedirectingLoading(true);
       const redirectPath = localStorage.getItem("redirectAfterLogin");
       if (redirectPath) {
         localStorage.removeItem("redirectAfterLogin");
@@ -39,6 +41,8 @@ const LoginPage: React.FC = () => {
       } else {
         router.push("/dashboard");
       }
+    } else {
+      setRedirectingLoading(false);
     }
   }, [isAuthenticated, router]);
 
@@ -166,6 +170,14 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
         </Card>
+        {redirectingLoading && (
+          <div className="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Redirecting...</p>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -267,6 +279,14 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
       </Card>
+      {redirectingLoading && (
+        <div className="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Redirecting...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

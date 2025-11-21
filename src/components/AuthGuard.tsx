@@ -16,21 +16,23 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   children,
   requiredRoles,
 }) => {
-  const { user, isAuthenticated, refreshToken } = useAuth();
+  const { user, isAuthenticated, isHydrated, refreshToken } = useAuth();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated && !loading) {
-      // Store the current path for redirect after login
-      if (pathname && pathname !== "/login") {
-        localStorage.setItem("redirectAfterLogin", pathname);
-      }
+    if (isHydrated) {
+      if (!isAuthenticated && !loading) {
+        // Store the current path for redirect after login
+        if (pathname && pathname !== "/login") {
+          localStorage.setItem("redirectAfterLogin", pathname);
+        }
 
-      redirect("/login");
+        redirect("/login");
+      }
+      setLoading(false);
     }
-    setLoading(false);
-  }, [isAuthenticated, pathname, loading]);
+  }, [isAuthenticated, isHydrated, pathname, loading]);
 
   // Refresh token if close to expiry
   useEffect(() => {
@@ -58,7 +60,9 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
         <p className="text-sm text-gray-500">
           Required roles: {requiredRoles.join(", ")}
         </p>
-        <p className="text-sm text-gray-500">Your role: {user.role.replace("_", " ")}</p>
+        <p className="text-sm text-gray-500">
+          Your role: {user.role.replace("_", " ")}
+        </p>
 
         <div className="mt-4">
           <Button onClick={() => redirect("/")}>Go Home</Button>

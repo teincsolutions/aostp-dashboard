@@ -133,6 +133,7 @@ export const useAuth = () => {
     user: authStore.user,
     tokens: authStore.tokens,
     isAuthenticated: authStore.isAuthenticated,
+    isHydrated: authStore.isHydrated,
     // Authentication functions
     login: loginMutation.mutateAsync,
     twoFactorLogin: twoFactorLoginMutation.mutateAsync,
