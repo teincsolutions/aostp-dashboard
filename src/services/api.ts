@@ -1,7 +1,8 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/authStore";
-import { AuthService } from "./authService";
 import { jwtDecode } from "jwt-decode";
+import { refreshToken } from "@/services/authService";
+
 // Store the environment variable in a constant at the top level
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -59,11 +60,12 @@ class ApiService {
           const authStore = useAuthStore.getState();
           const accessToken = authStore.tokens?.accessToken;
           if (accessToken && this.isTokenExpired(accessToken)) {
-            const refreshToken = authStore.tokens?.refreshToken;
-            if (refreshToken) {
+            const refreshTokenValue = authStore.tokens?.refreshToken;
+
+            if (refreshTokenValue) {
               try {
-                const newTokens = await AuthService.refreshToken({
-                  refreshToken,
+                const newTokens = await refreshToken({
+                  refreshToken: refreshTokenValue,
                 });
                 authStore.refreshTokens(newTokens);
                 // Retry the original request with new token

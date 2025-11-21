@@ -1,8 +1,5 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
-import { useSecurity } from "@/hooks/useSecurity";
-import { useAuthStore } from "@/store/authStore";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import {
@@ -17,6 +14,9 @@ import {
   Modal,
   Spin,
   Image,
+  Descriptions,
+  Avatar,
+  Typography,
 } from "antd";
 import { Formik, Form as FormikForm, Field } from "formik";
 import * as Yup from "yup";
@@ -24,12 +24,16 @@ import { useState } from "react";
 import { ChangePasswordPayload, TwoFAVerifyPayload } from "@/types/auth";
 import { toast } from "sonner";
 import { handleError } from "@/utils/forms/errorUtils";
-
-const ProfileSchema = Yup.object().shape({
-  firstName: Yup.string().required("First name required"),
-  lastName: Yup.string().required("Last name required"),
-  email: Yup.string().email("Invalid email").required("Email required"),
-});
+import { useAuth } from "@/hooks/useAuth";
+import {
+  UserOutlined,
+  MailOutlined,
+  HomeOutlined,
+  SafetyCertificateOutlined,
+  IdcardOutlined,
+  LockOutlined,
+  KeyOutlined,
+} from "@ant-design/icons";
 
 const PasswordSchema = Yup.object().shape({
   currentPassword: Yup.string().required("Current password required"),
@@ -44,18 +48,25 @@ const PasswordSchema = Yup.object().shape({
 });
 
 const TwoFASchema = Yup.object().shape({
-  code: Yup.string()
+  token: Yup.string()
     .length(6, "Must be 6 digits")
     .matches(/^\d{6}$/, "Must be 6 digits")
-    .required("Code required"),
+    .required("Token required"),
 });
 
 export default function ProfilePage() {
-  const { user } = useAuth();
-  const security = useSecurity();
-  const authStore = useAuthStore();
+  const {
+    user,
+    changePassword,
+    get2FARecoveryCodes,
+    regenerate2FARecoveryCodes,
+    disable2FA,
+    enable2FA,
+    verify2FA,
+  } = useAuth();
 
   const [show2FAModal, setShow2FAModal] = useState(false);
+  const [showDisableModal, setShowDisableModal] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [enable2FAData, setEnable2FAData] = useState<any>(null);
@@ -73,213 +84,362 @@ export default function ProfilePage() {
   return (
     <AppLayout>
       <AuthGuard>
-        <Card className="lg:w-[50%] mx-auto">
-          <Tabs defaultActiveKey="profile" tabPosition="top">
-            <Tabs.TabPane tab="Profile Info" key="profile">
-              <Divider orientation="left">Profile Info</Divider>
-              <div className="mb-4">
-                <Tag color="blue">Username: {user.username}</Tag>
-                <Tag color="purple">Role: {user.role}</Tag>
-                <Tag color={user.twoFactorEnabled ? "green" : "red"}>
-                  2FA: {user.twoFactorEnabled ? "Enabled" : "Disabled"}
+        <Card
+          className="lg:w-[60%] mx-auto shadow-md"
+          styles={{ body: { padding: 0, overflow: "hidden" } }}
+        >
+          <div
+            style={{
+              height: 140,
+              background: "linear-gradient(90deg, #1677ff 0%, #80bfff 100%)",
+            }}
+          />
+          <div style={{ padding: "0 24px 24px" }}>
+            <div
+              style={{
+                marginTop: -40,
+                marginBottom: 24,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                flexWrap: "wrap",
+                gap: 16,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
+                <Avatar
+                  size={100}
+                  style={{
+                    backgroundColor: "#f56a00",
+                    border: "4px solid white",
+                    fontSize: 48,
+                  }}
+                  icon={<UserOutlined />}
+                >
+                  {(user.firstName?.[0] || "") + (user.lastName?.[0] || "")}
+                </Avatar>
+                <div style={{ marginBottom: 8 }}>
+                  <Typography.Title level={3} style={{ margin: 0 }}>
+                    {user.firstName} {user.lastName}
+                  </Typography.Title>
+                  <Tag color="blue">{user.role}</Tag>
+                </div>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <Tag
+                  icon={<SafetyCertificateOutlined />}
+                  color={user.twoFactorEnabled ? "success" : "warning"}
+                  style={{ padding: "4px 10px", fontSize: 14 }}
+                >
+                  {user.twoFactorEnabled ? "2FA Enabled" : "2FA Disabled"}
                 </Tag>
               </div>
-              <Formik
-                initialValues={{
-                  firstName: user.firstName || "",
-                  lastName: user.lastName || "",
-                  email: user.email,
-                }}
-                validationSchema={ProfileSchema}
-                onSubmit={(values, actions) => {
-                  authStore.updateUser({
-                    firstName: values.firstName,
-                    lastName: values.lastName,
-                    email: values.email,
-                  });
-                  notification.success({ message: "Profile updated" });
-                  actions.setSubmitting(false);
-                }}
+            </div>
+
+            <Descriptions column={1} bordered size="small">
+              <Descriptions.Item
+                label={
+                  <>
+                    <MailOutlined /> Email
+                  </>
+                }
               >
-                {({
-                  errors,
-                  touched,
-                  handleSubmit,
-                  isSubmitting,
-                  handleReset,
-                }) => (
-                  <FormikForm onSubmit={handleSubmit}>
-                    <Form.Item
-                      label="First Name"
-                      validateStatus={
-                        errors.firstName && touched.firstName ? "error" : ""
-                      }
-                      help={
-                        errors.firstName && touched.firstName
-                          ? errors.firstName
-                          : ""
-                      }
-                    >
-                      <Field name="firstName" as={Input} />
-                    </Form.Item>
-                    <Form.Item
-                      label="Last Name"
-                      validateStatus={
-                        errors.lastName && touched.lastName ? "error" : ""
-                      }
-                      help={
-                        errors.lastName && touched.lastName
-                          ? errors.lastName
-                          : ""
-                      }
-                    >
-                      <Field name="lastName" as={Input} />
-                    </Form.Item>
-                    <Form.Item
-                      label="Email"
-                      validateStatus={
-                        errors.email && touched.email ? "error" : ""
-                      }
-                      help={errors.email && touched.email ? errors.email : ""}
-                    >
-                      <Field name="email" as={Input} />
-                    </Form.Item>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      loading={isSubmitting}
-                      className="mr-2"
-                    >
-                      Save
-                    </Button>
-                    <Button onClick={handleReset} disabled={isSubmitting}>
-                      Cancel
-                    </Button>
-                  </FormikForm>
-                )}
-              </Formik>
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="Change Password" key="password">
-              <Divider orientation="left">Change Password</Divider>
-              <Formik
-                initialValues={{
-                  currentPassword: "",
-                  newPassword: "",
-                  confirmNewPassword: "",
-                }}
-                validationSchema={PasswordSchema}
-                onSubmit={(values, actions) => {
-                  const payload: ChangePasswordPayload = {
-                    currentPassword: values.currentPassword,
-                    newPassword: values.newPassword,
-                  };
-                  security.changePassword.mutate(payload, {
-                    onSuccess: () => {
-                      toast.success("Password changed");
-                      actions.resetForm();
-                    },
-                    onError: (error) => {
-                      handleError(error);
-                    },
-                  });
-                  actions.setSubmitting(false);
-                }}
+                {user.email}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <>
+                    <IdcardOutlined /> Username
+                  </>
+                }
               >
-                {({ errors, touched, handleSubmit, isSubmitting }) => (
-                  <FormikForm onSubmit={handleSubmit}>
-                    <Form.Item
-                      label="Current Password"
-                      validateStatus={
-                        errors.currentPassword && touched.currentPassword
-                          ? "error"
-                          : ""
-                      }
-                      help={
-                        errors.currentPassword && touched.currentPassword
-                          ? errors.currentPassword
-                          : ""
-                      }
-                    >
-                      <Field name="currentPassword" as={Input.Password} />
-                    </Form.Item>
-                    <Form.Item
-                      label="New Password"
-                      validateStatus={
-                        errors.newPassword && touched.newPassword ? "error" : ""
-                      }
-                      help={
-                        errors.newPassword && touched.newPassword
-                          ? errors.newPassword
-                          : ""
-                      }
-                    >
-                      <Field name="newPassword" as={Input.Password} />
-                    </Form.Item>
-                    <Form.Item
-                      label="Confirm New Password"
-                      validateStatus={
-                        errors.confirmNewPassword && touched.confirmNewPassword
-                          ? "error"
-                          : ""
-                      }
-                      help={
-                        errors.confirmNewPassword && touched.confirmNewPassword
-                          ? errors.confirmNewPassword
-                          : ""
-                      }
-                    >
-                      <Field name="confirmNewPassword" as={Input.Password} />
-                    </Form.Item>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      loading={
-                        security.changePassword.isPending || isSubmitting
-                      }
-                    >
-                      Change Password
-                    </Button>
-                  </FormikForm>
-                )}
-              </Formik>
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="Two-Factor Authentication (2FA)" key="2fa">
-              <Divider orientation="left">Two-Factor Authentication</Divider>
-              {user.twoFactorEnabled ? (
-                <>
-                  <Button
-                    danger
-                    onClick={() => {
-                      Modal.confirm({
-                        title: "Disable 2FA",
-                        content: "Are you sure you want to disable 2FA?",
-                        onOk: () => {
-                          security.disable2FA.mutate(undefined, {
-                            onSuccess: () => {
-                              toast.success("2FA disabled");
-                            },
-                            onError: () => {
-                              toast.error("Failed to disable 2FA");
-                            },
-                          });
+                {user.username}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <>
+                    <HomeOutlined /> Warehouse
+                  </>
+                }
+              >
+                {user.warehouse?.name || "Unassigned"}
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider style={{ margin: "24px 0" }} />
+
+            <Tabs defaultActiveKey="password" tabPosition="top" type="card">
+              <Tabs.TabPane
+                tab={
+                  <span>
+                    <LockOutlined /> Change Password
+                  </span>
+                }
+                key="password"
+              >
+                <div style={{ padding: "24px 0" }}>
+                  <Formik
+                    initialValues={{
+                      currentPassword: "",
+                      newPassword: "",
+                      confirmNewPassword: "",
+                    }}
+                    validationSchema={PasswordSchema}
+                    onSubmit={(values, actions) => {
+                      const payload: ChangePasswordPayload = {
+                        currentPassword: values.currentPassword,
+                        newPassword: values.newPassword,
+                      };
+                      changePassword.mutate(payload, {
+                        onSuccess: () => {
+                          toast.success("Password changed");
+                          actions.resetForm();
+                        },
+                        onError: (error) => {
+                          handleError(error);
                         },
                       });
-                    }}
-                    loading={security.disable2FA.isPending}
-                  >
-                    Disable 2FA
-                  </Button>
-                  <Button
-                    style={{ marginLeft: 8 }}
-                    onClick={async () => {
-                      setShowRecoveryModal(true);
-                      const codes =
-                        await security.get2FARecoveryCodes.mutateAsync();
-                      setRecoveryCodes(codes?.recoveryCodes || []);
+                      actions.setSubmitting(false);
                     }}
                   >
-                    Show Backup Codes
-                  </Button>
+                    {({ errors, touched, handleSubmit, isSubmitting }) => (
+                      <Form layout="vertical" onFinish={handleSubmit}>
+                        <Form.Item
+                          label="Current Password"
+                          required
+                          validateStatus={
+                            errors.currentPassword && touched.currentPassword
+                              ? "error"
+                              : ""
+                          }
+                          help={
+                            errors.currentPassword && touched.currentPassword
+                              ? errors.currentPassword
+                              : ""
+                          }
+                        >
+                          <Field
+                            name="currentPassword"
+                            as={Input.Password}
+                            prefix={<LockOutlined />}
+                            placeholder="Enter current password"
+                          />
+                        </Form.Item>
+                        <Form.Item
+                          label="New Password"
+                          required
+                          validateStatus={
+                            errors.newPassword && touched.newPassword
+                              ? "error"
+                              : ""
+                          }
+                          help={
+                            errors.newPassword && touched.newPassword
+                              ? errors.newPassword
+                              : ""
+                          }
+                        >
+                          <Field
+                            name="newPassword"
+                            as={Input.Password}
+                            prefix={<LockOutlined />}
+                            placeholder="Enter new password"
+                          />
+                        </Form.Item>
+                        <Form.Item
+                          label="Confirm New Password"
+                          required
+                          validateStatus={
+                            errors.confirmNewPassword &&
+                            touched.confirmNewPassword
+                              ? "error"
+                              : ""
+                          }
+                          help={
+                            errors.confirmNewPassword &&
+                            touched.confirmNewPassword
+                              ? errors.confirmNewPassword
+                              : ""
+                          }
+                        >
+                          <Field
+                            name="confirmNewPassword"
+                            as={Input.Password}
+                            prefix={<LockOutlined />}
+                            placeholder="Confirm new password"
+                          />
+                        </Form.Item>
+                        <Button
+                          type="primary"
+                          htmlType="submit"
+                          loading={changePassword.isPending || isSubmitting}
+                          block
+                          size="large"
+                        >
+                          Change Password
+                        </Button>
+                      </Form>
+                    )}
+                  </Formik>
+                </div>
+              </Tabs.TabPane>
+              <Tabs.TabPane
+                tab={
+                  <span>
+                    <SafetyCertificateOutlined /> 2FA
+                  </span>
+                }
+                key="2fa"
+              >
+                <div style={{ padding: "24px 0", textAlign: "center" }}>
+                  <div style={{ marginBottom: 24 }}>
+                    <SafetyCertificateOutlined
+                      style={{ fontSize: 48, color: "#1677ff" }}
+                    />
+                    <Typography.Title level={4} style={{ marginTop: 16 }}>
+                      Two-Factor Authentication
+                    </Typography.Title>
+                    <Typography.Text type="secondary">
+                      Add an extra layer of security to your account by enabling
+                      2FA.
+                    </Typography.Text>
+                  </div>
+
+                  {user.twoFactorEnabled ? (
+                    <div
+                      style={{
+                        background: "#f6ffed",
+                        border: "1px solid #b7eb8f",
+                        padding: 24,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Typography.Text strong type="success">
+                        2FA is currently enabled on your account.
+                      </Typography.Text>
+                      <div
+                        style={{
+                          marginTop: 16,
+                          display: "flex",
+                          justifyContent: "center",
+                          gap: 16,
+                        }}
+                      >
+                        <Button
+                          danger
+                          size="large"
+                          onClick={() => setShowDisableModal(true)}
+                        >
+                          Disable 2FA
+                        </Button>
+                        <Button
+                          size="large"
+                          onClick={async () => {
+                            setShowRecoveryModal(true);
+                            const codes =
+                              await get2FARecoveryCodes.mutateAsync();
+                            setRecoveryCodes(codes?.recoveryCodes || []);
+                          }}
+                        >
+                          Show Backup Codes
+                        </Button>
+                      </div>
+                      <Modal
+                        open={showDisableModal}
+                        title="Disable Two-Factor Authentication"
+                        onCancel={() => setShowDisableModal(false)}
+                        footer={null}
+                      >
+                        <Formik
+                          initialValues={{ token: "" }}
+                          validationSchema={TwoFASchema}
+                          onSubmit={(values, actions) => {
+                            disable2FA.mutate(
+                              { token: values.token },
+                              {
+                                onSuccess: () => {
+                                  toast.success("2FA disabled");
+                                  setShowDisableModal(false);
+                                },
+                                onError: () => {
+                                  toast.error("Invalid token");
+                                },
+                              }
+                            );
+                            actions.setSubmitting(false);
+                          }}
+                        >
+                          {({
+                            errors,
+                            touched,
+                            handleSubmit,
+                            isSubmitting,
+                          }) => (
+                            <Form layout="vertical" onFinish={handleSubmit}>
+                              <Form.Item
+                                label="Verification Token"
+                                required
+                                validateStatus={
+                                  errors.token && touched.token ? "error" : ""
+                                }
+                                help={
+                                  errors.token && touched.token
+                                    ? errors.token
+                                    : ""
+                                }
+                              >
+                                <Field
+                                  name="token"
+                                  as={Input}
+                                  maxLength={6}
+                                  prefix={<KeyOutlined />}
+                                  placeholder="Enter 6-digit code"
+                                />
+                              </Form.Item>
+                              <Button
+                                danger
+                                htmlType="submit"
+                                loading={disable2FA.isPending || isSubmitting}
+                                block
+                              >
+                                Disable 2FA
+                              </Button>
+                            </Form>
+                          )}
+                        </Formik>
+                      </Modal>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        background: "#f0f5ff",
+                        border: "1px solid #adc6ff",
+                        padding: 24,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Typography.Text>
+                        Protect your account by enabling 2FA. You will be
+                        required to enter a code from your authenticator app
+                        when logging in.
+                      </Typography.Text>
+                      <div style={{ marginTop: 16 }}>
+                        <Button
+                          type="primary"
+                          size="large"
+                          onClick={async () => {
+                            setShow2FAModal(true);
+                            const enableData = await enable2FA.mutateAsync();
+                            setEnable2FAData(enableData);
+                          }}
+                          loading={enable2FA.isPending}
+                        >
+                          Enable 2FA
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <Modal
                     open={showRecoveryModal}
                     title="2FA Recovery Codes"
@@ -288,17 +448,37 @@ export default function ProfilePage() {
                   >
                     <div>
                       {recoveryCodes.length > 0 ? (
-                        recoveryCodes.map((code: string) => (
-                          <Tag key={code}>{code}</Tag>
-                        ))
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 8,
+                            marginBottom: 16,
+                          }}
+                        >
+                          {recoveryCodes.map((code: string) => (
+                            <Tag
+                              key={code}
+                              style={{
+                                textAlign: "center",
+                                padding: "8px",
+                                fontSize: 16,
+                                margin: 0,
+                              }}
+                            >
+                              {code}
+                            </Tag>
+                          ))}
+                        </div>
                       ) : (
                         <Spin />
                       )}
                       <Divider />
                       <Button
+                        block
                         onClick={async () => {
                           const codes =
-                            await security.regenerate2FARecoveryCodes.mutateAsync();
+                            await regenerate2FARecoveryCodes.mutateAsync();
                           setRecoveryCodes(codes?.recoveryCodes || []);
                           notification.success({
                             message: "Backup codes regenerated",
@@ -309,50 +489,65 @@ export default function ProfilePage() {
                       </Button>
                     </div>
                   </Modal>
-                </>
-              ) : (
-                <>
-                  <Button
-                    type="primary"
-                    onClick={async () => {
-                      setShow2FAModal(true);
-                      const enableData = await security.enable2FA.mutateAsync();
-                      setEnable2FAData(enableData);
-                    }}
-                    loading={security.enable2FA.isPending}
-                  >
-                    Enable 2FA
-                  </Button>
+
                   <Modal
                     open={show2FAModal}
                     title="Enable Two-Factor Authentication"
                     onCancel={() => setShow2FAModal(false)}
                     footer={null}
+                    width={600}
                   >
                     {enable2FAData ? (
-                      <div>
+                      <div style={{ textAlign: "center" }}>
                         <Divider />
-                        <Image
-                          src={enable2FAData.qrCode}
-                          alt="QR Code"
-                          style={{ width: 200, marginBottom: 16 }}
-                        />
+                        <Typography.Paragraph>
+                          1. Scan this QR code with your authenticator app
+                          (Google Authenticator, Authy, etc.)
+                        </Typography.Paragraph>
+                        <div
+                          style={{
+                            background: "white",
+                            padding: 16,
+                            display: "inline-block",
+                            border: "1px solid #eee",
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Image
+                            src={enable2FAData.qrCode}
+                            alt="QR Code"
+                            width={200}
+                            preview={false}
+                          />
+                        </div>
+                        <div style={{ marginTop: 16, marginBottom: 24 }}>
+                          <Typography.Text type="secondary">
+                            Or enter this key manually:
+                          </Typography.Text>
+                          <br />
+                          <Typography.Text copyable strong code>
+                            {enable2FAData.manualEntryKey}
+                          </Typography.Text>
+                        </div>
                         <Divider />
+                        <Typography.Paragraph>
+                          2. Enter the 6-digit code from your app to verify
+                        </Typography.Paragraph>
                         <Formik
-                          initialValues={{ code: "" }}
+                          initialValues={{ token: "" }}
                           validationSchema={TwoFASchema}
                           onSubmit={(values, actions) => {
                             const payload: TwoFAVerifyPayload = {
-                              code: values.code,
+                              token: values.token,
                             };
-                            security.verify2FA.mutate(payload, {
+                            verify2FA.mutate(payload, {
                               onSuccess: () => {
                                 toast.success("2FA enabled");
                                 setShow2FAModal(false);
                                 setEnable2FAData(null);
                               },
-                              onError: () => {
-                                toast.error("Invalid code");
+                              onError: (error) => {
+                                handleError(error);
                               },
                             });
                             actions.setSubmitting(false);
@@ -364,50 +559,82 @@ export default function ProfilePage() {
                             handleSubmit,
                             isSubmitting,
                           }) => (
-                            <FormikForm onSubmit={handleSubmit}>
+                            <Form layout="vertical" onFinish={handleSubmit}>
                               <Form.Item
-                                label="Verification Code"
                                 validateStatus={
-                                  errors.code && touched.code ? "error" : ""
+                                  errors.token && touched.token ? "error" : ""
                                 }
                                 help={
-                                  errors.code && touched.code ? errors.code : ""
+                                  errors.token && touched.token
+                                    ? errors.token
+                                    : ""
                                 }
                               >
-                                <Field name="code" as={Input} maxLength={6} />
+                                <Field
+                                  name="token"
+                                  as={Input}
+                                  maxLength={6}
+                                  style={{
+                                    textAlign: "center",
+                                    fontSize: 24,
+                                    letterSpacing: 8,
+                                    width: 200,
+                                  }}
+                                  placeholder="000000"
+                                />
                               </Form.Item>
                               <Button
                                 type="primary"
                                 htmlType="submit"
-                                loading={
-                                  security.verify2FA.isPending || isSubmitting
-                                }
+                                loading={verify2FA.isPending || isSubmitting}
+                                size="large"
+                                block
                               >
                                 Verify & Enable
                               </Button>
-                            </FormikForm>
+                            </Form>
                           )}
                         </Formik>
                         <Divider />
-                        <div>
-                          <strong>Manual Entry Key:</strong>{" "}
-                          {enable2FAData.manualEntryKey}
-                        </div>
-                        <div>
-                          <strong>Recovery Codes:</strong>
-                          {enable2FAData.recoveryCodes?.map((code: string) => (
-                            <Tag key={code}>{code}</Tag>
-                          )) || <Spin />}
+                        <div style={{ textAlign: "left" }}>
+                          <Typography.Text strong>
+                            Save these recovery codes in a safe place:
+                          </Typography.Text>
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "1fr 1fr",
+                              gap: 8,
+                              marginTop: 8,
+                            }}
+                          >
+                            {enable2FAData.recoveryCodes?.map(
+                              (code: string) => (
+                                <Tag
+                                  key={code}
+                                  style={{
+                                    textAlign: "center",
+                                    padding: "4px",
+                                    margin: 0,
+                                  }}
+                                >
+                                  {code}
+                                </Tag>
+                              )
+                            ) || <Spin />}
+                          </div>
                         </div>
                       </div>
                     ) : (
-                      <Spin />
+                      <div style={{ textAlign: "center", padding: 40 }}>
+                        <Spin size="large" />
+                      </div>
                     )}
                   </Modal>
-                </>
-              )}
-            </Tabs.TabPane>
-          </Tabs>
+                </div>
+              </Tabs.TabPane>
+            </Tabs>
+          </div>
         </Card>
       </AuthGuard>
     </AppLayout>

@@ -24,6 +24,7 @@ export interface User {
   lastName: string;
   role: UserRole;
   warehouse: Warehouse | null;
+  warehouseId: string | null;
   isActive: boolean;
   twoFactorEnabled: boolean;
   createdAt: string;

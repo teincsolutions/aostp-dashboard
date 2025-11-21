@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { redirect } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { ref } from "yup";
+import { useAuthStore } from "@/store/authStore";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -16,7 +17,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   children,
   requiredRoles,
 }) => {
-  const { user, isAuthenticated, isHydrated, refreshToken } = useAuth();
+  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { user } = useAuth();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
 
@@ -33,13 +35,6 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
       setLoading(false);
     }
   }, [isAuthenticated, isHydrated, pathname, loading]);
-
-  // Refresh token if close to expiry
-  useEffect(() => {
-    if (isAuthenticated) {
-      refreshToken();
-    }
-  }, [isAuthenticated, refreshToken]);
 
   if (loading) {
     return (

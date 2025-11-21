@@ -214,7 +214,7 @@ export default function DashboardPage() {
                 </div>
                 {/* Quick link button */}
                 {quickLinks[idx] && (
-                  <Link href={quickLinks[idx].href} passHref legacyBehavior>
+                  <Link href={quickLinks[idx].href}>
                     <Button
                       type="link"
                       icon={quickLinks[idx].icon}

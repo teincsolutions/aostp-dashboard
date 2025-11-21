@@ -1,16 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AuthService } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
+import { LoginRequest, LoginResponse } from "@/types/common";
 import {
-  LoginRequest,
-  LoginResponse,
-  TwoFactorLoginRequest,
-  RefreshTokenRequest,
-  AuthTokens,
-  TwoFactorSetup,
-  TwoFactorVerifyRequest,
-  TwoFactorDisableRequest,
-} from "@/types/common";
+  changePassword,
+  requestPasswordReset,
+  enable2FA,
+  verify2FA,
+  disable2FA,
+  get2FARecoveryCodes,
+  regenerate2FARecoveryCodes,
+  getMe,
+  login,
+  loginWithTwoFactor,
+} from "@/services/authService";
+import { ChangePasswordPayload, TwoFAVerifyPayload } from "@/types/auth";
+import { log } from "console";
 
 // Error type for axios-like errors
 interface AxiosError {
@@ -26,202 +30,102 @@ export const authKeys = {
   user: ["auth", "user"] as const,
   token: ["auth", "token"] as const,
 } as const;
-
-// Main authentication hook - combines Zustand + React Query + Services
 export const useAuth = () => {
   const queryClient = useQueryClient();
-  const authStore = useAuthStore();
-
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginRequest): Promise<LoginResponse> => {
-      return await AuthService.login(credentials);
-    },
-    onSuccess: (data) => {
-      // Update Zustand store
-      authStore.login(data.user, data.tokens);
-      // Update React Query cache
-      queryClient.setQueryData(authKeys.user, data.user);
-    },
-  });
-
-  // 2FA Login mutation
-  const twoFactorLoginMutation = useMutation({
-    mutationFn: async (
-      credentials: TwoFactorLoginRequest
-    ): Promise<LoginResponse> => {
-      return await AuthService.loginWithTwoFactor(credentials);
-    },
-    onSuccess: (data) => {
-      // Update Zustand store
-      authStore.login(data.user, data.tokens);
-      // Update React Query cache
-      queryClient.setQueryData(authKeys.user, data.user);
-    },
-  });
-
-  // Logout mutation
-  const logoutMutation = useMutation({
-    mutationFn: async (): Promise<void> => {
-      const tokens = authStore.tokens;
-      if (tokens?.refreshToken) {
-        await AuthService.logout(tokens.refreshToken);
-      }
-    },
-    onSettled: () => {
-      // Always clear local state, even if API call fails
-      authStore.logout();
-      queryClient.clear();
-    },
-  });
-
-  // Logout all devices mutation
-  const logoutAllMutation = useMutation({
-    mutationFn: async (): Promise<void> => {
-      await AuthService.logoutAll();
-    },
-    onSuccess: () => {
-      authStore.logout();
-      queryClient.clear();
-    },
-  });
-
-  // Refresh token mutation
-  const refreshTokenMutation = useMutation({
-    mutationFn: async (): Promise<AuthTokens> => {
-      const request: RefreshTokenRequest = {
-        refreshToken: authStore.tokens?.refreshToken || "",
-      };
-      return await AuthService.refreshToken(request);
-    },
-    onSuccess: (tokens) => {
-      authStore.refreshTokens(tokens);
-    },
-    onError: (error: unknown) => {
-      // Check if error is network-related
-      const axiosError = error as AxiosError;
-      const isNetworkError =
-        axiosError?.code === "ECONNREFUSED" ||
-        axiosError?.code === "ENOTFOUND" ||
-        axiosError?.code === "ECONNRESET" ||
-        axiosError?.code === "ETIMEDOUT" ||
-        axiosError?.message?.includes("Network Error") ||
-        !navigator.onLine;
-
-      // Check for 401 unauthorized (invalid refresh token or user not available)
-      const is401Error = axiosError?.response?.status === 401;
-
-      // Check if user is disabled
-      const currentUser = authStore.user;
-      const isUserDisabled = currentUser && !currentUser.isActive;
-
-      // Always logout on 401 errors (invalid token/user not available)
-      if (is401Error) {
-        authStore.logout();
-        queryClient.clear();
-      }
-      // For other errors, only logout if it's not a network error and user is not disabled
-      else if (!isNetworkError && !isUserDisabled) {
-        authStore.logout();
-        queryClient.clear();
-      }
-    },
-  });
-
-  return {
-    // Zustand state
-    user: authStore.user,
-    tokens: authStore.tokens,
-    isAuthenticated: authStore.isAuthenticated,
-    isHydrated: authStore.isHydrated,
-    // Authentication functions
-    login: loginMutation.mutateAsync,
-    twoFactorLogin: twoFactorLoginMutation.mutateAsync,
-    logout: logoutMutation.mutateAsync,
-    logoutAll: logoutAllMutation.mutateAsync,
-    refreshToken: refreshTokenMutation.mutateAsync,
-
-    // Loading states
-    isLoggingIn: loginMutation.isPending,
-    isLoggingInTwoFactor: twoFactorLoginMutation.isPending,
-    isLoggingOut: logoutMutation.isPending,
-    isLoggingOutAll: logoutAllMutation.isPending,
-    isRefreshingToken: refreshTokenMutation.isPending,
-
-    // Error states
-    loginError: loginMutation.error,
-    twoFactorLoginError: twoFactorLoginMutation.error,
-    logoutError: logoutMutation.error,
-    logoutAllError: logoutAllMutation.error,
-    refreshTokenError: refreshTokenMutation.error,
-  };
-};
-
-// 2FA specific hook
-export const useTwoFactor = () => {
-  // Enable 2FA mutation
-  const enableMutation = useMutation({
-    mutationFn: async (): Promise<TwoFactorSetup> => {
-      return await AuthService.enableTwoFactor();
-    },
-  });
-
-  // Verify 2FA mutation
-  const verifyMutation = useMutation({
-    mutationFn: async (request: TwoFactorVerifyRequest): Promise<void> => {
-      return await AuthService.verifyTwoFactor(request);
-    },
-  });
-
-  // Disable 2FA mutation
-  const disableMutation = useMutation({
-    mutationFn: async (request: TwoFactorDisableRequest): Promise<void> => {
-      return await AuthService.disableTwoFactor(request);
-    },
-  });
-
-  // Request backup code mutation
-  const backupCodeMutation = useMutation({
-    mutationFn: async (): Promise<{ code: string }> => {
-      return await AuthService.requestBackupCode();
-    },
-  });
-
-  return {
-    // 2FA functions
-    enableTwoFactor: enableMutation.mutateAsync,
-    verifyTwoFactor: verifyMutation.mutateAsync,
-    disableTwoFactor: disableMutation.mutateAsync,
-    requestBackupCode: backupCodeMutation.mutateAsync,
-
-    // Loading states
-    isEnabling: enableMutation.isPending,
-    isVerifying: verifyMutation.isPending,
-    isDisabling: disableMutation.isPending,
-    isRequestingCode: backupCodeMutation.isPending,
-
-    // Error states
-    enableError: enableMutation.error,
-    verifyError: verifyMutation.error,
-    disableError: disableMutation.error,
-    backupCodeError: backupCodeMutation.error,
-
-    // Data
-    twoFactorSetup: enableMutation.data,
-  };
-};
-
-// Get current user query hook
-export const useCurrentUser = () => {
-  const authStore = useAuthStore();
-
-  return useQuery({
+  const { tokens, setTokens } = useAuthStore();
+  const { data: user, isLoading: isUserLoading } = useQuery({
     queryKey: authKeys.user,
     queryFn: async () => {
-      // In a real app, you might fetch user profile from API
-      // For now, return user from Zustand store
-      return authStore.user;
+      return await getMe();
     },
-    enabled: authStore.isAuthenticated, // Only run if user is authenticated
+    enabled: !!tokens?.accessToken,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const loginMutation = useMutation<LoginResponse, AxiosError, LoginRequest>({
+    mutationFn: (credentials: LoginRequest) => login(credentials),
+    onSuccess: (data) => {
+      setTokens(data.tokens);
+      queryClient.invalidateQueries({ queryKey: authKeys.user });
+    },
+  });
+
+  const twoFactorLoginMutation = useMutation<
+    LoginResponse,
+    AxiosError,
+    {
+      email: string;
+      password: string;
+      token: string;
+    }
+  >({
+    mutationFn: ({ email, password, token }) =>
+      loginWithTwoFactor({ email, password, token }),
+    onSuccess: (data) => {
+      setTokens(data.tokens);
+      queryClient.invalidateQueries({ queryKey: authKeys.user });
+    },
+  });
+
+  // Change password
+  const changePasswordMutation = useMutation({
+    mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authKeys.user });
+    },
+  });
+
+  // Request password reset
+  const requestPasswordResetMutation = useMutation({
+    mutationFn: (email: string) => requestPasswordReset(email),
+  });
+
+  // Enable 2FA
+  const enable2FAMutation = useMutation({
+    mutationFn: () => enable2FA(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authKeys.user });
+    },
+  });
+
+  // Verify 2FA
+  const verify2FAMutation = useMutation({
+    mutationFn: (payload: TwoFAVerifyPayload) => verify2FA(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authKeys.user });
+    },
+  });
+
+  // Disable 2FA
+  const disable2FAMutation = useMutation({
+    mutationFn: (payload: { token: string }) => disable2FA(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authKeys.user });
+    },
+  });
+
+  // Get 2FA recovery codes
+  const getRecoveryCodesMutation = useMutation({
+    mutationFn: () => get2FARecoveryCodes(),
+  });
+
+  // Regenerate 2FA recovery codes
+  const regenerateRecoveryCodesMutation = useMutation({
+    mutationFn: () => regenerate2FARecoveryCodes(),
+  });
+
+  return {
+    user,
+    isUserLoading,
+    isAuthenticated: !!tokens?.accessToken,
+    login: loginMutation.mutateAsync,
+    twoFactorLogin: twoFactorLoginMutation.mutateAsync,
+    changePassword: changePasswordMutation,
+    requestPasswordReset: requestPasswordResetMutation,
+    enable2FA: enable2FAMutation,
+    verify2FA: verify2FAMutation,
+    disable2FA: disable2FAMutation,
+    get2FARecoveryCodes: getRecoveryCodesMutation,
+    regenerate2FARecoveryCodes: regenerateRecoveryCodesMutation,
+  };
 };

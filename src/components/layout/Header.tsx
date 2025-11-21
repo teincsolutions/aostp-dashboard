@@ -3,7 +3,7 @@
 
 import { Button, Dropdown, Avatar, Select } from "antd";
 import { MenuFoldOutlined } from "@ant-design/icons";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useCurrentUser } from "@/hooks/useAuth";
 import { useWarehouses } from "@/hooks/useWarehouse";
 import { useWarehouseStore } from "@/store/warehouseStore";
 import { useRouter } from "next/navigation";

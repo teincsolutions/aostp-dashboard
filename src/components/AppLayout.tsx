@@ -13,9 +13,7 @@ import {
 } from "@ant-design/icons";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
-import { UserMenu } from "@/components/layout/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
-import { Role } from "@/types/user";
 import type { ReactNode } from "react";
 import { UserRole } from "@/types/common";
 
@@ -47,7 +45,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Package Intake",
     roles: ["SUPER_ADMIN", "PAYMENT_CLERK", "OPERATIONS_CLERK"],
   },
-  
+
   // Group: Packages, Packing Lists, Warehouse, Containers
   {
     key: "/packages",
@@ -73,7 +71,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Containers",
     roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
   },
-  
+
   // Group: Customers, Cities, Users
   {
     key: "/customers",
@@ -93,7 +91,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Users",
     roles: ["SUPER_ADMIN"],
   },
-  
+
   // Group: Payments, Invoices, Exchange Rate
   {
     key: "/payments",
@@ -118,7 +116,12 @@ export const menuItems: Array<MenuItem> = [
     key: "/notifications",
     icon: <FileTextOutlined />,
     label: "Notifications",
-    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK", "FINANCE_MANAGER", "PAYMENT_CLERK"],
+    roles: [
+      "SUPER_ADMIN",
+      "OPERATIONS_CLERK",
+      "FINANCE_MANAGER",
+      "PAYMENT_CLERK",
+    ],
   },
   {
     key: "/audit-logs",
@@ -126,7 +129,7 @@ export const menuItems: Array<MenuItem> = [
     label: "Audit Logs",
     roles: ["SUPER_ADMIN"],
   },
-  
+
   {
     key: "/settings",
     icon: <SettingOutlined />,
@@ -142,7 +145,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   // Filter menu items by role and remove 'roles' property for AntD Menu
   const filteredMenuItems = menuItems
-    .filter((item) => item.roles?.includes(user?.role || Role.CUSTOMER))
+    .filter((item) => item.roles?.includes(user?.role as UserRole))
     .map(({ roles, ...rest }) => rest);
 
   // Close Drawer on route change

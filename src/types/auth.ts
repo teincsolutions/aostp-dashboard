@@ -19,5 +19,5 @@ export interface TwoFASetup {
 }
 
 export interface TwoFAVerifyPayload {
-  code: string;
+  token: string;
 }

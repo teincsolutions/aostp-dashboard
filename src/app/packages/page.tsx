@@ -51,8 +51,8 @@ import { Form } from "antd";
 import { ReceiptModal } from "@/components/ReceiptModal";
 import { TransferPackagesModal } from "@/components/TransferPackagesModal";
 import { PackingListSearchSelect } from "@/components/PackingListSearchSelect";
-import { useAuth } from "@/hooks/useAuth";
 import { Role } from "@/types/user";
+import { useAuth } from "@/hooks/useAuth";
 
 const { Search } = Input;
 const { useForm } = Form;
@@ -76,8 +76,8 @@ export const packageStatusColors = {
 };
 
 export default function PackagesPage() {
-  const router = useRouter();
   const { user } = useAuth();
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string | undefined>();
   const [shipmentType, setShippingMode] = useState<string | undefined>();

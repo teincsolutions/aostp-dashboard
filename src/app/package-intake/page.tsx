@@ -38,6 +38,8 @@ import { CustomerCreatePayload } from "@/types/customer";
 import { UploadProps } from "antd/lib";
 import { toast } from "sonner";
 import { InvoiceStatus } from "@/types/invoice";
+import { Html5QrcodeScanner } from "html5-qrcode";
+import { useAuth } from "@/hooks/useAuth";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -88,8 +90,11 @@ export default function PackageIntakePage() {
     string | null
   >(null);
 
+  // Scanner modal state
+  const [scannerModalVisible, setScannerModalVisible] = useState(false);
+
   // Get current user, global warehouse selection, and data
-  const user = useAuthStore((state) => state.user);
+  const { user } = useAuth();
   const { selectedWarehouseId } = useWarehouseStore();
   const { data: warehouses } = useWarehouses();
 
@@ -114,8 +119,7 @@ export default function PackageIntakePage() {
 
   // Handler for QR/Barcode scan simulation
   const handleScanTrackingCode = () => {
-    // TODO:
-    toast.info("Tracking code scanned successfully");
+    setScannerModalVisible(true);
   };
 
   // Mutation hook for creating customer
@@ -302,6 +306,58 @@ export default function PackageIntakePage() {
 
   const onFinishFailed = () => {
     toast.error("Please fix validation errors");
+  };
+
+  // Scanner modal component
+  const ScannerModal = ({
+    visible,
+    onCancel,
+    onScan,
+  }: {
+    visible: boolean;
+    onCancel: () => void;
+    onScan: (decodedText: string) => void;
+  }) => {
+    useEffect(() => {
+      let scanner: Html5QrcodeScanner | null = null;
+      if (visible) {
+        scanner = new Html5QrcodeScanner(
+          "reader",
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          /* verbose= */ false
+        );
+        scanner.render(
+          (decodedText) => {
+            onScan(decodedText);
+            scanner?.clear();
+          },
+          (error) => {
+            // console.warn(error);
+          }
+        );
+      }
+
+      return () => {
+        if (scanner) {
+          scanner.clear().catch((error) => {
+            console.error("Failed to clear html5-qrcode scanner. ", error);
+          });
+        }
+      };
+    }, [visible, onScan]);
+
+    return (
+      <Modal
+        open={visible}
+        onCancel={onCancel}
+        footer={null}
+        title="Scan QR/Barcode"
+        destroyOnClose
+        width={400}
+      >
+        <div id="reader" style={{ width: "100%" }}></div>
+      </Modal>
+    );
   };
 
   return (
@@ -718,6 +774,15 @@ export default function PackageIntakePage() {
             visible={!!receiptModalPackageId}
             onClose={() => setReceiptModalPackageId(null)}
             packageId={receiptModalPackageId}
+          />
+          <ScannerModal
+            visible={scannerModalVisible}
+            onCancel={() => setScannerModalVisible(false)}
+            onScan={(decodedText) => {
+              form.setFieldsValue({ trackingCode: decodedText });
+              setScannerModalVisible(false);
+              toast.success("Tracking code scanned: " + decodedText);
+            }}
           />
         </div>
       </AppLayout>
