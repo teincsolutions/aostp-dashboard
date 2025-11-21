@@ -21,10 +21,7 @@ import {
 import { Formik, Form as FormikForm, Field } from "formik";
 import * as Yup from "yup";
 import { useState } from "react";
-import {
-  ChangePasswordPayload,
-  TwoFAVerifyPayload,
-} from "@/types/auth";
+import { ChangePasswordPayload, TwoFAVerifyPayload } from "@/types/auth";
 import { toast } from "sonner";
 
 const ProfileSchema = Yup.object().shape({
@@ -60,6 +57,7 @@ export default function ProfilePage() {
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+  const [enable2FAData, setEnable2FAData] = useState<any>(null);
 
   if (!user) {
     return (
@@ -102,25 +100,45 @@ export default function ProfilePage() {
                   actions.setSubmitting(false);
                 }}
               >
-                {({ errors, touched, handleSubmit, isSubmitting, handleReset }) => (
+                {({
+                  errors,
+                  touched,
+                  handleSubmit,
+                  isSubmitting,
+                  handleReset,
+                }) => (
                   <FormikForm onSubmit={handleSubmit}>
                     <Form.Item
                       label="First Name"
-                      validateStatus={errors.firstName && touched.firstName ? "error" : ""}
-                      help={errors.firstName && touched.firstName ? errors.firstName : ""}
+                      validateStatus={
+                        errors.firstName && touched.firstName ? "error" : ""
+                      }
+                      help={
+                        errors.firstName && touched.firstName
+                          ? errors.firstName
+                          : ""
+                      }
                     >
                       <Field name="firstName" as={Input} />
                     </Form.Item>
                     <Form.Item
                       label="Last Name"
-                      validateStatus={errors.lastName && touched.lastName ? "error" : ""}
-                      help={errors.lastName && touched.lastName ? errors.lastName : ""}
+                      validateStatus={
+                        errors.lastName && touched.lastName ? "error" : ""
+                      }
+                      help={
+                        errors.lastName && touched.lastName
+                          ? errors.lastName
+                          : ""
+                      }
                     >
                       <Field name="lastName" as={Input} />
                     </Form.Item>
                     <Form.Item
                       label="Email"
-                      validateStatus={errors.email && touched.email ? "error" : ""}
+                      validateStatus={
+                        errors.email && touched.email ? "error" : ""
+                      }
                       help={errors.email && touched.email ? errors.email : ""}
                     >
                       <Field name="email" as={Input} />
@@ -170,29 +188,53 @@ export default function ProfilePage() {
                   <FormikForm onSubmit={handleSubmit}>
                     <Form.Item
                       label="Current Password"
-                      validateStatus={errors.currentPassword && touched.currentPassword ? "error" : ""}
-                      help={errors.currentPassword && touched.currentPassword ? errors.currentPassword : ""}
+                      validateStatus={
+                        errors.currentPassword && touched.currentPassword
+                          ? "error"
+                          : ""
+                      }
+                      help={
+                        errors.currentPassword && touched.currentPassword
+                          ? errors.currentPassword
+                          : ""
+                      }
                     >
                       <Field name="currentPassword" as={Input.Password} />
                     </Form.Item>
                     <Form.Item
                       label="New Password"
-                      validateStatus={errors.newPassword && touched.newPassword ? "error" : ""}
-                      help={errors.newPassword && touched.newPassword ? errors.newPassword : ""}
+                      validateStatus={
+                        errors.newPassword && touched.newPassword ? "error" : ""
+                      }
+                      help={
+                        errors.newPassword && touched.newPassword
+                          ? errors.newPassword
+                          : ""
+                      }
                     >
                       <Field name="newPassword" as={Input.Password} />
                     </Form.Item>
                     <Form.Item
                       label="Confirm New Password"
-                      validateStatus={errors.confirmNewPassword && touched.confirmNewPassword ? "error" : ""}
-                      help={errors.confirmNewPassword && touched.confirmNewPassword ? errors.confirmNewPassword : ""}
+                      validateStatus={
+                        errors.confirmNewPassword && touched.confirmNewPassword
+                          ? "error"
+                          : ""
+                      }
+                      help={
+                        errors.confirmNewPassword && touched.confirmNewPassword
+                          ? errors.confirmNewPassword
+                          : ""
+                      }
                     >
                       <Field name="confirmNewPassword" as={Input.Password} />
                     </Form.Item>
                     <Button
                       type="primary"
                       htmlType="submit"
-                      loading={security.changePassword.isPending || isSubmitting}
+                      loading={
+                        security.changePassword.isPending || isSubmitting
+                      }
                     >
                       Change Password
                     </Button>
@@ -230,7 +272,8 @@ export default function ProfilePage() {
                     style={{ marginLeft: 8 }}
                     onClick={async () => {
                       setShowRecoveryModal(true);
-                      const codes = await security.get2FARecoveryCodes.mutateAsync();
+                      const codes =
+                        await security.get2FARecoveryCodes.mutateAsync();
                       setRecoveryCodes(codes?.recoveryCodes || []);
                     }}
                   >
@@ -253,9 +296,12 @@ export default function ProfilePage() {
                       <Divider />
                       <Button
                         onClick={async () => {
-                          const codes = await security.regenerate2FARecoveryCodes.mutateAsync();
+                          const codes =
+                            await security.regenerate2FARecoveryCodes.mutateAsync();
                           setRecoveryCodes(codes?.recoveryCodes || []);
-                          notification.success({ message: "Backup codes regenerated" });
+                          notification.success({
+                            message: "Backup codes regenerated",
+                          });
                         }}
                       >
                         Regenerate Codes
@@ -269,7 +315,8 @@ export default function ProfilePage() {
                     type="primary"
                     onClick={async () => {
                       setShow2FAModal(true);
-                      await security.enable2FA.mutateAsync();
+                      const enableData = await security.enable2FA.mutateAsync();
+                      setEnable2FAData(enableData);
                     }}
                     loading={security.enable2FA.isPending}
                   >
@@ -281,11 +328,11 @@ export default function ProfilePage() {
                     onCancel={() => setShow2FAModal(false)}
                     footer={null}
                   >
-                    {security.enable2FA.data ? (
+                    {enable2FAData ? (
                       <div>
                         <Divider />
                         <Image
-                          src={security.enable2FA.data.qrImageDataUrl}
+                          src={enable2FAData.qrCode}
                           alt="QR Code"
                           style={{ width: 200, marginBottom: 16 }}
                         />
@@ -294,11 +341,14 @@ export default function ProfilePage() {
                           initialValues={{ code: "" }}
                           validationSchema={TwoFASchema}
                           onSubmit={(values, actions) => {
-                            const payload: TwoFAVerifyPayload = { code: values.code };
+                            const payload: TwoFAVerifyPayload = {
+                              code: values.code,
+                            };
                             security.verify2FA.mutate(payload, {
                               onSuccess: () => {
                                 toast.success("2FA enabled");
                                 setShow2FAModal(false);
+                                setEnable2FAData(null);
                               },
                               onError: () => {
                                 toast.error("Invalid code");
@@ -307,19 +357,30 @@ export default function ProfilePage() {
                             actions.setSubmitting(false);
                           }}
                         >
-                          {({ errors, touched, handleSubmit, isSubmitting }) => (
+                          {({
+                            errors,
+                            touched,
+                            handleSubmit,
+                            isSubmitting,
+                          }) => (
                             <FormikForm onSubmit={handleSubmit}>
                               <Form.Item
                                 label="Verification Code"
-                                validateStatus={errors.code && touched.code ? "error" : ""}
-                                help={errors.code && touched.code ? errors.code : ""}
+                                validateStatus={
+                                  errors.code && touched.code ? "error" : ""
+                                }
+                                help={
+                                  errors.code && touched.code ? errors.code : ""
+                                }
                               >
                                 <Field name="code" as={Input} maxLength={6} />
                               </Form.Item>
                               <Button
                                 type="primary"
                                 htmlType="submit"
-                                loading={security.verify2FA.isPending || isSubmitting}
+                                loading={
+                                  security.verify2FA.isPending || isSubmitting
+                                }
                               >
                                 Verify & Enable
                               </Button>
@@ -328,10 +389,14 @@ export default function ProfilePage() {
                         </Formik>
                         <Divider />
                         <div>
+                          <strong>Manual Entry Key:</strong>{" "}
+                          {enable2FAData.manualEntryKey}
+                        </div>
+                        <div>
                           <strong>Recovery Codes:</strong>
-                          {security.enable2FA.data.recoveryCodes?.map((code: string) => (
+                          {enable2FAData.recoveryCodes?.map((code: string) => (
                             <Tag key={code}>{code}</Tag>
-                          ))}
+                          )) || <Spin />}
                         </div>
                       </div>
                     ) : (

@@ -10,9 +10,11 @@ export interface PasswordResetRequest {
 }
 
 export interface TwoFASetup {
-  qrImageDataUrl?: string;
-  secret?: string;
-  otpauthUrl?: string;
+  secret: string;
+  qrCode: string;
+  manualEntryKey: string;
+  otpAuthUrl: string;
+  correlationId: string;
   recoveryCodes?: string[];
 }
 
