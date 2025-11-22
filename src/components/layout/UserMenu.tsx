@@ -24,7 +24,7 @@ export function UserMenu() {
   const router = useRouter();
 
   const handleUserMenuClick = (e: { key: string }) => {
-    if (e.key === "logout") logout();
+    if (e.key === "logout") logout.mutate();
     if (e.key === "profile") router.push("/profile");
   };
 
@@ -34,7 +34,6 @@ export function UserMenu() {
         items: userMenuItems,
         onClick: handleUserMenuClick,
       }}
-
       rootClassName="w-48"
       placement="bottomRight"
     >

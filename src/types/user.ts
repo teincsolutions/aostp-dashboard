@@ -23,6 +23,8 @@ export interface User {
   firstName: string;
   lastName: string;
   role: UserRole;
+  phone: string | null;
+  avatar: string | null;
   warehouse: Warehouse | null;
   warehouseId: string | null;
   isActive: boolean;

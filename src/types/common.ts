@@ -69,9 +69,9 @@ export interface RefreshTokenRequest {
 }
 
 export interface TwoFactorSetup {
-  secret: string;
-  qrCodeUrl: string;
-  backupCodes: string[];
+  manualEntryKey: string;
+  qrCode: string;
+  recoveryCodes: string[];
 }
 
 export interface TwoFactorVerifyRequest {

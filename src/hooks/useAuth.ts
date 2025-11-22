@@ -12,6 +12,7 @@ import {
   login,
   logout,
   loginWithTwoFactor,
+  regenerate2FARecoveryCodes,
 } from "@/services/authService";
 import { ChangePasswordPayload, TwoFAVerifyPayload } from "@/types/auth";
 import { useWarehouseStore } from "@/store/warehouseStore";
@@ -121,6 +122,10 @@ export const useAuth = () => {
     mutationFn: () => get2FARecoveryCodes(),
   });
 
+  const regenerate2FARecoveryCodesMutation = useMutation({
+    mutationFn: () => regenerate2FARecoveryCodes(),
+  });
+
   // Regenerate 2FA recovery codes
   return {
     user,
@@ -135,5 +140,6 @@ export const useAuth = () => {
     verify2FA: verify2FAMutation,
     disable2FA: disable2FAMutation,
     get2FARecoveryCodes: getRecoveryCodesMutation,
+    regenerate2FARecoveryCodes: regenerate2FARecoveryCodesMutation,
   };
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Card,
   Typography,
@@ -11,25 +11,19 @@ import {
   Input,
   QRCode,
   Alert,
-  Divider,
-  Switch,
   Descriptions,
 } from "antd";
 import { toast } from "sonner";
 import {
   QrcodeOutlined,
-  MobileOutlined,
   KeyOutlined,
   SafetyOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from "@ant-design/icons";
-import {
-  TwoFactorSetup as TwoFactorSetupType,
-  TwoFactorVerifyRequest,
-  TwoFactorDisableRequest,
-} from "@/types/common";
-import { AuthService } from "@/services/authService";
+import { TwoFactorSetup as TwoFactorSetupType } from "@/types/common";
+import { useAuth } from "@/hooks/useAuth";
+import { handleError } from "@/utils/forms/errorUtils";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -49,11 +43,13 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
   const [verificationToken, setVerificationToken] = useState("");
   const [disableToken, setDisableToken] = useState("");
 
+  const { enable2FA, verify2FA, disable2FA, get2FARecoveryCodes } = useAuth();
+
   // Handle enabling 2FA
   const handleEnable2FA = async () => {
     try {
       setLoading(true);
-      const setupData = await AuthService.enableTwoFactor();
+      const setupData = await enable2FA.mutateAsync();
 
       if (setupData) {
         setSetupData(setupData);
@@ -62,7 +58,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
         toast.error("Failed to enable 2FA");
       }
     } catch (error) {
-      toast.error("Failed to enable 2FA");
+      handleError(error || "Failed to enable 2FA");
     } finally {
       setLoading(false);
     }
@@ -77,7 +73,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
     try {
       setLoading(true);
-      await AuthService.verifyTwoFactor({ token: verificationToken });
+      await verify2FA.mutateAsync({ token: verificationToken });
 
       toast.success("Two-factor authentication enabled successfully");
       setShowSetupModal(false);
@@ -85,7 +81,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
       setVerificationToken("");
       onStatusChange?.(true);
     } catch (error) {
-      toast.error("Verification failed");
+      handleError(error || "Verification failed");
     } finally {
       setLoading(false);
     }
@@ -100,14 +96,14 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
     try {
       setLoading(true);
-      await AuthService.disableTwoFactor({ token: disableToken });
+      await disable2FA.mutateAsync({ token: disableToken });
 
       toast.success("Two-factor authentication disabled successfully");
       setShowDisableModal(false);
       setDisableToken("");
       onStatusChange?.(false);
     } catch (error) {
-      toast.error("Failed to disable 2FA");
+      handleError(error || "Failed to disable 2FA");
     } finally {
       setLoading(false);
     }
@@ -117,28 +113,43 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
   const handleRequestBackupCode = async () => {
     try {
       setLoading(true);
-      const response = await AuthService.requestBackupCode();
+      const response = await get2FARecoveryCodes.mutateAsync();
 
-      if (response.code) {
+      if (response?.recoveryCodes) {
         Modal.info({
-          title: "Backup Code",
+          title: "Backup Codes",
           content: (
             <div>
               <Paragraph>
-                Save this backup code in a secure place. You can use it to
+                Save these backup codes in a secure place. You can use them to
                 access your account if you lose your authenticator device.
               </Paragraph>
-              <Text strong style={{ fontSize: 18, fontFamily: "monospace" }}>
-                {response.code}
-              </Text>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 8,
+                }}
+              >
+                {response.recoveryCodes.map((code: string) => (
+                  <Text
+                    key={code}
+                    strong
+                    style={{ fontSize: 16, fontFamily: "monospace" }}
+                  >
+                    {code}
+                  </Text>
+                ))}
+              </div>
             </div>
           ),
+          width: 500,
         });
       } else {
-        toast.error("Failed to request backup code");
+        toast.error("Failed to retrieve backup codes");
       }
     } catch (error) {
-      toast.error("Failed to request backup code");
+      toast.error("Failed to request backup codes");
     } finally {
       setLoading(false);
     }
@@ -242,16 +253,16 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
           {setupData && (
             <>
               <div style={{ textAlign: "center" }}>
-                <QRCode value={setupData.qrCodeUrl} size={200} />
+                <QRCode value={setupData.qrCode} size={200} />
               </div>
 
               <Descriptions bordered column={1}>
                 <Descriptions.Item label="Secret Key">
-                  <Text code>{setupData.secret}</Text>
+                  <Text code>{setupData.manualEntryKey}</Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Backup Codes">
                   <Space direction="vertical">
-                    {setupData.backupCodes.map((code, index) => (
+                    {setupData.recoveryCodes.map((code, index) => (
                       <Text key={index} code>
                         {code}
                       </Text>

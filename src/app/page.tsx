@@ -3,10 +3,10 @@
 import { Spin } from "antd";
 import { redirect } from "next/navigation";
 import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/store/authStore";
 
 export default function Home() {
-  const { isAuthenticated, isHydrated } = useAuth();
+  const { isAuthenticated, isHydrated } = useAuthStore();
 
   useEffect(() => {
     if (isHydrated) {
