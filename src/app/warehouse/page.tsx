@@ -12,7 +12,6 @@ import {
   Space,
   Modal,
   Form,
-  message,
   Tabs,
   Popconfirm,
   Row,
@@ -32,7 +31,6 @@ import {
 } from "@/hooks/useWarehouse";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { useAuthStore } from "@/store/authStore";
 import {
   WarehousePackage,
   WarehouseCreatePayload,
@@ -42,6 +40,7 @@ import {
 import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import { toast } from "sonner";
 import { GetWarehousePackagesParams } from "@/services/warehouseService";
+import { useAuth } from "@/hooks/useAuth";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -50,7 +49,7 @@ const { TabPane } = Tabs;
 const allowedRoles = ["OPERATIONS_CLERK", "SUPER_ADMIN"];
 
 export default function WarehousePage() {
-  const user = useAuthStore((s) => s.user);
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("1");
 
   // Warehouse packages filters

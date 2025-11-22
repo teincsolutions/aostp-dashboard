@@ -5,7 +5,6 @@ import { Button, Spin } from "antd";
 import { useAuth } from "@/hooks/useAuth";
 import { redirect } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { ref } from "yup";
 import { useAuthStore } from "@/store/authStore";
 
 interface AuthGuardProps {

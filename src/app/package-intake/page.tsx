@@ -24,10 +24,9 @@ import { CustomerModal } from "@/components/CustomerModal";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import { packageIntakeColumns } from "@/app/package-intake/columns";
 import { usePackageIntake } from "@/hooks/usePackageIntake";
-import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
+import { useCreateCustomer } from "@/hooks/useCustomers";
 import { useCustomerInvoices } from "@/hooks/useInvoices";
 import { useWarehouses } from "@/hooks/useWarehouse";
-import { useAuthStore } from "@/store/authStore";
 import { useWarehouseStore } from "@/store/warehouseStore";
 import { CreatePackagePayload } from "@/types/package";
 import { ReceiptModal } from "@/components/ReceiptModal";
@@ -630,7 +629,11 @@ export default function PackageIntakePage() {
                       className="w-full"
                       placeholder="Select warehouse"
                       disabled={!isAdmin}
-                      value={selectedWarehouseId}
+                      value={
+                        (warehouses?.data?.length || 0) > 0
+                          ? selectedWarehouseId
+                          : undefined
+                      }
                     >
                       {warehouses?.data?.map((warehouse) => (
                         <Select.Option key={warehouse.id} value={warehouse.id}>

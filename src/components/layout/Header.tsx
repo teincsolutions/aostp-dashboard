@@ -3,8 +3,8 @@
 
 import { Button, Dropdown, Avatar, Select } from "antd";
 import { MenuFoldOutlined } from "@ant-design/icons";
-import { useAuth, useCurrentUser } from "@/hooks/useAuth";
-import { useWarehouses } from "@/hooks/useWarehouse";
+import { useAuth } from "@/hooks/useAuth";
+import { useWarehouse, useWarehouses } from "@/hooks/useWarehouse";
 import { useWarehouseStore } from "@/store/warehouseStore";
 import { useRouter } from "next/navigation";
 import { ReactNode, useEffect } from "react";
@@ -31,13 +31,10 @@ export function Header({
       setSelectedWarehouseId(warehouses.data[0].id);
     }
   }, [warehouses, selectedWarehouseId, setSelectedWarehouseId]);
-
-  const selectedWarehouse = warehouses?.data?.find(
-    (w) => w.id === selectedWarehouseId
-  );
+  const { data: selectedWarehouse } = useWarehouse(selectedWarehouseId || "");
 
   const handleUserMenuClick = (e: any) => {
-    if (e.key === "logout") logout();
+    if (e.key === "logout") logout.mutateAsync();
     if (e.key === "profile") router.push("/profile");
     if (e.key.startsWith("warehouse-")) {
       const warehouseId = e.key.replace("warehouse-", "");
@@ -65,10 +62,12 @@ export function Header({
     },
     {
       key: "warehouse-selector",
-      label: `Warehouse: ${selectedWarehouse?.warehouseId || "Select"}`,
+      label: `Warehouse: ${selectedWarehouse?.warehouseId || ""} - ${
+        selectedWarehouse?.name || "Select"
+      }`,
       children: warehouses?.data?.map((warehouse) => ({
         key: `warehouse-${warehouse.id}`,
-        label: `${warehouse.warehouseId} - ${warehouse.name}`,
+        label: `${warehouse.name}`,
       })),
     },
     {

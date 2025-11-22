@@ -74,6 +74,11 @@ export const getWarehouses = async (params?: {
   return response.data;
 };
 
+export const getWarehouseById = async (id: string) => {
+  const response = await apiService.get<Warehouse>(`/warehouses/${id}`);
+  return response.data;
+};
+
 export const createWarehouse = async (payload: WarehouseCreatePayload) => {
   const response = await apiService.post<ApiResponse<Warehouse>>(
     "/warehouses",

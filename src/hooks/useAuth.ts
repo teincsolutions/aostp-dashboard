@@ -8,13 +8,13 @@ import {
   verify2FA,
   disable2FA,
   get2FARecoveryCodes,
-  regenerate2FARecoveryCodes,
   getMe,
   login,
+  logout,
   loginWithTwoFactor,
 } from "@/services/authService";
 import { ChangePasswordPayload, TwoFAVerifyPayload } from "@/types/auth";
-import { log } from "console";
+import { useWarehouseStore } from "@/store/warehouseStore";
 
 // Error type for axios-like errors
 interface AxiosError {
@@ -32,7 +32,8 @@ export const authKeys = {
 } as const;
 export const useAuth = () => {
   const queryClient = useQueryClient();
-  const { tokens, setTokens } = useAuthStore();
+  const { tokens, login: loginSession, logout: logoutSession } = useAuthStore();
+  const { setSelectedWarehouseId } = useWarehouseStore();
   const { data: user, isLoading: isUserLoading } = useQuery({
     queryKey: authKeys.user,
     queryFn: async () => {
@@ -45,7 +46,18 @@ export const useAuth = () => {
   const loginMutation = useMutation<LoginResponse, AxiosError, LoginRequest>({
     mutationFn: (credentials: LoginRequest) => login(credentials),
     onSuccess: (data) => {
-      setTokens(data.tokens);
+      loginSession(data.tokens);
+      queryClient.invalidateQueries({ queryKey: authKeys.user });
+    },
+  });
+
+  const logoutMutation = useMutation<void, AxiosError>({
+    mutationFn: async () => {
+      return await logout(tokens?.refreshToken || "");
+    },
+    onSuccess: () => {
+      logoutSession();
+      setSelectedWarehouseId(null);
       queryClient.invalidateQueries({ queryKey: authKeys.user });
     },
   });
@@ -62,7 +74,7 @@ export const useAuth = () => {
     mutationFn: ({ email, password, token }) =>
       loginWithTwoFactor({ email, password, token }),
     onSuccess: (data) => {
-      setTokens(data.tokens);
+      loginSession(data.tokens);
       queryClient.invalidateQueries({ queryKey: authKeys.user });
     },
   });
@@ -110,15 +122,12 @@ export const useAuth = () => {
   });
 
   // Regenerate 2FA recovery codes
-  const regenerateRecoveryCodesMutation = useMutation({
-    mutationFn: () => regenerate2FARecoveryCodes(),
-  });
-
   return {
     user,
     isUserLoading,
     isAuthenticated: !!tokens?.accessToken,
     login: loginMutation.mutateAsync,
+    logout: logoutMutation,
     twoFactorLogin: twoFactorLoginMutation.mutateAsync,
     changePassword: changePasswordMutation,
     requestPasswordReset: requestPasswordResetMutation,
@@ -126,6 +135,5 @@ export const useAuth = () => {
     verify2FA: verify2FAMutation,
     disable2FA: disable2FAMutation,
     get2FARecoveryCodes: getRecoveryCodesMutation,
-    regenerate2FARecoveryCodes: regenerateRecoveryCodesMutation,
   };
 };

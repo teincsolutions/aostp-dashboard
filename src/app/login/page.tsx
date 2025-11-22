@@ -268,15 +268,6 @@ const LoginPage: React.FC = () => {
               </Button>
             </Form.Item>
           </Form>
-
-          <Divider plain>Demo Credentials</Divider>
-          <div className="text-center">
-            <Text type="secondary" className="text-xs">
-              Email: admin@aostp.com
-              <br />
-              Password: Admin@123456
-            </Text>
-          </div>
         </div>
       </Card>
       {redirectingLoading && (

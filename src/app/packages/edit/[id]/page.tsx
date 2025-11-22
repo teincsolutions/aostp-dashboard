@@ -24,12 +24,12 @@ import { AuthGuard } from "@/components/AuthGuard";
 import type { UploadFile } from "antd/es/upload/interface";
 import { CustomerCreatePayload } from "@/types/customer";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
 import { useWarehouseStore } from "@/store/warehouseStore";
 import { useWarehouses } from "@/hooks/useWarehouse";
 import { ShippingMode } from "@/types/exchangeRate";
 import { useCities } from "@/hooks/useCities";
 import { Currency } from "@/types/package";
+import { useAuth } from "@/hooks/useAuth";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -66,7 +66,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
   });
 
   // Get current user, global warehouse selection, and data
-  const user = useAuthStore((state) => state.user);
+  const { user } = useAuth();
   const { selectedWarehouseId } = useWarehouseStore();
   const { data: warehouses } = useWarehouses();
 

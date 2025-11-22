@@ -25,9 +25,9 @@ import { useUsers } from "@/hooks/useUsers";
 import { AuditAction, AuditEntityType, AuditLog } from "@/types/audit";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { useAuthStore } from "@/store/authStore";
 import dayjs from "dayjs";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const { RangePicker } = DatePicker;
 
@@ -63,7 +63,7 @@ function prettyDiff(
 }
 
 export default function AuditLogsPage() {
-  const user = useAuthStore((s) => s.user);
+  const { user } = useAuth();
   const [filters, setFilters] = useState({
     entityType: undefined as AuditEntityType | undefined,
     action: undefined as AuditAction | undefined,

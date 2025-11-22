@@ -9,6 +9,7 @@ import {
   deleteWarehouse,
   updateWarehouseDays,
   GetWarehousePackagesParams,
+  getWarehouseById,
 } from "@/services/warehouseService";
 import {
   WarehouseCreatePayload,
@@ -43,6 +44,17 @@ export const useWarehouses = (params?: {
   return useQuery({
     queryKey: ["warehouses", params],
     queryFn: () => getWarehouses(params),
+  });
+};
+
+// get one warehouse by id
+export const useWarehouse = (id: string) => {
+  return useQuery({
+    queryKey: ["warehouses", id],
+    queryFn: async () => {
+      return await getWarehouseById(id);
+    },
+    enabled: !!id,
   });
 };
 
