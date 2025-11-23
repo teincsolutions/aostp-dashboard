@@ -2,25 +2,15 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import {
-  Button,
-  Card,
-  Input,
-  Select,
-  Switch,
-  Form,
-  message,
-  notification,
-} from "antd";
+import { Button, Card, Input, Select, Switch, Form, notification } from "antd";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useCreateUser } from "@/hooks/useUsers";
 import { useWarehouses } from "@/hooks/useWarehouse";
 import { Role } from "@/types/user";
 import { userCreateSchema } from "@/utils/forms/userSchemas";
-import { getServerValidationErrors } from "@/utils/forms/errorUtils";
+import { handleError } from "@/utils/forms/errorUtils";
 import { Formik } from "formik";
-import { toast } from "sonner";
 
 const roleOptions = [
   { label: "Super Admin", value: Role.SUPER_ADMIN },
@@ -41,18 +31,12 @@ export default function CreateUserPage() {
     try {
       const payload = {
         ...values,
-        force2FA: values.twoFactorEnabled,
       };
       await createUserMutation.mutateAsync(payload);
       notification.success({ message: "User created successfully" });
       router.push("/users");
     } catch (error: unknown) {
-      const serverErrors = getServerValidationErrors(error);
-      if (serverErrors) {
-        setErrors(serverErrors);
-      } else {
-        toast.error((error as Error)?.message || "Create failed");
-      }
+      handleError(error);
     } finally {
       setSubmitting(false);
     }
@@ -78,7 +62,6 @@ export default function CreateUserPage() {
                 role: Role.OPERATIONS_CLERK,
                 warehouseId: "",
                 isActive: true,
-                twoFactorEnabled: false,
               }}
               validationSchema={userCreateSchema}
               onSubmit={handleSubmit}
@@ -231,15 +214,6 @@ export default function CreateUserPage() {
                     <Switch
                       checked={values.isActive}
                       onChange={(checked) => setFieldValue("isActive", checked)}
-                    />
-                  </Form.Item>
-
-                  <Form.Item label="Two Factor Enabled">
-                    <Switch
-                      checked={values.twoFactorEnabled}
-                      onChange={(checked) =>
-                        setFieldValue("twoFactorEnabled", checked)
-                      }
                     />
                   </Form.Item>
 
