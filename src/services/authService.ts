@@ -21,6 +21,17 @@ export async function getMe(): Promise<User> {
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   const response = await apiService.post(`${BASE_URL}/login`, credentials);
   const apiData = response.data;
+
+  // Handle 2FA required response
+  if (apiData.requiresTwoFactor) {
+    return {
+      requiresTwoFactor: true,
+      message: apiData.message,
+      userId: apiData.userId,
+    };
+  }
+
+  // Handle standard login response
   return {
     user: apiData.user,
     tokens: {
@@ -28,7 +39,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
       refreshToken: apiData.refreshToken,
       expiresIn: parseExpiresIn(apiData.expiresIn),
     },
-    requiresTwoFactor: apiData.requiresTwoFactor,
+    requiresTwoFactor: false,
   };
 }
 

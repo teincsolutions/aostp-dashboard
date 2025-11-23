@@ -47,8 +47,12 @@ export const useAuth = () => {
   const loginMutation = useMutation<LoginResponse, AxiosError, LoginRequest>({
     mutationFn: (credentials: LoginRequest) => login(credentials),
     onSuccess: (data) => {
-      loginSession(data.tokens);
-      queryClient.invalidateQueries({ queryKey: authKeys.user });
+      // Only store tokens if 2FA is not required
+      if (!data.requiresTwoFactor && data.tokens) {
+        loginSession(data.tokens);
+        queryClient.invalidateQueries({ queryKey: authKeys.user });
+      }
+      // If requiresTwoFactor is true, the UI will handle showing 2FA form
     },
   });
 
@@ -75,8 +79,11 @@ export const useAuth = () => {
     mutationFn: ({ email, password, token }) =>
       loginWithTwoFactor({ email, password, token }),
     onSuccess: (data) => {
-      loginSession(data.tokens);
-      queryClient.invalidateQueries({ queryKey: authKeys.user });
+      // After successful 2FA, tokens should always be present
+      if (data.tokens) {
+        loginSession(data.tokens);
+        queryClient.invalidateQueries({ queryKey: authKeys.user });
+      }
     },
   });
 

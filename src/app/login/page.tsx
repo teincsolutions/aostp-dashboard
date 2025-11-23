@@ -58,7 +58,14 @@ const LoginPage: React.FC = () => {
     validationSchema: loginSchema,
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
-        await login(values);
+        const response = await login(values);
+
+        // Check if 2FA is required
+        if (response.requiresTwoFactor) {
+          setTwoFactorMode(true);
+        }
+        // If no 2FA required, tokens will be stored by the hook
+        // and isAuthenticated will trigger redirect via useEffect
       } catch (error: any) {
         console.error("Login error:", error);
         setFieldError(

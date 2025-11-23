@@ -53,9 +53,11 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  user: User;
-  tokens: AuthTokens;
+  user?: User;
+  tokens?: AuthTokens;
   requiresTwoFactor?: boolean;
+  message?: string;
+  userId?: string;
 }
 
 export interface TwoFactorLoginRequest {

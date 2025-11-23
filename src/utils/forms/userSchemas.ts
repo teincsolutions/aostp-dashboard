@@ -27,7 +27,6 @@ export const userCreateSchema = Yup.object().shape({
     .required("Role is required"),
   warehouseId: Yup.string().optional(),
   isActive: Yup.boolean().required(),
-  twoFactorEnabled: Yup.boolean().required(),
 });
 
 // Schema for updating an existing user (all fields optional)
