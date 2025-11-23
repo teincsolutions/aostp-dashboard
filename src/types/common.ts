@@ -38,6 +38,7 @@ export interface User {
   isActive: boolean;
   avatar: string;
   twoFactorEnabled?: boolean;
+  mustChangePassword?: boolean;
   warehouseId?: string;
 }
 

@@ -7,6 +7,7 @@ import { LockOutlined, MobileOutlined, UserOutlined } from "@ant-design/icons";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const { Title, Text } = Typography;
 
@@ -63,8 +64,17 @@ const LoginPage: React.FC = () => {
         // Check if 2FA is required
         if (response.requiresTwoFactor) {
           setTwoFactorMode(true);
+          return;
         }
-        // If no 2FA required, tokens will be stored by the hook
+
+        // Check if password change is required
+        if (response.user?.mustChangePassword) {
+          toast.warning("Please change your temporary password to continue");
+          router.push("/profile?tab=security");
+          return;
+        }
+
+        // If no 2FA or password change required, tokens will be stored by the hook
         // and isAuthenticated will trigger redirect via useEffect
       } catch (error: any) {
         console.error("Login error:", error);
@@ -85,11 +95,18 @@ const LoginPage: React.FC = () => {
     validationSchema: twoFactorSchema,
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
-        await twoFactorLogin({
+        const response = await twoFactorLogin({
           email: loginFormik.values.email,
           password: loginFormik.values.password,
           token: values.twoFactorToken,
         });
+
+        // Check if password change is required after 2FA
+        if (response.user?.mustChangePassword) {
+          toast.warning("Please change your temporary password to continue");
+          router.push("/profile?tab=security");
+        }
+        // Otherwise, isAuthenticated will trigger redirect via useEffect
       } catch (error) {
         setFieldError(
           "twoFactorToken",

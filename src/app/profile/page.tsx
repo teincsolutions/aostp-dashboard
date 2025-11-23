@@ -17,14 +17,16 @@ import {
   Descriptions,
   Avatar,
   Typography,
+  Alert,
 } from "antd";
 import { Formik, Form as FormikForm, Field } from "formik";
 import * as Yup from "yup";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChangePasswordPayload, TwoFAVerifyPayload } from "@/types/auth";
 import { toast } from "sonner";
 import { handleError } from "@/utils/forms/errorUtils";
 import { useAuth } from "@/hooks/useAuth";
+import { useSearchParams } from "next/navigation";
 import {
   UserOutlined,
   MailOutlined,
@@ -65,11 +67,20 @@ export default function ProfilePage() {
     verify2FA,
   } = useAuth();
 
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState("password");
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [enable2FAData, setEnable2FAData] = useState<any>(null);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "security") {
+      setActiveTab("password");
+    }
+  }, [searchParams]);
 
   if (!user) {
     return (
@@ -168,7 +179,22 @@ export default function ProfilePage() {
 
             <Divider style={{ margin: "24px 0" }} />
 
-            <Tabs defaultActiveKey="password" tabPosition="top" type="card">
+            {user.mustChangePassword && (
+              <Alert
+                message="Password Change Required"
+                description="For security reasons, you must change your temporary password before accessing other features."
+                type="warning"
+                showIcon
+                style={{ marginBottom: 24 }}
+              />
+            )}
+
+            <Tabs
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              tabPosition="top"
+              type="card"
+            >
               <Tabs.TabPane
                 tab={
                   <span>
@@ -190,10 +216,19 @@ export default function ProfilePage() {
                         currentPassword: values.currentPassword,
                         newPassword: values.newPassword,
                       };
+                      const wasMustChange = user?.mustChangePassword;
                       changePassword.mutate(payload, {
                         onSuccess: () => {
-                          toast.success("Password changed");
+                          toast.success("Password changed successfully");
                           actions.resetForm();
+
+                          // If this was a forced password change, log out and redirect to login
+                          if (wasMustChange) {
+                            toast.info("Please log in with your new password");
+                            setTimeout(() => {
+                              window.location.href = "/login";
+                            }, 2000);
+                          }
                         },
                         onError: (error) => {
                           handleError(error);

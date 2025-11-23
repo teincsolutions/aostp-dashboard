@@ -2,7 +2,12 @@
 
 ## Overview
 
-This API implements a secure two-factor authentication (2FA) flow. When a user has 2FA enabled, the login process requires two steps.
+This API implements a secure authentication system with:
+
+1. **Two-factor authentication (2FA)** - Optional additional security layer
+2. **Forced password change** - New users must change their temporary password on first login
+
+When a user has 2FA enabled, the login process requires two steps. Additionally, newly created users will have limited access until they change their password.
 
 ## Login Flow
 
@@ -37,12 +42,16 @@ This API implements a secure two-factor authentication (2FA) flow. When a user h
     "username": "john_doe",
     "firstName": "John",
     "lastName": "Doe",
-    "role": "CUSTOMER"
+    "role": "CUSTOMER",
+    "mustChangePassword": false
   }
 }
 ```
 
-**Action:** Store tokens and redirect to dashboard.
+**Action:**
+
+- Check if `mustChangePassword` is `true` - if so, redirect to change password page
+- Otherwise, store tokens and redirect to dashboard
 
 #### B) User WITH 2FA Enabled (2FA Required)
 
@@ -96,7 +105,7 @@ This API implements a secure two-factor authentication (2FA) flow. When a user h
 {
   "email": "user@example.com",
   "password": "userPassword123",
-  "twoFactorToken": "123456"
+  "token": "123456"
 }
 ```
 
@@ -439,4 +448,134 @@ Body: {
   "currentPassword": "oldPass123",
   "newPassword": "newPass456"
 }
+```
+
+**Note:** This endpoint is accessible even when `mustChangePassword` is `true`.
+
+---
+
+## Forced Password Change Flow
+
+### Overview
+
+When an admin creates a new user, the user receives a welcome email with temporary credentials and **must change their password** before accessing any system features.
+
+### How It Works
+
+1. **User Creation**: Admin creates user → User receives welcome email with temporary password
+2. **First Login**: User logs in with temporary credentials
+3. **Limited Access**: User can only access:
+   - `GET /auth/me` - View their profile
+   - `POST /auth/change-password` - Change their password
+   - Public endpoints
+4. **Blocked Access**: All other protected endpoints return `403 Forbidden`
+5. **Password Change**: User changes password → `mustChangePassword` flag is cleared
+6. **Full Access**: User can now access all authorized endpoints
+
+### Login Response with Password Change Required
+
+When `mustChangePassword` is `true`, the login response includes this flag:
+
+```json
+{
+  "accessToken": "...",
+  "refreshToken": "...",
+  "user": {
+    "id": "...",
+    "email": "user@example.com",
+    "mustChangePassword": true // ← Check this flag!
+  }
+}
+```
+
+### Handling 403 Forbidden Errors
+
+If a user with `mustChangePassword: true` tries to access a protected endpoint:
+
+**Response:**
+
+```json
+{
+  "statusCode": 403,
+  "message": "You must change your password before accessing this resource. Please use the change password endpoint."
+}
+```
+
+**Frontend Action:**
+
+- Intercept 403 errors
+- Check if message contains "must change your password"
+- Redirect to change password page
+- Show appropriate notification
+
+### Change Password Flow for New Users
+
+```typescript
+// 1. User logs in and sees mustChangePassword: true
+if (loginResponse.user.mustChangePassword) {
+  router.push('/change-password');
+  showNotification('For security, please change your temporary password');
+}
+
+// 2. User changes password
+await changePassword({
+  currentPassword: 'TempPassword123', // From welcome email
+  newPassword: 'MyNewSecurePass456',
+});
+
+// 3. Success response - all sessions invalidated
+// User must login again with new password
+
+// 4. Clear tokens and redirect to login
+localStorage.clear();
+router.push('/login');
+showNotification(
+  'Password changed successfully. Please login with your new password.',
+);
+```
+
+### Implementation Example
+
+```typescript
+// API Interceptor
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 403) {
+      const message = error.response.data.message;
+      if (message?.includes('must change your password')) {
+        router.push('/change-password');
+        toast.warning('Please change your password to continue');
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
+// Route Guard
+if (user.mustChangePassword && currentRoute !== '/change-password') {
+  return router.push('/change-password');
+}
+
+// Login Handler
+const handleLogin = async (credentials) => {
+  const response = await login(credentials);
+
+  // Check for 2FA
+  if (response.requiresTwoFactor) {
+    setShow2FAInput(true);
+    return;
+  }
+
+  // Check for password change requirement
+  if (response.user.mustChangePassword) {
+    router.push('/change-password');
+    toast.info('Please change your temporary password');
+    return;
+  }
+
+  // Normal login flow
+  storeTokens(response);
+  router.push('/dashboard');
+};
 ```

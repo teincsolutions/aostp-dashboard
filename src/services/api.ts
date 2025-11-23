@@ -52,10 +52,22 @@ class ApiService {
       }
     );
 
-    // Response interceptor for handling 401 and token refresh
+    // Response interceptor for handling 401, 403, and token refresh
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error) => {
+        // Handle 403 Forbidden - Check for mustChangePassword
+        if (error.response?.status === 403) {
+          const message = error.response?.data?.message || "";
+          if (message.toLowerCase().includes("must change your password")) {
+            // Redirect to profile page with security tab
+            if (typeof window !== "undefined") {
+              window.location.href = "/profile?tab=security";
+            }
+          }
+        }
+
+        // Handle 401 Unauthorized - Token refresh
         if (error.response?.status === 401) {
           const authStore = useAuthStore.getState();
           const accessToken = authStore.tokens?.accessToken;

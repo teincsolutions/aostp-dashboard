@@ -29,6 +29,7 @@ export interface User {
   warehouseId: string | null;
   isActive: boolean;
   twoFactorEnabled: boolean;
+  mustChangePassword?: boolean;
   createdAt: string;
   updatedAt: string;
   lastLogin: string | null;

@@ -31,9 +31,19 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
 
         redirect("/login");
       }
+
+      // Check if user must change password and not already on profile page
+      if (
+        isAuthenticated &&
+        user?.mustChangePassword &&
+        pathname !== "/profile"
+      ) {
+        redirect("/profile?tab=security");
+      }
+
       setLoading(false);
     }
-  }, [isAuthenticated, isHydrated, pathname, loading]);
+  }, [isAuthenticated, isHydrated, pathname, loading, user]);
 
   if (loading) {
     return (
