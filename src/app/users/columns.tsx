@@ -118,7 +118,14 @@ export function getUserColumns(actions: UserActions): ColumnsType<User> {
             onClick: () => {
               Modal.confirm({
                 title: record.isActive ? "Deactivate user?" : "Activate user?",
-                onOk: () => actions.onToggleStatus(record.id, !record.isActive),
+                content: `Are you sure you want to ${
+                  record.isActive ? "deactivate" : "activate"
+                } ${record.firstName} ${record.lastName}?`,
+                okText: record.isActive ? "Deactivate" : "Activate",
+                okButtonProps: { danger: record.isActive },
+                onOk: async () => {
+                  await actions.onToggleStatus(record.id, !record.isActive);
+                },
               });
             },
           },

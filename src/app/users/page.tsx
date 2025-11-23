@@ -90,9 +90,15 @@ export default function UsersPage() {
   const handleToggleUserStatus = async (id: string, isActive: boolean) => {
     try {
       await toggleUserStatusMutation.mutateAsync({ id, isActive });
-      toast.success("User status updated");
-    } catch (error) {
-      toast.error("Failed to update user status");
+      toast.success(
+        `User ${isActive ? "activated" : "deactivated"} successfully`
+      );
+      refetch();
+    } catch (error: any) {
+      console.error("Toggle status error:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to update user status"
+      );
     }
   };
 
@@ -377,11 +383,19 @@ export default function UsersPage() {
                       title: viewingUser.isActive
                         ? "Deactivate user?"
                         : "Activate user?",
-                      onOk: () =>
-                        handleToggleUserStatus(
+                      content: `Are you sure you want to ${
+                        viewingUser.isActive ? "deactivate" : "activate"
+                      } ${viewingUser.firstName} ${viewingUser.lastName}?`,
+                      okText: viewingUser.isActive ? "Deactivate" : "Activate",
+                      okButtonProps: { danger: viewingUser.isActive },
+                      onOk: async () => {
+                        await handleToggleUserStatus(
                           viewingUser.id,
                           !viewingUser.isActive
-                        ),
+                        );
+                        setViewModal(false);
+                        setViewingUser(null);
+                      },
                     });
                   }
                 }}
