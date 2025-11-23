@@ -1,4 +1,3 @@
-
 import { User, UserCreatePayload, UserUpdatePayload, Role } from "@/types/user";
 import { apiService } from "./api";
 
@@ -53,6 +52,17 @@ const userService = {
     return res.data;
   },
 
+  resetPasswordWithToken: async (
+    token: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const res = await apiService.post(`/users/reset-password`, {
+      token,
+      newPassword,
+    });
+    return res.data;
+  },
+
   setUserRoles: async (id: string, roles: Role[]): Promise<User> => {
     const res = await apiService.patch(`/users/${id}/roles`, { roles });
     return res.data;
@@ -65,7 +75,7 @@ const userService = {
 
   disable2FA: async (id: string): Promise<User> => {
     const res = await apiService.post(`/users/${id}/2fa/disable`);
-    return res.data;  
+    return res.data;
   },
 };
 
