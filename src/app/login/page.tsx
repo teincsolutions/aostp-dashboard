@@ -42,8 +42,6 @@ const LoginPage: React.FC = () => {
       } else {
         router.push("/dashboard");
       }
-    } else {
-      setRedirectingLoading(false);
     }
   }, [isAuthenticated, router]);
 
@@ -80,7 +78,9 @@ const LoginPage: React.FC = () => {
         console.error("Login error:", error);
         setFieldError(
           "general",
-          error?.response ? error?.response?.data?.message : "An error occurred"
+          error?.response?.data?.message ||
+            error?.message ||
+            "An error occurred"
         );
       } finally {
         setSubmitting(false);
@@ -110,7 +110,9 @@ const LoginPage: React.FC = () => {
       } catch (error: any) {
         setFieldError(
           "twoFactorToken",
-          error?.response?.data?.message || "An error occurred"
+          error?.response?.data?.message ||
+            error?.message ||
+            "An error occurred"
         );
       } finally {
         setSubmitting(false);
@@ -136,9 +138,11 @@ const LoginPage: React.FC = () => {
               </Text>
             </div>
 
-            <Form
-              layout="vertical"
-              onFinish={twoFactorFormik.handleSubmit}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                twoFactorFormik.handleSubmit(e);
+              }}
               className="space-y-6"
             >
               <Form.Item
@@ -182,7 +186,7 @@ const LoginPage: React.FC = () => {
                   Back to Login
                 </Button>
               </Form.Item>
-            </Form>
+            </form>
 
             <Divider plain>Demo Credentials</Divider>
             <div className="text-center">
@@ -216,9 +220,11 @@ const LoginPage: React.FC = () => {
             <Text type="secondary">Sign in to your account</Text>
           </div>
 
-          <Form
-            layout="vertical"
-            onFinish={loginFormik.handleSubmit}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              loginFormik.handleSubmit(e);
+            }}
             className="space-y-4"
           >
             <Form.Item
@@ -291,7 +297,7 @@ const LoginPage: React.FC = () => {
                 Sign In
               </Button>
             </Form.Item>
-          </Form>
+          </form>
         </div>
       </Card>
       {redirectingLoading && (

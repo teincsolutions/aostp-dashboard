@@ -9,6 +9,8 @@ const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 // Single Axios instance with interceptors
 class ApiService {
   private axiosInstance: AxiosInstance;
+  private isRefreshing: boolean = false;
+  private failedQueue: any[] = [];
 
   constructor(baseUrl?: string, publicMode: boolean = false) {
     const config = baseUrl || NEXT_PUBLIC_API_BASE_URL;
@@ -31,6 +33,18 @@ class ApiService {
     } catch {
       return true;
     }
+  }
+
+  private processQueue(error: any, token: string | null = null) {
+    this.failedQueue.forEach((prom) => {
+      if (error) {
+        prom.reject(error);
+      } else {
+        prom.resolve(token);
+      }
+    });
+
+    this.failedQueue = [];
   }
 
   private setupInterceptors(): void {
@@ -60,36 +74,97 @@ class ApiService {
         if (error.response?.status === 403) {
           const message = error.response?.data?.message || "";
           if (message.toLowerCase().includes("must change your password")) {
-            // Redirect to profile page with security tab
+            // Only redirect if not already on profile page to prevent loop
             if (typeof window !== "undefined") {
-              window.location.href = "/profile?tab=security";
+              const currentPath = window.location.pathname;
+              if (!currentPath.startsWith("/profile")) {
+                window.location.href = "/profile?tab=security";
+              }
             }
           }
         }
 
         // Handle 401 Unauthorized - Token refresh
-        if (error.response?.status === 401) {
+        if (
+          error.response?.status === 401 &&
+          error.config &&
+          !error.config._retry
+        ) {
+          const originalRequest = error.config;
+
+          // Skip token refresh for login and refresh endpoints
+          if (
+            originalRequest.url?.includes("/auth/login") ||
+            originalRequest.url?.includes("/auth/refresh") ||
+            originalRequest.url?.includes("/auth/login/2fa")
+          ) {
+            // These are authentication endpoints, don't try to refresh token
+            // Just reject the error so the login form can handle it
+            return Promise.reject(error);
+          }
+
           const authStore = useAuthStore.getState();
           const accessToken = authStore.tokens?.accessToken;
-          if (accessToken && this.isTokenExpired(accessToken)) {
-            const refreshTokenValue = authStore.tokens?.refreshToken;
+          const refreshTokenValue = authStore.tokens?.refreshToken;
 
-            if (refreshTokenValue) {
-              try {
-                const newTokens = await refreshToken({
-                  refreshToken: refreshTokenValue,
+          // If no access token or refresh token, just reject (user not logged in)
+          if (!accessToken || !refreshTokenValue) {
+            // Don't redirect to login here - might be a login attempt
+            return Promise.reject(error);
+          }
+
+          // If token is expired, try to refresh
+          if (this.isTokenExpired(accessToken)) {
+            if (this.isRefreshing) {
+              // If already refreshing, queue this request
+              return new Promise((resolve, reject) => {
+                this.failedQueue.push({ resolve, reject });
+              })
+                .then((token) => {
+                  originalRequest.headers.set(
+                    "Authorization",
+                    `Bearer ${token}`
+                  );
+                  return this.axiosInstance.request(originalRequest);
+                })
+                .catch((err) => {
+                  return Promise.reject(err);
                 });
-                authStore.refreshTokens(newTokens);
-                // Retry the original request with new token
-                error.config.headers.set(
-                  "Authorization",
-                  `Bearer ${newTokens.accessToken}`
-                );
-                return this.axiosInstance.request(error.config);
-              } catch {
-                authStore.logout();
-              }
             }
+
+            originalRequest._retry = true;
+            this.isRefreshing = true;
+
+            try {
+              const newTokens = await refreshToken({
+                refreshToken: refreshTokenValue,
+              });
+              authStore.refreshTokens(newTokens);
+              this.isRefreshing = false;
+              this.processQueue(null, newTokens.accessToken);
+
+              // Retry the original request with new token
+              originalRequest.headers.set(
+                "Authorization",
+                `Bearer ${newTokens.accessToken}`
+              );
+              return this.axiosInstance.request(originalRequest);
+            } catch (refreshError) {
+              this.isRefreshing = false;
+              this.processQueue(refreshError, null);
+              authStore.logout();
+              if (typeof window !== "undefined") {
+                window.location.href = "/login";
+              }
+              return Promise.reject(refreshError);
+            }
+          } else {
+            // Token is not expired but got 401, logout
+            authStore.logout();
+            if (typeof window !== "undefined") {
+              window.location.href = "/login";
+            }
+            return Promise.reject(error);
           }
         }
         return Promise.reject(error);

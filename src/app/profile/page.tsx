@@ -65,6 +65,7 @@ export default function ProfilePage() {
     disable2FA,
     enable2FA,
     verify2FA,
+    logout,
   } = useAuth();
 
   const searchParams = useSearchParams();
@@ -218,16 +219,21 @@ export default function ProfilePage() {
                       };
                       const wasMustChange = user?.mustChangePassword;
                       changePassword.mutate(payload, {
-                        onSuccess: () => {
+                        onSuccess: async () => {
                           toast.success("Password changed successfully");
                           actions.resetForm();
 
                           // If this was a forced password change, log out and redirect to login
                           if (wasMustChange) {
-                            toast.info("Please log in with your new password");
-                            setTimeout(() => {
+                            toast.info("Please log in with your new password", {
+                              duration: 2000,
+                            });
+
+                            // Wait a moment for toast to show, then logout
+                            setTimeout(async () => {
+                              await logout.mutateAsync();
                               window.location.href = "/login";
-                            }, 2000);
+                            }, 1500);
                           }
                         },
                         onError: (error) => {

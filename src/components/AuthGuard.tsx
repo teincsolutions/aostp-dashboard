@@ -22,28 +22,29 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isHydrated) {
-      if (!isAuthenticated && !loading) {
-        // Store the current path for redirect after login
-        if (pathname && pathname !== "/login") {
-          localStorage.setItem("redirectAfterLogin", pathname);
-        }
+    if (!isHydrated) return;
 
-        redirect("/login");
+    if (!isAuthenticated) {
+      // Store the current path for redirect after login
+      if (pathname && pathname !== "/login") {
+        localStorage.setItem("redirectAfterLogin", pathname);
       }
-
-      // Check if user must change password and not already on profile page
-      if (
-        isAuthenticated &&
-        user?.mustChangePassword &&
-        !pathname?.startsWith("/profile")
-      ) {
-        redirect("/profile?tab=security");
-      }
-
-      setLoading(false);
+      redirect("/login");
+      return;
     }
-  }, [isAuthenticated, isHydrated, pathname, loading, user]);
+
+    // Check if user must change password and not already on profile page
+    if (
+      isAuthenticated &&
+      user?.mustChangePassword &&
+      !pathname?.startsWith("/profile")
+    ) {
+      redirect("/profile?tab=security");
+      return;
+    }
+
+    setLoading(false);
+  }, [isAuthenticated, isHydrated, pathname, user]);
 
   if (loading) {
     return (
