@@ -9,6 +9,7 @@ import {
   Select,
   Table,
   Modal,
+  Popconfirm,
   notification,
   Empty,
   Row,
@@ -142,8 +143,6 @@ export default function UsersPage() {
 
   // Get all warehouses for the edit form
   const availableWarehouses = warehousesData?.data || [];
-
-  const columns = getUserColumns(actions);
 
   return (
     <AuthGuard requiredRoles={[Role.SUPER_ADMIN]}>
@@ -374,34 +373,36 @@ export default function UsersPage() {
               >
                 Edit
               </Button>,
-              <Button
-                key="toggle"
-                danger={viewingUser?.isActive}
-                onClick={() => {
-                  if (viewingUser) {
-                    Modal.confirm({
-                      title: viewingUser.isActive
-                        ? "Deactivate user?"
-                        : "Activate user?",
-                      content: `Are you sure you want to ${
-                        viewingUser.isActive ? "deactivate" : "activate"
-                      } ${viewingUser.firstName} ${viewingUser.lastName}?`,
-                      okText: viewingUser.isActive ? "Deactivate" : "Activate",
-                      okButtonProps: { danger: viewingUser.isActive },
-                      onOk: async () => {
-                        await handleToggleUserStatus(
-                          viewingUser.id,
-                          !viewingUser.isActive
-                        );
-                        setViewModal(false);
-                        setViewingUser(null);
-                      },
-                    });
+              viewingUser && (
+                <Popconfirm
+                  key="toggle"
+                  title={
+                    viewingUser.isActive ? "Deactivate user?" : "Activate user?"
                   }
-                }}
-              >
-                {viewingUser?.isActive ? "Deactivate" : "Activate"}
-              </Button>,
+                  description={`Are you sure you want to ${
+                    viewingUser.isActive ? "deactivate" : "activate"
+                  } ${viewingUser.firstName} ${viewingUser.lastName}?`}
+                  onConfirm={() => {
+                    handleToggleUserStatus(
+                      viewingUser.id,
+                      !viewingUser.isActive
+                    ).then(() => {
+                      setViewModal(false);
+                      setViewingUser(null);
+                    });
+                  }}
+                  okText={viewingUser.isActive ? "Deactivate" : "Activate"}
+                  cancelText="Cancel"
+                  okButtonProps={{
+                    danger: viewingUser.isActive,
+                    type: viewingUser.isActive ? "default" : "primary",
+                  }}
+                >
+                  <Button key="toggle-btn" danger={viewingUser.isActive}>
+                    {viewingUser.isActive ? "Deactivate" : "Activate"}
+                  </Button>
+                </Popconfirm>
+              ),
               <Button
                 key="reset"
                 onClick={() => {

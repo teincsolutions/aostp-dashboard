@@ -1,7 +1,13 @@
 import { ColumnsType } from "antd/es/table";
-import { Tooltip, Button, Dropdown } from "antd";
-import { MoreOutlined } from "@ant-design/icons";
-import { Modal } from "antd";
+import { Tooltip, Button, Dropdown, Popconfirm, Space } from "antd";
+import {
+  MoreOutlined,
+  EyeOutlined,
+  EditOutlined,
+  StopOutlined,
+  CheckCircleOutlined,
+  KeyOutlined,
+} from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { User, Role, UserStatus } from "@/types/user";
 
@@ -99,47 +105,61 @@ export function getUserColumns(actions: UserActions): ColumnsType<User> {
       title: "Actions",
       key: "actions",
       fixed: "right",
-      width: 80,
+      width: 200,
       render: (_: any, record: User) => {
-        const menuItems: MenuProps["items"] = [
-          {
-            key: "view",
-            label: "View",
-            onClick: () => actions.onView(record),
-          },
-          {
-            key: "edit",
-            label: "Edit",
-            onClick: () => actions.onEdit(record),
-          },
-          {
-            key: "toggle",
-            label: record.isActive ? "Deactivate" : "Activate",
-            onClick: () => {
-              Modal.confirm({
-                title: record.isActive ? "Deactivate user?" : "Activate user?",
-                content: `Are you sure you want to ${
-                  record.isActive ? "deactivate" : "activate"
-                } ${record.firstName} ${record.lastName}?`,
-                okText: record.isActive ? "Deactivate" : "Activate",
-                okButtonProps: { danger: record.isActive },
-                onOk: async () => {
-                  await actions.onToggleStatus(record.id, !record.isActive);
-                },
-              });
-            },
-          },
-          {
-            key: "reset",
-            label: "Reset Password",
-            onClick: () => actions.onResetPassword(record),
-          },
-        ];
-
+        const isActivating = !record.isActive;
         return (
-          <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
-            <Button type="text" icon={<MoreOutlined />} />
-          </Dropdown>
+          <Space size="small">
+            <Tooltip title="View Details">
+              <Button
+                type="text"
+                icon={<EyeOutlined />}
+                onClick={() => actions.onView(record)}
+              />
+            </Tooltip>
+
+            <Tooltip title="Edit User">
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => actions.onEdit(record)}
+              />
+            </Tooltip>
+
+            <Tooltip title={isActivating ? "Activate User" : "Deactivate User"}>
+              <Popconfirm
+                title={isActivating ? "Activate user?" : "Deactivate user?"}
+                description={`Are you sure you want to ${
+                  isActivating ? "activate" : "deactivate"
+                } ${record.firstName} ${record.lastName}?`}
+                onConfirm={() =>
+                  actions.onToggleStatus(record.id, isActivating)
+                }
+                okText={isActivating ? "Activate" : "Deactivate"}
+                cancelText="Cancel"
+                okButtonProps={{
+                  danger: !isActivating,
+                  type: isActivating ? "primary" : "default",
+                }}
+              >
+                <Button
+                  type="text"
+                  icon={
+                    isActivating ? <CheckCircleOutlined /> : <StopOutlined />
+                  }
+                  danger={!isActivating}
+                />
+              </Popconfirm>
+            </Tooltip>
+
+            <Tooltip title="Reset Password">
+              <Button
+                type="text"
+                icon={<KeyOutlined />}
+                onClick={() => actions.onResetPassword(record)}
+              />
+            </Tooltip>
+          </Space>
         );
       },
     },
