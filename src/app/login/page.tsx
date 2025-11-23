@@ -107,10 +107,10 @@ const LoginPage: React.FC = () => {
           router.push("/profile?tab=security");
         }
         // Otherwise, isAuthenticated will trigger redirect via useEffect
-      } catch (error) {
+      } catch (error: any) {
         setFieldError(
           "twoFactorToken",
-          error instanceof Error ? error.message : "An error occurred"
+          error?.response?.data?.message || "An error occurred"
         );
       } finally {
         setSubmitting(false);
