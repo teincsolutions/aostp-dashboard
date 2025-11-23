@@ -153,11 +153,16 @@ export function getUserColumns(actions: UserActions): ColumnsType<User> {
             </Tooltip>
 
             <Tooltip title="Reset Password">
-              <Button
-                type="text"
-                icon={<KeyOutlined />}
-                onClick={() => actions.onResetPassword(record)}
-              />
+              <Popconfirm
+                title="Reset Password"
+                description={`Are you sure you want to reset the password for ${record.firstName} ${record.lastName}? This will send a password reset email to the user.`}
+                onConfirm={() => actions.onResetPassword(record)}
+                okText="Yes, Reset"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true }}
+              >
+                <Button type="text" icon={<KeyOutlined />} danger />
+              </Popconfirm>
             </Tooltip>
           </Space>
         );

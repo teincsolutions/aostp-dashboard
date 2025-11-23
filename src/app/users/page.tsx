@@ -103,19 +103,15 @@ export default function UsersPage() {
     }
   };
 
-  const handleResetUserPassword = (user: User) => {
-    Modal.confirm({
-      title: "Reset Password",
-      content: `Are you sure you want to reset the password for ${user.firstName} ${user.lastName}? This will send a password reset email to the user.`,
-      onOk: async () => {
-        try {
-          await resetPasswordMutation.mutateAsync({ id: user.id });
-          toast.success("Password reset email sent successfully");
-        } catch (error) {
-          toast.error("Failed to send password reset email");
-        }
-      },
-    });
+  const handleResetUserPassword = async (user: User) => {
+    try {
+      await resetPasswordMutation.mutateAsync({ id: user.id });
+      toast.success("Password reset email sent successfully");
+      refetch();
+    } catch (error) {
+      console.error("Failed to reset password:", error);
+      toast.error("Failed to send password reset email");
+    }
   };
 
   const handleTableChange = (
@@ -403,16 +399,19 @@ export default function UsersPage() {
                   </Button>
                 </Popconfirm>
               ),
-              <Button
+              <Popconfirm
                 key="reset"
-                onClick={() => {
-                  if (viewingUser) {
-                    handleResetUserPassword(viewingUser);
-                  }
-                }}
+                title="Reset Password"
+                description={`Are you sure you want to reset the password for ${viewingUser?.firstName} ${viewingUser?.lastName}? This will send a password reset email to the user.`}
+                onConfirm={() =>
+                  viewingUser && handleResetUserPassword(viewingUser)
+                }
+                okText="Yes, Reset"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true }}
               >
-                Reset Password
-              </Button>,
+                <Button danger>Reset Password</Button>
+              </Popconfirm>,
             ]}
             destroyOnHidden
           >
