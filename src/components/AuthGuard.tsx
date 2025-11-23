@@ -36,7 +36,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
       if (
         isAuthenticated &&
         user?.mustChangePassword &&
-        pathname !== "/profile"
+        !pathname?.startsWith("/profile")
       ) {
         redirect("/profile?tab=security");
       }
