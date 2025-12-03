@@ -35,9 +35,9 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
 
   const { data: packingList } = usePackingList(packingListId);
 
-  const handleAssignPackages = () => {
+  const handleAssignPackages = async () => {
     try {
-      addPackagesToPackingList.mutateAsync({
+      await addPackagesToPackingList.mutateAsync({
         id: packingListId,
         packageIds: selectedPackageIds,
       });
@@ -65,13 +65,14 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
     }
   };
 
-  const handleRemovePackage = (packageId: string) => {
+  const handleRemovePackage = async (packageId: string) => {
     try {
-      removePackagesFromPackingList.mutateAsync({
+      await removePackagesFromPackingList.mutateAsync({
         id: packingListId,
         packageIds: packageId,
       });
       setSelectedPackageIds((prev) => prev.filter((id) => id !== packageId));
+      toast.success("Package removed successfully");
     } catch (error) {
       handleError(error);
     }

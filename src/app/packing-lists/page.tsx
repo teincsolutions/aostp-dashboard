@@ -111,12 +111,10 @@ export default function PackingListsPage() {
     isDeleting,
   } = usePackingListMutations();
 
-  const { data: packingListDetails } = usePackingList(
-    detailsPackingList?.id || ""
-  );
-  const { data: packingListSummary } = usePackingListSummary(
-    detailsPackingList?.id || ""
-  );
+  const { data: packingListDetails, refetch: refetchPackingListDetails } =
+    usePackingList(detailsPackingList?.id || "");
+  const { data: packingListSummary, refetch: refetchPackingListSummary } =
+    usePackingListSummary(detailsPackingList?.id || "");
 
   // Use all active containers
   const filteredContainers = activeContainers;
@@ -492,10 +490,20 @@ export default function PackingListsPage() {
             onCancel={() => {
               setIsPackageAssignmentModalVisible(false);
               setCurrentAssignmentsPackingListId("");
+              // Refetch details and summary when modal closes
+              if (detailsPackingList?.id) {
+                refetchPackingListDetails();
+                refetchPackingListSummary();
+              }
             }}
             onConfirm={() => {
               setIsPackageAssignmentModalVisible(false);
               setCurrentAssignmentsPackingListId("");
+              // Refetch details and summary when modal closes
+              if (detailsPackingList?.id) {
+                refetchPackingListDetails();
+                refetchPackingListSummary();
+              }
             }}
             packingListId={currentAssignmentsPackingListId}
           />
@@ -529,14 +537,14 @@ export default function PackingListsPage() {
                   </Descriptions.Item>
                   <Descriptions.Item label="Loading Date">
                     {packingListDetails.loadingDate
-                      ? new Date(
-                          packingListDetails.loadingDate
-                        ).toLocaleDateString()
+                      ? dayjs(packingListDetails.loadingDate).format(
+                          "DD MMM, YYYY"
+                        )
                       : "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="ETA">
                     {packingListDetails.eta
-                      ? new Date(packingListDetails.eta).toLocaleDateString()
+                      ? dayjs(packingListDetails.eta).format("DD MMM, YYYY")
                       : "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Status">

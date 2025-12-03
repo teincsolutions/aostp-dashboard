@@ -2,6 +2,7 @@
 import { ColumnsType } from "antd/es/table";
 import { Button, Popconfirm, Space, Tooltip } from "antd";
 import { Payment } from "@/types/payment";
+import dayjs from "dayjs";
 
 export const getPaymentColumns = ({
   handleDelete,
@@ -41,7 +42,7 @@ export const getPaymentColumns = ({
       dataIndex: "processedAt",
       key: "processedAt",
       width: 140,
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
     },
     {
       title: "Method",

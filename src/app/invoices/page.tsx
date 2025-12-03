@@ -28,6 +28,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { InvoiceModal } from "@/components/InvoiceModal";
 import { useInvoices, useRegenerateInvoicePdf } from "@/hooks/useInvoices";
 import { Invoice, InvoiceStatus } from "@/types/invoice";
+import dayjs from "dayjs";
 
 const { Option } = Select;
 
@@ -176,7 +177,7 @@ export default function InvoicesPage() {
       dataIndex: "createdAt",
       key: "createdAt",
       sorter: true,
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
     },
     {
       title: "Actions",

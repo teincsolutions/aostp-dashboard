@@ -398,7 +398,10 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                     />
                   </Form.Item>
 
-                  <Form.Item label="Destination City" name="destinationCityId">
+                  <Form.Item
+                    label="Destination City (Optional)"
+                    name="destinationCityId"
+                  >
                     <Select
                       showSearch
                       placeholder="Select destination city"
@@ -475,18 +478,18 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                 <div className="space-y-4">
                   {form.getFieldValue("shippingMode") === ShippingMode.AIR && (
                     <Form.Item
-                      label="Weight (kg)"
+                      label="Weight (kg) - Optional"
                       name="weight"
-                      rules={[{ required: true, type: "number", min: 0.01 }]}
+                      rules={[{ type: "number", min: 0.01 }]}
                     >
                       <InputNumber min={0.01} className="w-full" />
                     </Form.Item>
                   )}
                   {form.getFieldValue("shippingMode") === ShippingMode.SEA && (
                     <Form.Item
-                      label="CBM (m³)"
+                      label="CBM (m³) - Optional"
                       name="cbm"
-                      rules={[{ required: true, type: "number", min: 0 }]}
+                      rules={[{ type: "number", min: 0 }]}
                     >
                       <InputNumber min={0} className="w-full" />
                     </Form.Item>
@@ -499,15 +502,22 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                     <InputNumber min={1} className="w-full" />
                   </Form.Item>
 
-                  <Form.Item label="Shipping Currency" name="shippingCurrency">
-                    <Select placeholder="Select currency" className="w-full">
+                  <Form.Item
+                    label="Shipping Currency (Optional)"
+                    name="shippingCurrency"
+                  >
+                    <Select
+                      placeholder="Select currency"
+                      className="w-full"
+                      allowClear
+                    >
                       <Option value={Currency.USD}>USD</Option>
                       <Option value={Currency.GHS}>GHS</Option>
                     </Select>
                   </Form.Item>
 
                   <Form.Item
-                    label="Shipping Rate"
+                    label="Shipping Rate (Optional)"
                     name="shippingRate"
                     rules={[{ type: "number", min: 0 }]}
                   >
@@ -515,7 +525,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                   </Form.Item>
 
                   <Form.Item
-                    label="Shipping Cost"
+                    label="Shipping Cost (Optional)"
                     name="shippingCost"
                     rules={[{ type: "number", min: 0 }]}
                   >
@@ -542,16 +552,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                       ))}
                     </Select>
                   </Form.Item>
-                  <Form.Item
-                    label="Pickup Code"
-                    name="pickupCode"
-                    rules={[
-                      {
-                        pattern: /^[A-Za-z0-9]*$/,
-                        message: "Only letters and numbers allowed",
-                      },
-                    ]}
-                  >
+                  <Form.Item label="Pickup Code (Optional)" name="pickupCode">
                     <Input placeholder="Enter pickup code" maxLength={20} />
                   </Form.Item>
                   <Form.Item label="Notes" name="notes">

@@ -37,6 +37,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import { InvoiceModal } from "@/components/InvoiceModal";
+import dayjs from "dayjs";
 
 import {
   useAllPayments,
@@ -494,7 +495,7 @@ export default function PaymentsPage() {
                     dataIndex="dueDate"
                     key="dueDate"
                     render={(date: string) =>
-                      new Date(date).toLocaleDateString()
+                      dayjs(date).format("DD MMM, YYYY")
                     }
                   />
                 </Table>

@@ -131,7 +131,7 @@ export default function ContainersPage() {
   const cities = citiesData?.data || [];
 
   const getCityName = (cityId: string) => {
-    const city = cities.find(c => c.id === cityId);
+    const city = cities.find((c) => c.id === cityId);
     return city ? `${city.name}, ${city.country}` : cityId;
   };
 
@@ -581,20 +581,19 @@ export default function ContainersPage() {
                 <Card title="Container Details">
                   <div className="space-y-2">
                     <div>
-                      <strong>Route:</strong> {getCityName(viewingContainer?.departureCityId || "")}{" "}
-                      → {getCityName(viewingContainer?.destinationCityId || "")}
+                      <strong>Route:</strong>{" "}
+                      {getCityName(viewingContainer?.departureCityId || "")} →{" "}
+                      {getCityName(viewingContainer?.destinationCityId || "")}
                     </div>
                     <div>
                       <strong>Loading Date:</strong>{" "}
-                      {new Date(
-                        viewingContainer?.loadingDate || ""
-                      ).toLocaleDateString()}
+                      {dayjs(viewingContainer?.loadingDate).format(
+                        "DD MMM, YYYY"
+                      )}
                     </div>
                     <div>
                       <strong>ETA:</strong>{" "}
-                      {new Date(
-                        viewingContainer?.eta || ""
-                      ).toLocaleDateString()}
+                      {dayjs(viewingContainer?.eta).format("DD MMM, YYYY")}
                     </div>
                     <div>
                       <strong>Current Status:</strong>{" "}

@@ -24,6 +24,7 @@ import {
 } from "@ant-design/icons";
 import { Customer } from "@/types/customer";
 import { useCustomerStats } from "@/hooks/useCustomers";
+import dayjs from "dayjs";
 
 interface CustomerDetailsModalProps {
   visible: boolean;
@@ -64,7 +65,13 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       displayAmount: invoice.totalAmount,
       currency: invoice.currency || "USD",
       date: invoice.createdAt,
-      description: `Invoice #${invoice.invoiceNumber}`,
+      description: `Invoice #${invoice.invoiceNumber}${
+        invoice.exchangeRate?.rate
+          ? ` | Rate: ${invoice.exchangeRate.rate.toFixed(4)} ${
+              invoice.exchangeRate.fromCurrency
+            }/${invoice.exchangeRate.toCurrency}`
+          : ""
+      }`,
       status: invoice.status,
     })) || []),
     ...(customerStatsData?.customer?.payments?.map((payment: any) => {
@@ -79,7 +86,11 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         displayAmount: payment.amount,
         currency: payment.currency,
         date: payment.createdAt,
-        description: `Payment - ${payment.paymentMethod || "N/A"}`,
+        description: `Payment - ${payment.paymentMethod || "N/A"}${
+          payment.invoice?.invoiceNumber
+            ? ` | Invoice #${payment.invoice.invoiceNumber}`
+            : ""
+        }`,
       };
     }) || []),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Oldest first for running balance
@@ -143,7 +154,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       title: "Date",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
     },
   ];
 
@@ -152,7 +163,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       title: "Date",
       dataIndex: "date",
       key: "date",
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
     },
     {
       title: "Type",
@@ -258,19 +269,21 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                   .map(
                     (transaction) => `
                       <tr>
-                        <td>${new Date(
-                          transaction.date
-                        ).toLocaleDateString()}</td>
+                        <td>${dayjs(transaction.date).format(
+                          "DD MMM, YYYY"
+                        )}</td>
                         <td>${
                           transaction.type === "invoice" ? "Invoice" : "Payment"
                         }</td>
                         <td>${transaction.description}</td>
-                        <td>${
-                          transaction.type === "invoice" ? "+" : "-"
-                        }$${transaction.displayAmount.toFixed(2)}</td>
+                        <td>${transaction.type === "invoice" ? "+" : "-"}${
+                      transaction.currency
+                    }${transaction.displayAmount.toFixed(2)}</td>
                         <td class="${
                           transaction.balance >= 0 ? "positive" : "negative"
-                        }">$${transaction.balance.toFixed(2)}</td>
+                        }">${transaction.currency}${transaction.balance.toFixed(
+                      2
+                    )}</td>
                       </tr>
                     `
                   )

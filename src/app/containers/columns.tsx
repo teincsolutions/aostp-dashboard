@@ -10,6 +10,7 @@ import type { ColumnsType } from "antd/es/table";
 import type { Container } from "@/types/container";
 import { ContainerStatus, ExportFormat } from "@/types/container";
 import { City } from "@/types/exchangeRate";
+import dayjs from "dayjs";
 
 const { Text } = Typography;
 
@@ -53,7 +54,7 @@ export const getContainerColumns = (
     title: "Loading Date",
     dataIndex: "loadingDate",
     key: "loadingDate",
-    render: (date: string) => new Date(date).toLocaleDateString(),
+    render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
     sorter: true,
   },
   {
@@ -72,7 +73,7 @@ export const getContainerColumns = (
     title: "ETA",
     dataIndex: "eta",
     key: "eta",
-    render: (date: string) => new Date(date).toLocaleDateString(),
+    render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
     sorter: true,
   },
   {
@@ -126,7 +127,7 @@ export const getContainerColumns = (
     title: "Created At",
     dataIndex: "createdAt",
     key: "createdAt",
-    render: (date: string) => new Date(date).toLocaleDateString(),
+    render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
     sorter: true,
   },
   {

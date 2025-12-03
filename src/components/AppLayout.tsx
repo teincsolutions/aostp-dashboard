@@ -77,7 +77,12 @@ export const menuItems: Array<MenuItem> = [
     key: "/customers",
     icon: <TeamOutlined />,
     label: "Customers",
-    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
+    roles: [
+      "SUPER_ADMIN",
+      "OPERATIONS_CLERK",
+      "FINANCE_MANAGER",
+      "PAYMENT_CLERK",
+    ],
   },
   {
     key: "/cities",

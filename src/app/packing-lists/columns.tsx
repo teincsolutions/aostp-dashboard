@@ -11,6 +11,7 @@ import type { PackingList } from "@/types/packingList";
 import { PackingListStatus } from "@/types/packingList";
 import { City } from "@/types/exchangeRate";
 import { Container } from "@/types/container";
+import dayjs from "dayjs";
 export const packingListStatusColors = {
   [PackingListStatus.DRAFT]: "default",
   [PackingListStatus.POSTED]: "green",
@@ -36,7 +37,7 @@ export const getPackingListColumns = (
     title: "Loading Date",
     dataIndex: "loadingDate",
     key: "loadingDate",
-    render: (date: string) => new Date(date).toLocaleDateString(),
+    render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
     sorter: true,
   },
 
@@ -44,7 +45,7 @@ export const getPackingListColumns = (
     title: "ETA",
     dataIndex: "eta",
     key: "eta",
-    render: (eta: string) => (eta ? new Date(eta).toLocaleDateString() : "N/A"),
+    render: (eta: string) => (eta ? dayjs(eta).format("DD MMM, YYYY") : "N/A"),
     sorter: true,
   },
   {
@@ -52,7 +53,10 @@ export const getPackingListColumns = (
     dataIndex: "container",
     key: "container",
     render: (container: Container) => (
-      <span>{`${container?.destinationCity?.name}, ${container?.destinationCity?.country}` || "N/A"}</span>
+      <span>
+        {`${container?.destinationCity?.name}, ${container?.destinationCity?.country}` ||
+          "N/A"}
+      </span>
     ),
   },
   {
@@ -93,7 +97,7 @@ export const getPackingListColumns = (
     title: "Created At",
     dataIndex: "createdAt",
     key: "createdAt",
-    render: (date: string) => new Date(date).toLocaleDateString(),
+    render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
     sorter: true,
   },
   {

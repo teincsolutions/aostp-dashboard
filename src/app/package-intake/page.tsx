@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { InvoiceStatus } from "@/types/invoice";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useAuth } from "@/hooks/useAuth";
+import dayjs from "dayjs";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -439,9 +440,9 @@ export default function PackageIntakePage() {
                                     {invoice.invoiceNumber}
                                   </div>
                                   <div className="text-sm text-gray-600">
-                                    {new Date(
-                                      invoice.createdAt
-                                    ).toLocaleDateString()}
+                                    {dayjs(invoice.createdAt).format(
+                                      "DD MMM, YYYY"
+                                    )}
                                   </div>
                                 </div>
                                 <div className="text-right">
@@ -489,10 +490,9 @@ export default function PackageIntakePage() {
                   </Form.Item>
 
                   <Form.Item
-                    label="Tracking Code"
+                    label="Tracking Code (Optional)"
                     name="trackingCode"
                     rules={[
-                      { required: true, message: "Tracking code is required" },
                       {
                         min: 3,
                         message: "Tracking code must be at least 3 characters",
@@ -583,36 +583,6 @@ export default function PackageIntakePage() {
                       ) : null;
                     }}
                   </Form.Item>
-
-                  <Form.Item
-                    shouldUpdate={(prevValues, currentValues) =>
-                      prevValues.shippingMode !== currentValues.shippingMode
-                    }
-                    noStyle
-                  >
-                    {({ getFieldValue }) => {
-                      const shippingMode = getFieldValue("shippingMode");
-                      return shippingMode === "AIR" ? (
-                        <Form.Item
-                          label="Weight (kg)"
-                          name="weight"
-                          rules={[
-                            { required: true, type: "number", min: 0.01 },
-                          ]}
-                        >
-                          <InputNumber min={0.01} className="w-full" />
-                        </Form.Item>
-                      ) : shippingMode === "SEA" ? (
-                        <Form.Item
-                          label="CBM (m³)"
-                          name="cbm"
-                          rules={[{ required: true, type: "number", min: 0 }]}
-                        >
-                          <InputNumber min={0} className="w-full" />
-                        </Form.Item>
-                      ) : null;
-                    }}
-                  </Form.Item>
                 </div>
               </Card>
               {/* Warehouse & Additional Info Card */}
@@ -651,16 +621,7 @@ export default function PackageIntakePage() {
                     </div>
                   )}
 
-                  <Form.Item
-                    label="Pickup Code"
-                    name="pickupCode"
-                    rules={[
-                      {
-                        pattern: /^[A-Za-z0-9]+$/,
-                        message: "Only letters and numbers allowed",
-                      },
-                    ]}
-                  >
+                  <Form.Item label="Pickup Code (Optional)" name="pickupCode">
                     <Input placeholder="Enter pickup code" maxLength={20} />
                   </Form.Item>
 
