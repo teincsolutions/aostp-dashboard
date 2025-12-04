@@ -1,8 +1,10 @@
 // src/types/customer.ts
 
+import { City } from "./exchangeRate";
 import { Invoice } from "./invoice";
 import { Package } from "./package";
 import { Payment } from "./payment";
+import { Warehouse } from "./warehouse";
 
 export enum CustomerStatus {
   ACTIVE = "ACTIVE",
@@ -18,8 +20,10 @@ export interface Customer {
   phoneNumber: string;
   alternatePhone?: string;
   address?: string;
-  city: string;
-  country: string;
+  cityRef?: City;
+  warehouse?: Warehouse;
+  warehouseId?: string;
+  cityId?: string;
   idType: "NATIONAL_ID" | "PASSPORT" | "DRIVER_LICENSE";
   idNumber: string;
   preferredChannel?: string;
@@ -40,8 +44,8 @@ export interface CustomerCreatePayload {
   phoneNumber: string;
   alternatePhone?: string;
   address?: string;
-  city: string;
-  country: string;
+  cityId?: string;
+  warehouseId?: string;
   idType: "NATIONAL_ID" | "PASSPORT" | "DRIVER_LICENSE";
   idNumber: string;
   preferredChannel?: string;
@@ -54,8 +58,8 @@ export interface CustomerUpdatePayload {
   phoneNumber?: string;
   alternatePhone?: string;
   address?: string;
-  city?: string;
-  country?: string;
+  cityId?: string;
+  warehouseId?: string;
   idType?: "NATIONAL_ID" | "PASSPORT" | "DRIVER_LICENSE";
   idNumber?: string;
   preferredChannel?: string;

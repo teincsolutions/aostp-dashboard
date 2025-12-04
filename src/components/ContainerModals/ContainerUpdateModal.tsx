@@ -83,13 +83,18 @@ const ContainerUpdateModal: React.FC<ContainerUpdateModalProps> = ({
         layout="vertical"
         onFinish={(values) => {
           if (!container) return;
+
+          // Build payload with all fields
           const payload: ContainerUpdatePayload = {
-            ...values,
+            departureCityId: values.departureCityId,
+            destinationCityId: values.destinationCityId,
             loadingDate: values.loadingDate
               ? (values.loadingDate as Dayjs).toISOString()
-              : null,
-            eta: values.eta ? (values.eta as Dayjs).toISOString() : null,
+              : undefined,
+            eta: values.eta ? (values.eta as Dayjs).toISOString() : undefined,
+            notes: values.notes || "",
           };
+
           onSubmit(container.id, payload);
         }}
       >
@@ -163,14 +168,13 @@ const ContainerUpdateModal: React.FC<ContainerUpdateModalProps> = ({
             <Form.Item
               name="containerType"
               label="Container Type"
-              rules={[
-                {
-                  required: true,
-                  message: "Please select container type",
-                },
-              ]}
+              tooltip="Container type cannot be changed after creation"
             >
-              <Select placeholder="Select container type" value={form.getFieldValue("containerType")}>
+              <Select
+                placeholder="Select container type"
+                disabled
+                value={form.getFieldValue("containerType")}
+              >
                 <Option value={ContainerType.CONTAINER}>
                   Container (Sea Freight)
                 </Option>

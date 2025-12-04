@@ -1,15 +1,15 @@
 // src/app/customers/columns.tsx
 
-import { ColumnsType } from 'antd/es/table';
-import { Button, Tooltip } from 'antd';
+import { ColumnsType } from "antd/es/table";
+import { Button, Tooltip } from "antd";
 import {
   EditOutlined,
   CheckOutlined,
   StopOutlined,
   BarChartOutlined,
   ExportOutlined,
-} from '@ant-design/icons';
-import { Customer } from '@/types/customer';
+} from "@ant-design/icons";
+import { Customer } from "@/types/customer";
 
 interface CustomerActions {
   onEdit: (customer: Customer) => void;
@@ -22,93 +22,102 @@ interface CustomerActions {
   };
 }
 
-export function getCustomerColumns(actions: CustomerActions): ColumnsType<Customer> {
+export function getCustomerColumns(
+  actions: CustomerActions
+): ColumnsType<Customer> {
   return [
     {
-      title: 'Customer Code',
-      dataIndex: 'customerCode',
-      key: 'customerCode',
+      title: "Customer Code",
+      dataIndex: "customerCode",
+      key: "customerCode",
       sorter: true,
       width: 140,
     },
     {
-      title: 'Name',
-      dataIndex: 'firstName',
-      key: 'name',
+      title: "Name",
+      dataIndex: "firstName",
+      key: "name",
       sorter: true,
       width: 180,
-      render: (_: unknown, record: Customer) => `${record.firstName} ${record.lastName}`,
+      render: (_: unknown, record: Customer) =>
+        `${record.firstName} ${record.lastName}`,
     },
     {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
       sorter: true,
       width: 200,
     },
     {
-      title: 'Phone',
-      dataIndex: 'phoneNumber',
-      key: 'phoneNumber',
+      title: "Phone",
+      dataIndex: "phoneNumber",
+      key: "phoneNumber",
       sorter: true,
       width: 140,
     },
     {
-      title: 'ID Type',
-      dataIndex: 'idType',
-      key: 'idType',
+      title: "ID Type",
+      dataIndex: "idType",
+      key: "idType",
       width: 120,
+      render: (idType: string) => (idType ? idType.replace("_", " ") : "N/A"),
       filters: [
-        { text: 'NATIONAL_ID', value: 'NATIONAL_ID' },
-        { text: 'PASSPORT', value: 'PASSPORT' },
-        { text: 'DRIVER_LICENSE', value: 'DRIVER_LICENSE' },
+        { text: "NATIONAL ID", value: "NATIONAL_ID" },
+        { text: "PASSPORT", value: "PASSPORT" },
+        { text: "DRIVER LICENSE", value: "DRIVER_LICENSE" },
       ],
     },
     {
-      title: 'ID Number',
-      dataIndex: 'idNumber',
-      key: 'idNumber',
+      title: "ID Number",
+      dataIndex: "idNumber",
+      key: "idNumber",
       width: 160,
+      render: (idNumber: string) => idNumber || "N/A",
     },
     {
-      title: 'City',
-      dataIndex: 'city',
-      key: 'city',
+      title: "City",
+      key: "city",
       width: 120,
-      filters: [],
+      render: (_: unknown, record: Customer) => record.cityRef?.name || "N/A",
     },
     {
-      title: 'Country',
-      dataIndex: 'country',
-      key: 'country',
+      title: "Country",
+      key: "country",
       width: 120,
-      filters: [],
+      render: (_: unknown, record: Customer) =>
+        record.cityRef?.country || "N/A",
     },
-  {
-    title: 'Status',
-    dataIndex: 'isActive',
-    key: 'isActive',
-    width: 100,
-    filters: [
-      { text: 'Active', value: true },
-      { text: 'Inactive', value: false },
-    ],
-    render: (isActive: boolean) =>
-      isActive ? 'Active' : 'Inactive',
-  },
     {
-      title: 'Created At',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      title: "Warehouse",
+      key: "warehouse",
+      width: 150,
+      render: (_: unknown, record: Customer) => record.warehouse?.name || "N/A",
+    },
+    {
+      title: "Status",
+      dataIndex: "isActive",
+      key: "isActive",
+      width: 100,
+      filters: [
+        { text: "Active", value: true },
+        { text: "Inactive", value: false },
+      ],
+      render: (isActive: boolean) => (isActive ? "Active" : "Inactive"),
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
       sorter: true,
       width: 160,
     },
     {
-      title: 'Actions',
-      key: 'actions',
+      title: "Actions",
+      key: "actions",
       width: 220,
       render: (_: unknown, record: Customer) => (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: "flex", gap: 8 }}>
           <Tooltip title="Edit">
             <Button
               icon={<EditOutlined />}
@@ -116,14 +125,16 @@ export function getCustomerColumns(actions: CustomerActions): ColumnsType<Custom
               onClick={() => actions.onEdit(record)}
             />
           </Tooltip>
-          <Tooltip title={record.isActive ? 'Deactivate' : 'Activate'}>
+          <Tooltip title={record.isActive ? "Deactivate" : "Activate"}>
             <Button
               icon={record.isActive ? <StopOutlined /> : <CheckOutlined />}
               size="small"
               loading={actions.loading?.toggling}
-              onClick={() => actions.onToggleStatus(record.id, !record.isActive)}
+              onClick={() =>
+                actions.onToggleStatus(record.id, !record.isActive)
+              }
               danger={record.isActive}
-              type={record.isActive ? 'default' : 'primary'}
+              type={record.isActive ? "default" : "primary"}
             />
           </Tooltip>
           <Tooltip title="View Stats">

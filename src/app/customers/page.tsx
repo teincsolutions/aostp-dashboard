@@ -36,8 +36,6 @@ import {
 import {
   CustomerCreatePayload,
   CustomerUpdatePayload,
-  IdType,
-  PreferredChannel,
   Customer,
 } from "@/types/customer";
 import { getCustomerColumns } from "@/app/customers/columns";
@@ -50,8 +48,8 @@ export default function CustomersPage() {
   // State for UI
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [idTypeFilter, setIdTypeFilter] = useState<string>("");
-  const [channelFilter, setChannelFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortOrder, setSortOrder] = useState<string>("desc");
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
@@ -70,10 +68,10 @@ export default function CustomersPage() {
   const { data: customers, isLoading } = useCustomers({
     page: currentPage,
     limit: pageSize,
-    search: searchText,
+    search: searchText || undefined,
     isActive: statusFilter ? statusFilter === "active" : undefined,
-    idType: idTypeFilter || undefined,
-    preferredChannel: channelFilter || undefined,
+    sortBy: sortBy || undefined,
+    sortOrder: sortOrder || undefined,
   });
 
   // Export mutation hook
@@ -103,13 +101,21 @@ export default function CustomersPage() {
     setCurrentPage(1);
   };
 
-  const handleIdTypeFilter = (value: string) => {
-    setIdTypeFilter(value);
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
     setCurrentPage(1);
   };
 
-  const handleChannelFilter = (value: string) => {
-    setChannelFilter(value);
+  const handleSortOrderChange = (value: string) => {
+    setSortOrder(value);
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setSearchText("");
+    setStatusFilter("");
+    setSortBy("createdAt");
+    setSortOrder("desc");
     setCurrentPage(1);
   };
 
@@ -132,8 +138,16 @@ export default function CustomersPage() {
   const handleUpdateCustomer = async (values: Customer) => {
     if (!editingCustomer) return;
     try {
-      const { id, createdAt, updatedAt, customerCode, _count, ...payload } =
-        values;
+      const {
+        id,
+        createdAt,
+        updatedAt,
+        customerCode,
+        _count,
+        cityRef,
+        warehouse,
+        ...payload
+      } = values;
       await updateCustomer({ id: editingCustomer.id, payload });
       toast.success("Customer updated successfully");
       setIsEditModalVisible(false);
@@ -226,20 +240,6 @@ export default function CustomersPage() {
     },
   });
 
-  // Filter options
-  const idTypeOptions = [
-    { label: "National ID", value: IdType.NATIONAL_ID },
-    { label: "Passport", value: IdType.PASSPORT },
-    { label: "Driver License", value: IdType.DRIVERS_LICENSE },
-    { label: "Voter ID", value: IdType.VOTER_ID },
-  ];
-
-  const preferredChannelOptions = [
-    { label: "SMS", value: PreferredChannel.SMS },
-    { label: "Email", value: PreferredChannel.EMAIL },
-    { label: "WhatsApp", value: PreferredChannel.WHATSAPP },
-  ];
-
   // Statistics
   const totalCustomers = customers?.meta.total || 0;
   const activeCustomers =
@@ -316,48 +316,61 @@ export default function CustomersPage() {
 
           {/* Filters */}
           <Card className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <Input
-                placeholder="Search customers..."
-                prefix={<SearchOutlined />}
-                value={searchText}
-                onChange={(e) => handleSearch(e.target.value)}
-                allowClear
-              />
-              <Select
-                placeholder="Filter by status"
-                value={statusFilter}
-                onChange={handleStatusFilter}
-                allowClear
-              >
-                <Option value="active">Active</Option>
-                <Option value="inactive">Inactive</Option>
-              </Select>
-              <Select
-                placeholder="Filter by ID Type"
-                value={idTypeFilter}
-                onChange={handleIdTypeFilter}
-                allowClear
-              >
-                {idTypeOptions.map((opt) => (
-                  <Option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Filter by Channel"
-                value={channelFilter}
-                onChange={handleChannelFilter}
-                allowClear
-              >
-                {preferredChannelOptions.map((opt) => (
-                  <Option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </Option>
-                ))}
-              </Select>
-            </div>
+            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                <Input
+                  placeholder="Search by name, email, phone, customer code..."
+                  prefix={<SearchOutlined />}
+                  value={searchText}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  allowClear
+                />
+                <Select
+                  placeholder="Filter by status"
+                  value={statusFilter || undefined}
+                  onChange={handleStatusFilter}
+                  allowClear
+                  style={{ width: "100%" }}
+                >
+                  <Option value="active">Active</Option>
+                  <Option value="inactive">Inactive</Option>
+                </Select>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Select
+                  placeholder="Sort by"
+                  value={sortBy}
+                  onChange={handleSortChange}
+                  style={{ width: "100%" }}
+                >
+                  <Option value="createdAt">Created Date</Option>
+                  <Option value="firstName">First Name</Option>
+                  <Option value="lastName">Last Name</Option>
+                  <Option value="customerCode">Customer Code</Option>
+                </Select>
+                <Select
+                  placeholder="Sort order"
+                  value={sortOrder}
+                  onChange={handleSortOrderChange}
+                  style={{ width: "100%" }}
+                >
+                  <Option value="desc">Descending</Option>
+                  <Option value="asc">Ascending</Option>
+                </Select>
+                <Button
+                  onClick={handleClearFilters}
+                  disabled={
+                    !searchText &&
+                    !statusFilter &&
+                    sortBy === "createdAt" &&
+                    sortOrder === "desc"
+                  }
+                  style={{ width: "100%" }}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </Space>
           </Card>
 
           {/* Customers Table */}

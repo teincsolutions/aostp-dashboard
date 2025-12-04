@@ -11,12 +11,13 @@ export const customerCreateSchema = Yup.object({
   address: Yup.string().required("Address is required"),
   email: Yup.string().email("Please enter a valid email"),
   alternatePhone: Yup.string(),
-  city: Yup.string(),
+  warehouseId: Yup.string().uuid("Invalid warehouse ID").notRequired(),
+  cityId: Yup.string().uuid("Invalid city ID").notRequired(),
   idType: Yup.mixed().oneOf(
     ["NATIONAL_ID", "PASSPORT", "DRIVERS_LICENSE", "VOTER_ID"],
     "Invalid ID type"
   ),
-  idNumber: Yup.string(),
+  idNumber: Yup.string().notRequired(),
   preferredChannel: Yup.mixed()
     .oneOf(["SMS", "EMAIL", "WHATSAPP"], "Invalid preferred channel")
     .optional(),
@@ -35,19 +36,15 @@ export const customerUpdateSchema = Yup.object({
   phoneNumber: Yup.string(),
   alternatePhone: Yup.string().notRequired(),
   address: Yup.string().notRequired(),
-  city: Yup.string().notRequired(),
-  country: Yup.string().notRequired(),
+  warehouseId: Yup.string().uuid("Invalid warehouse ID").notRequired(),
+  cityId: Yup.string().uuid("Invalid city ID").notRequired(),
   idType: Yup.mixed()
     .oneOf(
       ["NATIONAL_ID", "PASSPORT", "DRIVERS_LICENSE", "VOTER_ID"],
       "Invalid ID type"
     )
     .notRequired(),
-  idNumber: Yup.string().when("idType", (value, schema) => {
-    return value
-      ? schema.required("ID number is required when ID type is set")
-      : schema.notRequired();
-  }),
+  idNumber: Yup.string().notRequired(),
   preferredChannel: Yup.mixed()
     .oneOf(["SMS", "EMAIL", "WHATSAPP"], "Invalid preferred channel")
     .optional(),

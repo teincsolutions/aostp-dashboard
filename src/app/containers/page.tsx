@@ -195,8 +195,7 @@ export default function ContainersPage() {
       await deleteContainer(id);
       toast.success("Container deleted successfully");
     } catch (error: any) {
-      console.log(error.response.data);
-      toast.error("Failed to delete container");
+      handleError(error);
     }
   };
 
@@ -210,8 +209,7 @@ export default function ContainersPage() {
       setIsStatusUpdateModalVisible(false);
       setUpdatingContainer(null);
     } catch (error: any) {
-      console.log(error.response.data);
-      toast.error("Failed to update container status");
+      handleError(error);
     }
   };
 

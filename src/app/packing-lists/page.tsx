@@ -19,6 +19,8 @@ import {
   Descriptions,
   Tag,
   Typography,
+  Dropdown,
+  Checkbox,
 } from "antd";
 import { toast } from "sonner";
 import {
@@ -29,6 +31,8 @@ import {
   BoxPlotOutlined,
   BarChartOutlined,
   BoxPlotOutlined as PackageIcon,
+  DownloadOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
 import { PackageAssignmentModal } from "@/components/PackageAssignmentModal";
 import { AppLayout } from "@/components/AppLayout";
@@ -77,6 +81,17 @@ export default function PackingListsPage() {
     useState<PackingList | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [isExportModalVisible, setIsExportModalVisible] = useState(false);
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([
+    "name",
+    "loadingDate",
+    "eta",
+    "destinationCity",
+    "container",
+    "totalPackages",
+    "status",
+    "createdAt",
+  ]);
 
   // Forms
   const [editForm] = Form.useForm();
@@ -204,6 +219,163 @@ export default function PackingListsPage() {
     }
   };
 
+  // Available columns for export
+  const exportColumnOptions = [
+    { label: "Name", value: "name" },
+    { label: "Loading Date", value: "loadingDate" },
+    { label: "ETA", value: "eta" },
+    { label: "Destination City", value: "destinationCity" },
+    { label: "Container", value: "container" },
+    { label: "Total Packages", value: "totalPackages" },
+    { label: "Status", value: "status" },
+    { label: "Created At", value: "createdAt" },
+  ];
+
+  const handleBulkExport = (format: "csv" | "excel" | "pdf") => {
+    if (selectedColumns.length === 0) {
+      toast.error("Please select at least one column to export");
+      return;
+    }
+
+    // Get data to export based on selected columns
+    const dataToExport = packingLists?.data?.map((pl: PackingList) => {
+      const row: any = {};
+      selectedColumns.forEach((col) => {
+        switch (col) {
+          case "name":
+            row["Name"] = pl.name;
+            break;
+          case "loadingDate":
+            row["Loading Date"] = pl.loadingDate
+              ? dayjs(pl.loadingDate).format("DD MMM, YYYY")
+              : "N/A";
+            break;
+          case "eta":
+            row["ETA"] = pl.eta ? dayjs(pl.eta).format("DD MMM, YYYY") : "N/A";
+            break;
+          case "destinationCity":
+            row["Destination City"] = pl.container?.destinationCity
+              ? `${pl.container.destinationCity.name}, ${pl.container.destinationCity.country}`
+              : "N/A";
+            break;
+          case "container":
+            row["Container"] = pl.container
+              ? `${pl.container.containerNumber} (${pl.container.containerType})`
+              : "N/A";
+            break;
+          case "totalPackages":
+            row["Total Packages"] = pl.totalPackages || 0;
+            break;
+          case "status":
+            row["Status"] = pl.status.replace("_", " ");
+            break;
+          case "createdAt":
+            row["Created At"] = dayjs(pl.createdAt).format("DD MMM, YYYY");
+            break;
+        }
+      });
+      return row;
+    });
+
+    // Export based on format
+    if (format === "csv") {
+      exportToCSV(dataToExport || []);
+    } else if (format === "excel") {
+      exportToExcel(dataToExport || []);
+    } else if (format === "pdf") {
+      exportToPDF(dataToExport || []);
+    }
+
+    setIsExportModalVisible(false);
+    toast.success(`Data exported as ${format.toUpperCase()} successfully`);
+  };
+
+  const exportToCSV = (data: any[]) => {
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row) =>
+        headers.map((header) => `"${row[header] || ""}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `packing-lists-${dayjs().format("YYYY-MM-DD")}.csv`;
+    link.click();
+  };
+
+  const exportToExcel = (data: any[]) => {
+    // For Excel export, we'll use CSV format with .xlsx extension
+    // In a real application, you'd use a library like xlsx
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row) =>
+        headers.map((header) => `"${row[header] || ""}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `packing-lists-${dayjs().format("YYYY-MM-DD")}.xlsx`;
+    link.click();
+  };
+
+  const exportToPDF = (data: any[]) => {
+    // For PDF export, create a simple HTML table and print
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Packing Lists Export</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #4CAF50; color: white; }
+            tr:nth-child(even) { background-color: #f2f2f2; }
+          </style>
+        </head>
+        <body>
+          <h1>Packing Lists - ${dayjs().format("DD MMM, YYYY")}</h1>
+          <table>
+            <thead>
+              <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              ${data
+                .map(
+                  (row) =>
+                    `<tr>${headers
+                      .map((h) => `<td>${row[h] || ""}</td>`)
+                      .join("")}</tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
   const [currentAssignmentsPackingListId, setCurrentAssignmentsPackingListId] =
     useState<string>("");
 
@@ -265,15 +437,21 @@ export default function PackingListsPage() {
         <div className="p-6">
           <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
             <Title level={2}>Packing List Management</Title>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              href="/packing-lists/create"
-              block
-              className="max-w-xs"
-            >
-              Create Packing List
-            </Button>
+            <Space>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={() => setIsExportModalVisible(true)}
+              >
+                Export Data
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                href="/packing-lists/create"
+              >
+                Create Packing List
+              </Button>
+            </Space>
           </div>
 
           {/* Statistics Cards */}
@@ -652,6 +830,64 @@ export default function PackingListsPage() {
               </div>
             )}
           </Drawer>
+
+          {/* Export Data Modal */}
+          <Modal
+            title="Export Packing Lists"
+            open={isExportModalVisible}
+            onCancel={() => setIsExportModalVisible(false)}
+            footer={null}
+            width={600}
+          >
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-3">Select Columns to Export:</h4>
+                <Checkbox.Group
+                  options={exportColumnOptions}
+                  value={selectedColumns}
+                  onChange={(values) => setSelectedColumns(values as string[])}
+                  className="flex flex-col gap-2"
+                />
+              </div>
+
+              <Divider />
+
+              <div>
+                <h4 className="font-medium mb-3">Select Export Format:</h4>
+                <Space size="middle" className="w-full" direction="vertical">
+                  <Button
+                    block
+                    icon={<DownloadOutlined />}
+                    onClick={() => handleBulkExport("csv")}
+                    disabled={selectedColumns.length === 0}
+                  >
+                    Export as CSV
+                  </Button>
+                  <Button
+                    block
+                    icon={<DownloadOutlined />}
+                    onClick={() => handleBulkExport("excel")}
+                    disabled={selectedColumns.length === 0}
+                  >
+                    Export as Excel
+                  </Button>
+                  <Button
+                    block
+                    icon={<DownloadOutlined />}
+                    onClick={() => handleBulkExport("pdf")}
+                    disabled={selectedColumns.length === 0}
+                  >
+                    Export as PDF (Print)
+                  </Button>
+                </Space>
+              </div>
+
+              <div className="text-xs text-gray-500 mt-4">
+                * {packingLists?.data?.length || 0} rows will be exported based
+                on current filters
+              </div>
+            </div>
+          </Modal>
         </div>
       </AppLayout>
     </AuthGuard>

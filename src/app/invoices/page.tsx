@@ -13,6 +13,10 @@ import {
   Statistic,
   message,
   Popconfirm,
+  DatePicker,
+  Tag,
+  Dropdown,
+  MenuProps,
 } from "antd";
 import {
   SearchOutlined,
@@ -22,21 +26,33 @@ import {
   UserOutlined,
   DollarOutlined,
   ReloadOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  MinusCircleOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { InvoiceModal } from "@/components/InvoiceModal";
-import { useInvoices, useRegenerateInvoicePdf } from "@/hooks/useInvoices";
+import {
+  useInvoices,
+  useRegenerateInvoicePdf,
+  useUpdateInvoice,
+} from "@/hooks/useInvoices";
 import { Invoice, InvoiceStatus } from "@/types/invoice";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 export default function InvoicesPage() {
   // State for filters
-  const [searchText, setSearchText] = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [customerId, setCustomerId] = useState<string>("");
+  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([
+    null,
+    null,
+  ]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [invoiceModalInvoiceId, setInvoiceModalInvoiceId] = useState<
@@ -44,18 +60,25 @@ export default function InvoicesPage() {
   >(null);
 
   // React Query hooks
-  const { data: invoices, isLoading } = useInvoices({
+  const {
+    data: invoices,
+    isLoading,
+    refetch,
+  } = useInvoices({
     page: currentPage,
     limit: pageSize,
-    customerId: customerId || undefined,
+    search: search || undefined,
     status: statusFilter || undefined,
+    dateFrom: dateRange[0] ? dateRange[0].toISOString() : undefined,
+    dateTo: dateRange[1] ? dateRange[1].toISOString() : undefined,
   });
   const { mutateAsync: regenerateInvoicePdfMutation } =
     useRegenerateInvoicePdf();
+  const { mutateAsync: updateInvoiceMutation } = useUpdateInvoice();
 
   // Handlers
   const handleSearch = (value: string) => {
-    setSearchText(value);
+    setSearch(value);
     setCurrentPage(1);
   };
 
@@ -64,8 +87,17 @@ export default function InvoicesPage() {
     setCurrentPage(1);
   };
 
-  const handleCustomerFilter = (customer: string) => {
-    setCustomerId(customer);
+  const handleDateRangeChange = (
+    dates: null | [Dayjs | null, Dayjs | null]
+  ) => {
+    setDateRange(dates || [null, null]);
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setStatusFilter("");
+    setDateRange([null, null]);
     setCurrentPage(1);
   };
 
@@ -87,6 +119,39 @@ export default function InvoicesPage() {
     }
   };
 
+  const handleMarkInvoiceStatus = async (
+    invoice: Invoice,
+    status: InvoiceStatus
+  ) => {
+    try {
+      let paidAmount = invoice.paidAmount;
+
+      // Set paidAmount based on status
+      if (status === InvoiceStatus.PAID) {
+        paidAmount = invoice.totalAmount;
+      } else if (status === InvoiceStatus.UNPAID) {
+        paidAmount = 0;
+      }
+      // For PARTIALLY_PAID, keep the current paidAmount
+
+      await updateInvoiceMutation({
+        invoiceId: invoice.id,
+        data: {
+          status,
+          paidAmount,
+          notes: `Invoice marked as ${status} by admin on ${dayjs().format(
+            "DD MMM, YYYY HH:mm"
+          )}`,
+        },
+      });
+      message.success(`Invoice marked as ${status.replace("_", " ")}`);
+      refetch();
+    } catch (error) {
+      console.error("Update invoice status failed:", error);
+      message.error("Failed to update invoice status");
+    }
+  };
+
   // Table columns
   const columns = [
     {
@@ -95,7 +160,9 @@ export default function InvoicesPage() {
       key: "invoiceNumber",
       sorter: true,
       render: (invoiceNumber: string) => (
-        <span style={{ fontFamily: "monospace", fontWeight: 500 }}>
+        <span
+          style={{ fontFamily: "monospace", fontWeight: 500, fontSize: 13 }}
+        >
           {invoiceNumber}
         </span>
       ),
@@ -104,6 +171,7 @@ export default function InvoicesPage() {
       title: "Customer",
       dataIndex: "customer",
       key: "customer",
+      width: 150,
       render: (customer: any) =>
         customer ? `${customer.firstName} ${customer.lastName}` : "N/A",
     },
@@ -118,11 +186,25 @@ export default function InvoicesPage() {
       ),
     },
     {
-      title: "Packages",
-      render: (_: any, record: Invoice) =>
-        record.packingList?.totalPackages || 0,
-      key: "packages",
-      align: "right" as const,
+      title: "Package Info",
+      render: (_: any, record: Invoice) => {
+        if (!record.package) {
+          return "N/A";
+        }
+        return (
+          <div>
+            <div style={{ fontFamily: "monospace", fontSize: "12px" }}>
+              <strong>Tracking:</strong> {record.package.trackingCode}
+            </div>
+            {record.package.pickupCode && (
+              <div style={{ fontFamily: "monospace", fontSize: "12px" }}>
+                <strong>Pickup:</strong> {record.package.pickupCode}
+              </div>
+            )}
+          </div>
+        );
+      },
+      key: "package",
     },
     {
       title: "Total (in USD)",
@@ -182,33 +264,76 @@ export default function InvoicesPage() {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: Invoice) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EyeOutlined />}
-            onClick={() => handleViewInvoice(record.id)}
-          >
-            View
-          </Button>
-          <Button
-            type="link"
-            icon={<DownloadOutlined />}
-            onClick={() => handleDownloadInvoice(record.id)}
-          >
-            Download
-          </Button>
-          <Popconfirm
-            title="Regenerate Invoice PDF"
-            description="Are you sure you want to regenerate the invoice PDF?"
-            onConfirm={() => handleRegenerateInvoice(record)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button type="link" icon={<ReloadOutlined />} />
-          </Popconfirm>
-        </Space>
-      ),
+      fixed: "right" as const,
+      width: 200,
+      render: (_: any, record: Invoice) => {
+        const menuItems: MenuProps["items"] = [
+          {
+            key: "view",
+            icon: <EyeOutlined />,
+            label: "View Details",
+            onClick: () => handleViewInvoice(record.id),
+          },
+          {
+            key: "download",
+            icon: <DownloadOutlined />,
+            label: "Download PDF",
+            onClick: () => handleDownloadInvoice(record.id),
+          },
+          {
+            key: "regenerate",
+            icon: <ReloadOutlined />,
+            label: "Regenerate PDF",
+            onClick: () => handleRegenerateInvoice(record),
+          },
+          {
+            type: "divider",
+          },
+          {
+            key: "mark-paid",
+            icon: <CheckCircleOutlined />,
+            label: "Mark as Paid",
+            disabled: record.status === InvoiceStatus.PAID,
+            onClick: () => handleMarkInvoiceStatus(record, InvoiceStatus.PAID),
+          },
+          {
+            key: "mark-partial",
+            icon: <MinusCircleOutlined />,
+            label: "Mark as Partially Paid",
+            disabled: record.status === InvoiceStatus.PARTIALLY_PAID,
+            onClick: () =>
+              handleMarkInvoiceStatus(record, InvoiceStatus.PARTIALLY_PAID),
+          },
+          {
+            key: "mark-unpaid",
+            icon: <CloseCircleOutlined />,
+            label: "Mark as Unpaid",
+            disabled: record.status === InvoiceStatus.UNPAID,
+            onClick: () =>
+              handleMarkInvoiceStatus(record, InvoiceStatus.UNPAID),
+          },
+        ];
+
+        return (
+          <Space>
+            <Button
+              type="link"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => handleViewInvoice(record.id)}
+            />
+            <Button
+              type="link"
+              size="small"
+              icon={<DownloadOutlined />}
+              onClick={() => handleDownloadInvoice(record.id)}
+            />
+            <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
+              <Button type="link" size="small" icon={<MoreOutlined />} />
+            </Dropdown>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -303,33 +428,45 @@ export default function InvoicesPage() {
 
           {/* Filters */}
           <Card className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              <Input
-                placeholder="Search invoices..."
-                prefix={<SearchOutlined />}
-                value={searchText}
-                onChange={(e) => handleSearch(e.target.value)}
-                allowClear
-              />
-              <Select
-                placeholder="Filter by status"
-                value={statusFilter}
-                onChange={handleStatusFilter}
-                allowClear
-              >
-                <Option value={InvoiceStatus.PAID}>Paid</Option>
-                <Option value={InvoiceStatus.UNPAID}>Unpaid</Option>
-                <Option value={InvoiceStatus.PARTIALLY_PAID}>
-                  Partially Paid
-                </Option>
-              </Select>
-              <Input
-                placeholder="Customer ID"
-                value={customerId}
-                onChange={(e) => handleCustomerFilter(e.target.value)}
-                allowClear
-              />
-            </div>
+            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Input
+                  placeholder="Search by invoice #, tracking code, pickup code, container..."
+                  prefix={<SearchOutlined />}
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  allowClear
+                />
+                <Select
+                  placeholder="Filter by status"
+                  value={statusFilter || undefined}
+                  onChange={handleStatusFilter}
+                  allowClear
+                  style={{ width: "100%" }}
+                >
+                  <Option value={InvoiceStatus.PAID}>Paid</Option>
+                  <Option value={InvoiceStatus.UNPAID}>Unpaid</Option>
+                  <Option value={InvoiceStatus.PARTIALLY_PAID}>
+                    Partially Paid
+                  </Option>
+                </Select>
+                <RangePicker
+                  value={dateRange}
+                  onChange={handleDateRangeChange}
+                  format="DD MMM, YYYY"
+                  placeholder={["Start Date", "End Date"]}
+                  style={{ width: "100%" }}
+                />
+                <Button
+                  onClick={handleClearFilters}
+                  disabled={
+                    !search && !statusFilter && !dateRange[0] && !dateRange[1]
+                  }
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </Space>
           </Card>
 
           {/* Invoices Table */}

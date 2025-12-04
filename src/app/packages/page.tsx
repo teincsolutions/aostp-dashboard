@@ -16,9 +16,12 @@ import {
   Tag,
   Image,
   Popconfirm,
+  Checkbox,
+  Divider,
+  Space,
 } from "antd";
 import { toast } from "sonner";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined, DownloadOutlined } from "@ant-design/icons";
 import {
   EyeOutlined,
   EditOutlined,
@@ -117,6 +120,19 @@ export default function PackagesPage() {
   // Table selection state
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
+  // Export states
+  const [isExportModalVisible, setIsExportModalVisible] = useState(false);
+  const [selectedExportColumns, setSelectedExportColumns] = useState<string[]>([
+    "trackingCode",
+    "customerName",
+    "description",
+    "weight",
+    "cbm",
+    "status",
+    "shipmentMode",
+    "warehouseName",
+  ]);
+
   const params = {
     page,
     limit: pageSize,
@@ -180,34 +196,251 @@ export default function PackagesPage() {
     }
   };
 
+  // Export column options
+  const exportColumnOptions = [
+    { label: "Tracking Code", value: "trackingCode" },
+    { label: "Customer Name", value: "customerName" },
+    { label: "Description", value: "description" },
+    { label: "Weight (kg)", value: "weight" },
+    { label: "CBM", value: "cbm" },
+    { label: "Status", value: "status" },
+    { label: "Shipment Mode", value: "shipmentMode" },
+    { label: "Warehouse", value: "warehouseName" },
+    { label: "Packing List", value: "packingListName" },
+    { label: "Invoice Number", value: "invoiceNumber" },
+    { label: "Created At", value: "createdAt" },
+  ];
+
+  const handleBulkExport = (format: "csv" | "excel" | "pdf") => {
+    if (selectedExportColumns.length === 0) {
+      toast.error("Please select at least one column to export");
+      return;
+    }
+
+    // Get data to export based on selected columns
+    const dataToExport = displayPackages?.map((pkg: DisplayPackage) => {
+      const row: any = {};
+      selectedExportColumns.forEach((col) => {
+        switch (col) {
+          case "trackingCode":
+            row["Tracking Code"] = pkg.trackingCode;
+            break;
+          case "customerName":
+            row["Customer Name"] = pkg.customerName;
+            break;
+          case "description":
+            row["Description"] = pkg.description || "N/A";
+            break;
+          case "weight":
+            row["Weight (kg)"] = pkg.weight || 0;
+            break;
+          case "cbm":
+            row["CBM"] = pkg.cbm || 0;
+            break;
+          case "status":
+            row["Status"] = pkg.status.replace("_", " ");
+            break;
+          case "shipmentMode":
+            row["Shipment Mode"] = pkg.shippingMode || "N/A";
+            break;
+          case "warehouseName":
+            row["Warehouse"] = pkg.warehouse?.name || "N/A";
+            break;
+          case "packingListName":
+            row["Packing List"] = pkg.packingList?.name || "N/A";
+            break;
+          case "invoiceNumber":
+            row["Invoice Number"] = pkg.invoice?.invoiceNumber || "N/A";
+            break;
+          case "createdAt":
+            row["Created At"] = new Date(pkg.createdAt).toLocaleDateString();
+            break;
+        }
+      });
+      return row;
+    });
+
+    // Export based on format
+    if (format === "csv") {
+      exportToCSV(dataToExport || []);
+    } else if (format === "excel") {
+      exportToExcel(dataToExport || []);
+    } else if (format === "pdf") {
+      exportToPDF(dataToExport || []);
+    }
+
+    setIsExportModalVisible(false);
+    toast.success(`Data exported as ${format.toUpperCase()} successfully`);
+  };
+
+  const exportToCSV = (data: any[]) => {
+    if (!data || data.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row) =>
+        headers.map((header) => `"${row[header] || ""}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `packages-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  };
+
+  const exportToExcel = (data: any[]) => {
+    if (!data || data.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row) =>
+        headers.map((header) => `"${row[header] || ""}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `packages-${new Date().toISOString().split("T")[0]}.xlsx`;
+    link.click();
+  };
+
+  const exportToPDF = (data: any[]) => {
+    if (!data || data.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Packages Export</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #4CAF50; color: white; }
+            tr:nth-child(even) { background-color: #f2f2f2; }
+          </style>
+        </head>
+        <body>
+          <h1>Packages - ${new Date().toLocaleDateString()}</h1>
+          <table>
+            <thead>
+              <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              ${data
+                .map(
+                  (row) =>
+                    `<tr>${headers
+                      .map((h) => `<td>${row[h] || ""}</td>`)
+                      .join("")}</tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
   const handleExportExcel = (record: DisplayPackage) => {
-    // Placeholder for Excel export
-    console.log("Export to Excel:", record.id);
+    const data = [
+      {
+        "Tracking Code": record.trackingCode,
+        "Customer Name": record.customerName,
+        Description: record.description || "N/A",
+        "Weight (kg)": record.weight || 0,
+        CBM: record.cbm || 0,
+        Status: record.status.replace("_", " "),
+        "Shipment Mode": record.shippingMode || "N/A",
+        Warehouse: record.warehouse?.name || "N/A",
+      },
+    ];
+    exportToExcel(data);
   };
 
   const handleExportPdf = (record: DisplayPackage) => {
-    // Placeholder for PDF export
-    console.log("Export to PDF:", record.id);
+    const data = [
+      {
+        "Tracking Code": record.trackingCode,
+        "Customer Name": record.customerName,
+        Description: record.description || "N/A",
+        "Weight (kg)": record.weight || 0,
+        CBM: record.cbm || 0,
+        Status: record.status.replace("_", " "),
+        "Shipment Mode": record.shippingMode || "N/A",
+        Warehouse: record.warehouse?.name || "N/A",
+      },
+    ];
+    exportToPDF(data);
   };
 
   const handleExportExcelAll = (ids: React.Key[] | null) => {
     const toExport = ids
       ? displayPackages.filter((pkg) => ids.includes(pkg.id))
       : displayPackages;
-    console.log(
-      "Export Excel for:",
-      toExport.map((p) => p.trackingCode)
-    );
+
+    if (toExport.length === 0) {
+      toast.error("No packages to export");
+      return;
+    }
+
+    const data = toExport.map((pkg) => ({
+      "Tracking Code": pkg.trackingCode,
+      "Customer Name": pkg.customerName,
+      Description: pkg.description || "N/A",
+      "Weight (kg)": pkg.weight || 0,
+      CBM: pkg.cbm || 0,
+      Status: pkg.status.replace("_", " "),
+      "Shipment Mode": pkg.shippingMode || "N/A",
+      Warehouse: pkg.warehouse?.name || "N/A",
+    }));
+    exportToExcel(data);
   };
 
   const handleExportPdfAll = (ids: React.Key[] | null) => {
     const toExport = ids
       ? displayPackages.filter((pkg) => ids.includes(pkg.id))
       : displayPackages;
-    console.log(
-      "Export PDF for:",
-      toExport.map((p) => p.trackingCode)
-    );
+
+    if (toExport.length === 0) {
+      toast.error("No packages to export");
+      return;
+    }
+
+    const data = toExport.map((pkg) => ({
+      "Tracking Code": pkg.trackingCode,
+      "Customer Name": pkg.customerName,
+      Description: pkg.description || "N/A",
+      "Weight (kg)": pkg.weight || 0,
+      CBM: pkg.cbm || 0,
+      Status: pkg.status.replace("_", " "),
+      "Shipment Mode": pkg.shippingMode || "N/A",
+      Warehouse: pkg.warehouse?.name || "N/A",
+    }));
+    exportToPDF(data);
   };
 
   const handleRegenerateInvoice = async (record: DisplayPackage) => {
@@ -445,6 +678,12 @@ export default function PackagesPage() {
               </Button>
               <div className="ml-auto flex gap-2">
                 <Button
+                  icon={<DownloadOutlined />}
+                  onClick={() => setIsExportModalVisible(true)}
+                >
+                  Export Data
+                </Button>
+                <Button
                   icon={<FileExcelOutlined />}
                   onClick={() =>
                     handleExportExcelAll(
@@ -452,7 +691,7 @@ export default function PackagesPage() {
                     )
                   }
                 >
-                  Export Excel{" "}
+                  Quick Export Excel{" "}
                   {selectedRowKeys.length > 0
                     ? `(${selectedRowKeys.length})`
                     : "(All)"}
@@ -777,6 +1016,17 @@ export default function PackagesPage() {
             <div style={{ marginBottom: 16 }}>
               <Row gutter={16}>
                 <Col span={12}>
+                  <div style={{ marginBottom: 8 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontWeight: "500",
+                        marginBottom: 4,
+                      }}
+                    >
+                      Customer
+                    </label>
+                  </div>
                   <CustomerSearchSelect
                     value={consCustomer}
                     onChange={setConsCustomer}
@@ -844,7 +1094,6 @@ export default function PackagesPage() {
 
             <Form
               form={consForm}
-              layout="inline"
               onFinish={async (values) => {
                 if (selectedForConsolidate.length < 2) {
                   toast.error("Select at least 2 packages");
@@ -858,7 +1107,7 @@ export default function PackagesPage() {
 
                   await consolidatePackagesMutation.mutateAsync({
                     sourceTrackingCodes,
-                    targetTrackingCode: values.newTrackingCode,
+                    targetTrackingCode: values.newTrackingCode || undefined,
                   });
                   toast.success("Packages consolidated successfully");
                   setIsConsolidateModalVisible(false);
@@ -871,18 +1120,47 @@ export default function PackagesPage() {
               }}
               style={{ marginTop: 16 }}
             >
-              <Form.Item
-                name="newTrackingCode"
-                label="New Tracking Code"
-                rules={[{ required: true }]}
-              >
-                <Input placeholder="Enter new tracking code" />
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit">
-                  Consolidate ({selectedForConsolidate.length} packages)
-                </Button>
-              </Form.Item>
+              <Row gutter={16}>
+                <Col span={16}>
+                  <div style={{ marginBottom: 8 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontWeight: "500",
+                        marginBottom: 4,
+                      }}
+                    >
+                      New Tracking Code (Optional)
+                    </label>
+                  </div>
+                  <Form.Item name="newTrackingCode" style={{ marginBottom: 0 }}>
+                    <Input placeholder="Enter new tracking code (optional)" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <div style={{ marginBottom: 8 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontWeight: "500",
+                        marginBottom: 4,
+                        visibility: "hidden",
+                      }}
+                    >
+                      Action
+                    </label>
+                  </div>
+                  <Form.Item style={{ marginBottom: 0 }}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      style={{ width: "100%" }}
+                    >
+                      Consolidate ({selectedForConsolidate.length} packages)
+                    </Button>
+                  </Form.Item>
+                </Col>
+              </Row>
             </Form>
           </Modal>
 
@@ -934,6 +1212,66 @@ export default function PackagesPage() {
             onClose={() => setReceiptModalPackageId(null)}
             packageId={receiptModalPackageId}
           />
+
+          {/* Export Data Modal */}
+          <Modal
+            title="Export Packages"
+            open={isExportModalVisible}
+            onCancel={() => setIsExportModalVisible(false)}
+            footer={null}
+            width={600}
+          >
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-3">Select Columns to Export:</h4>
+                <Checkbox.Group
+                  options={exportColumnOptions}
+                  value={selectedExportColumns}
+                  onChange={(values) =>
+                    setSelectedExportColumns(values as string[])
+                  }
+                  className="flex flex-col gap-2"
+                />
+              </div>
+
+              <Divider />
+
+              <div>
+                <h4 className="font-medium mb-3">Select Export Format:</h4>
+                <Space size="middle" className="w-full" direction="vertical">
+                  <Button
+                    block
+                    icon={<DownloadOutlined />}
+                    onClick={() => handleBulkExport("csv")}
+                    disabled={selectedExportColumns.length === 0}
+                  >
+                    Export as CSV
+                  </Button>
+                  <Button
+                    block
+                    icon={<DownloadOutlined />}
+                    onClick={() => handleBulkExport("excel")}
+                    disabled={selectedExportColumns.length === 0}
+                  >
+                    Export as Excel
+                  </Button>
+                  <Button
+                    block
+                    icon={<DownloadOutlined />}
+                    onClick={() => handleBulkExport("pdf")}
+                    disabled={selectedExportColumns.length === 0}
+                  >
+                    Export as PDF (Print)
+                  </Button>
+                </Space>
+              </div>
+
+              <div className="text-xs text-gray-500 mt-4">
+                * {displayPackages?.length || 0} rows will be exported based on
+                current filters
+              </div>
+            </div>
+          </Modal>
         </div>
       </AppLayout>
     </AuthGuard>

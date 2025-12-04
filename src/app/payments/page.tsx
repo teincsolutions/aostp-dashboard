@@ -21,6 +21,7 @@ import {
   Checkbox,
   Typography,
   DatePicker,
+  Divider,
 } from "antd";
 
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ import {
   UserOutlined,
   CalculatorOutlined,
   EyeOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -45,7 +47,7 @@ import {
   usePaymentDetail,
   usePaymentReceipt,
 } from "@/hooks/usePayments";
-import { useCustomerInvoices } from "@/hooks/useInvoices";
+import { useCustomerInvoices, usePendingInvoices } from "@/hooks/useInvoices";
 import {
   Invoice,
   PaymentCreatePayload,
@@ -67,7 +69,6 @@ const { TextArea } = Input;
 
 export default function PaymentsPage() {
   // State for UI
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedInvoices, setSelectedInvoices] = useState<Invoice[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>(
@@ -89,17 +90,23 @@ export default function PaymentsPage() {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
   const [dateRange, setDateRange] = useState<[string, string] | null>(null);
 
+  // Export states
+  const [isExportModalVisible, setIsExportModalVisible] = useState(false);
+  const [selectedExportColumns, setSelectedExportColumns] = useState<string[]>([
+    "paymentCode",
+    "customerName",
+    "amount",
+    "currency",
+    "processedAt",
+    "paymentMethod",
+  ]);
+
+  // Invoice modal for viewing specific invoice from payment receipt
+  const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
+
   // Forms
   const [paymentForm] = Form.useForm();
 
-  // React Query hooks
-  const { data: customerInvoices, isLoading: isLoadingCustomerInvoices } =
-    useCustomerInvoices(selectedCustomerId, {
-      page: 1,
-      limit: 10,
-      sortBy: "createdAt",
-      sortOrder: "desc",
-    });
   const { data: allPaymentsData, isLoading: isLoadingAllPayments } =
     useAllPayments({
       page: 1,
@@ -120,6 +127,10 @@ export default function PaymentsPage() {
   );
 
   const { data: customerData } = useCustomerById(selectedCustomerId);
+  const { data: unpaidInvoices = [], isLoading: isLoadingUnpaidInvoices } =
+    usePendingInvoices({
+      customerId: selectedCustomerId,
+    });
 
   const { activeRate } = useExchangeRate();
 
@@ -129,10 +140,8 @@ export default function PaymentsPage() {
   };
 
   const handleSelectAllInvoices = (checked: boolean) => {
-    if (checked && customerInvoices?.data) {
-      setSelectedInvoices(
-        customerInvoices.data.filter((inv) => inv.status !== InvoiceStatus.PAID)
-      );
+    if (checked && unpaidInvoices.length > 0) {
+      setSelectedInvoices(unpaidInvoices);
     } else {
       setSelectedInvoices([]);
     }
@@ -260,10 +269,169 @@ export default function PaymentsPage() {
     }
   };
 
-  const currentInvoices = customerInvoices?.data || [];
-  const unpaidInvoices = currentInvoices.filter(
-    (inv: Invoice) => inv.status !== InvoiceStatus.PAID
-  );
+  // Export column options
+  const exportColumnOptions = [
+    { label: "Payment Code", value: "paymentCode" },
+    { label: "Customer Name", value: "customerName" },
+    { label: "Amount", value: "amount" },
+    { label: "Currency", value: "currency" },
+    { label: "Payment Method", value: "paymentMethod" },
+    { label: "Processed At", value: "processedAt" },
+    { label: "Reference Number", value: "referenceNumber" },
+  ];
+
+  const handleBulkExport = (format: "csv" | "excel" | "pdf") => {
+    if (selectedExportColumns.length === 0) {
+      toast.error("Please select at least one column to export");
+      return;
+    }
+
+    const payments = allPaymentsData || [];
+
+    if (payments.length === 0) {
+      toast.error("No payments to export");
+      return;
+    }
+
+    // Get data to export based on selected columns
+    const dataToExport = payments.map((payment: Payment) => {
+      const row: any = {};
+      selectedExportColumns.forEach((col) => {
+        switch (col) {
+          case "paymentCode":
+            row["Payment Code"] = payment.paymentCode;
+            break;
+          case "customerName":
+            row[
+              "Customer Name"
+            ] = `${payment.customer.firstName} ${payment.customer.lastName}`;
+            break;
+          case "amount":
+            row["Amount"] = payment.amount.toFixed(2);
+            break;
+          case "currency":
+            row["Currency"] = payment.currency;
+            break;
+          case "paymentMethod":
+            row["Payment Method"] = payment.paymentMethod;
+            break;
+          case "processedAt":
+            row["Processed At"] = dayjs(payment.processedAt).format(
+              "DD MMM, YYYY"
+            );
+            break;
+          case "referenceNumber":
+            row["Reference Number"] = (payment as any).referenceNumber || "N/A";
+            break;
+        }
+      });
+      return row;
+    });
+
+    // Export based on format
+    if (format === "csv") {
+      exportToCSV(dataToExport);
+    } else if (format === "excel") {
+      exportToExcel(dataToExport);
+    } else if (format === "pdf") {
+      exportToPDF(dataToExport);
+    }
+
+    setIsExportModalVisible(false);
+    toast.success(`Data exported as ${format.toUpperCase()} successfully`);
+  };
+
+  const exportToCSV = (data: any[]) => {
+    if (!data || data.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row) =>
+        headers.map((header) => `"${row[header] || ""}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `payments-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  };
+
+  const exportToExcel = (data: any[]) => {
+    if (!data || data.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row) =>
+        headers.map((header) => `"${row[header] || ""}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `payments-${new Date().toISOString().split("T")[0]}.xlsx`;
+    link.click();
+  };
+
+  const exportToPDF = (data: any[]) => {
+    if (!data || data.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Payments Export</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #4CAF50; color: white; }
+            tr:nth-child(even) { background-color: #f2f2f2; }
+          </style>
+        </head>
+        <body>
+          <h1>Payments - ${new Date().toLocaleDateString()}</h1>
+          <table>
+            <thead>
+              <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              ${data
+                .map(
+                  (row) =>
+                    `<tr>${headers
+                      .map((h) => `<td>${row[h] || ""}</td>`)
+                      .join("")}</tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
 
   return (
     <AuthGuard>
@@ -271,16 +439,22 @@ export default function PaymentsPage() {
         <div className="p-6">
           <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
             <h1 className="text-2xl font-bold">Payment Processing</h1>
-            <Button
-              type="primary"
-              icon={<CalculatorOutlined />}
-              onClick={() => setIsPaymentModalVisible(true)}
-              disabled={selectedInvoices.length === 0}
-              block
-              className="max-w-xs"
-            >
-              Process Payment ({selectedInvoices.length} selected)
-            </Button>
+            <Space>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={() => setIsExportModalVisible(true)}
+              >
+                Export Data
+              </Button>
+              <Button
+                type="primary"
+                icon={<CalculatorOutlined />}
+                onClick={() => setIsPaymentModalVisible(true)}
+                disabled={selectedInvoices.length === 0}
+              >
+                Process Payment ({selectedInvoices.length} selected)
+              </Button>
+            </Space>
           </div>
 
           {/* Search Section */}
@@ -322,7 +496,7 @@ export default function PaymentsPage() {
                   <Card>
                     <Statistic
                       title="Invoice Count"
-                      value={customerInvoices?.meta.total || 0}
+                      value={unpaidInvoices.length}
                       prefix={<FileTextOutlined />}
                     />
                   </Card>
@@ -384,8 +558,8 @@ export default function PaymentsPage() {
                 </div>
 
                 <Table
-                  dataSource={currentInvoices}
-                  loading={isLoadingCustomerInvoices}
+                  dataSource={unpaidInvoices}
+                  loading={isLoadingUnpaidInvoices}
                   rowKey="id"
                   scroll={{ x: true }}
                   pagination={{
@@ -396,7 +570,7 @@ export default function PaymentsPage() {
                   rowSelection={{
                     selectedRowKeys: selectedInvoices.map((inv) => inv.id),
                     onChange: (selectedRowKeys) => {
-                      const selected = currentInvoices.filter(
+                      const selected = unpaidInvoices.filter(
                         (inv) =>
                           selectedRowKeys.includes(inv.id) &&
                           inv.status !== InvoiceStatus.PAID
@@ -524,11 +698,18 @@ export default function PaymentsPage() {
             </Card>
           )}
 
-          {/* Invoice Modal */}
+          {/* Invoice Modal for Customer Invoices */}
           <InvoiceModal
             visible={isInvoiceModalVisible}
             onClose={() => setIsInvoiceModalVisible(false)}
             invoiceId={null} // Show all customer invoices in the modal
+          />
+
+          {/* Invoice Modal for Viewing Specific Invoice from Payment Receipt */}
+          <InvoiceModal
+            visible={!!viewInvoiceId}
+            onClose={() => setViewInvoiceId(null)}
+            invoiceId={viewInvoiceId}
           />
 
           {/* Payment History */}
@@ -949,7 +1130,19 @@ export default function PaymentsPage() {
                     size="small"
                     dataSource={paymentDetail?.invoices}
                     renderItem={(invoice: Invoice) => (
-                      <List.Item>
+                      <List.Item
+                        actions={[
+                          <Button
+                            key="view"
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined />}
+                            onClick={() => setViewInvoiceId(invoice.id)}
+                          >
+                            View Invoice
+                          </Button>,
+                        ]}
+                      >
                         <List.Item.Meta
                           title={
                             <div className="flex justify-between items-center">
@@ -990,6 +1183,65 @@ export default function PaymentsPage() {
               </div>
             )}
           </Drawer>
+
+          {/* Export Data Modal */}
+          <Modal
+            title="Export Payments"
+            open={isExportModalVisible}
+            onCancel={() => setIsExportModalVisible(false)}
+            footer={null}
+            width={600}
+          >
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-3">Select Columns to Export:</h4>
+                <Checkbox.Group
+                  options={exportColumnOptions}
+                  value={selectedExportColumns}
+                  onChange={(values) =>
+                    setSelectedExportColumns(values as string[])
+                  }
+                  className="flex flex-col gap-2"
+                />
+              </div>
+
+              <Divider />
+
+              <div>
+                <h4 className="font-medium mb-3">Select Export Format:</h4>
+                <Space size="middle" className="w-full" direction="vertical">
+                  <Button
+                    block
+                    icon={<DownloadOutlined />}
+                    onClick={() => handleBulkExport("csv")}
+                    disabled={selectedExportColumns.length === 0}
+                  >
+                    Export as CSV
+                  </Button>
+                  <Button
+                    block
+                    icon={<DownloadOutlined />}
+                    onClick={() => handleBulkExport("excel")}
+                    disabled={selectedExportColumns.length === 0}
+                  >
+                    Export as Excel
+                  </Button>
+                  <Button
+                    block
+                    icon={<DownloadOutlined />}
+                    onClick={() => handleBulkExport("pdf")}
+                    disabled={selectedExportColumns.length === 0}
+                  >
+                    Export as PDF (Print)
+                  </Button>
+                </Space>
+              </div>
+
+              <div className="text-xs text-gray-500 mt-4">
+                * {allPaymentsData?.length || 0} rows will be exported
+              </div>
+            </div>
+          </Modal>
         </div>
       </AppLayout>
     </AuthGuard>

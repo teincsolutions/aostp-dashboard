@@ -58,27 +58,64 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
 
   // Combine and sort all transactions for history
   const allTransactions = [
-    ...(customerStatsData?.customer?.invoices?.map((invoice: any) => ({
-      id: invoice.id,
-      type: "invoice" as const,
-      amount: invoice.totalAmount, // Invoices are already in USD
-      displayAmount: invoice.totalAmount,
-      currency: invoice.currency || "USD",
-      date: invoice.createdAt,
-      description: `Invoice #${invoice.invoiceNumber}${
-        invoice.exchangeRate?.rate
-          ? ` | Rate: ${invoice.exchangeRate.rate.toFixed(4)} ${
-              invoice.exchangeRate.fromCurrency
-            }/${invoice.exchangeRate.toCurrency}`
-          : ""
-      }`,
-      status: invoice.status,
-    })) || []),
+    ...(customerStatsData?.customer?.invoices?.map((invoice: any) => {
+      // Build description with exchange rate and alternate currency amount
+      let description = `Invoice #${invoice.invoiceNumber}`;
+
+      if (invoice.exchangeRate?.rate) {
+        description += ` • Rate: ${invoice.exchangeRate.rate.toFixed(2)} ${
+          invoice.exchangeRate.fromCurrency
+        } ⇄ 1${invoice.exchangeRate.toCurrency}`;
+
+        // Show amount in alternate currency
+        if (invoice.currency === "USD") {
+          const ghsAmount = invoice.totalAmount * invoice.exchangeRate.rate;
+          description += ` equivalent in GHS ${ghsAmount.toFixed(2)}`;
+        } else if (invoice.currency === "GHS") {
+          const usdAmount = invoice.totalAmount / invoice.exchangeRate.rate;
+          description += ` equivalent in USD ${usdAmount.toFixed(2)}`;
+        }
+      }
+
+      return {
+        id: invoice.id,
+        type: "invoice" as const,
+        amount: invoice.totalAmount, // Invoices are already in USD
+        displayAmount: invoice.totalAmount,
+        currency: invoice.currency || "USD",
+        date: invoice.createdAt,
+        description,
+        status: invoice.status,
+      };
+    }) || []),
     ...(customerStatsData?.customer?.payments?.map((payment: any) => {
       // Convert payment amount to USD using the exchangeRate.rate field
       const usdAmount = payment.exchangeRate?.rate
         ? payment.amount / payment.exchangeRate.rate
         : payment.amount;
+
+      // Build description with exchange rate and alternate currency amount
+      let description = `Payment - ${payment.paymentMethod || "N/A"}`;
+
+      if (payment.invoice?.invoiceNumber) {
+        description += ` | Invoice #${payment.invoice.invoiceNumber}`;
+      }
+
+      if (payment.exchangeRate?.rate) {
+        description += ` • Rate: ${payment.exchangeRate.rate.toFixed(2)} ${
+          payment.exchangeRate.fromCurrency
+        } ⇄ 1${payment.exchangeRate.toCurrency}`;
+
+        // Show amount in alternate currency
+        if (payment.currency === "USD") {
+          const ghsAmount = payment.amount * payment.exchangeRate.rate;
+          description += ` equivalent in GHS ${ghsAmount.toFixed(2)}`;
+        } else if (payment.currency === "GHS") {
+          const usdAmount = payment.amount / payment.exchangeRate.rate;
+          description += ` equivalent in USD ${usdAmount.toFixed(2)}`;
+        }
+      }
+
       return {
         id: payment.id,
         type: "payment" as const,
@@ -86,11 +123,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         displayAmount: payment.amount,
         currency: payment.currency,
         date: payment.createdAt,
-        description: `Payment - ${payment.paymentMethod || "N/A"}${
-          payment.invoice?.invoiceNumber
-            ? ` | Invoice #${payment.invoice.invoiceNumber}`
-            : ""
-        }`,
+        description,
       };
     }) || []),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Oldest first for running balance
@@ -300,6 +333,146 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
 
   const tabItems = [
     {
+      key: "info",
+      label: "Customer Info",
+      children: (
+        <Card title="Customer Information">
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>Customer Code:</strong>
+                <div>{customer.customerCode}</div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>Full Name:</strong>
+                <div>
+                  {customer.firstName} {customer.lastName}
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>Status:</strong>
+                <div>
+                  <Tag color={customer.isActive ? "green" : "red"}>
+                    {customer.isActive ? "Active" : "Inactive"}
+                  </Tag>
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>Email:</strong>
+                <div>{customer.email || "N/A"}</div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>Phone Number:</strong>
+                <div>{customer.phoneNumber}</div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>Alternate Phone:</strong>
+                <div>{customer.alternatePhone || "N/A"}</div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>Address:</strong>
+                <div>{customer.address}</div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>ID Type:</strong>
+                <div>{customer.idType || "N/A"}</div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>ID Number:</strong>
+                <div>{customer.idNumber || "N/A"}</div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <div>
+                <strong>Preferred Channel:</strong>
+                <div>
+                  <Tag color="blue">{customer.preferredChannel || "SMS"}</Tag>
+                </div>
+              </div>
+            </Col>
+          </Row>
+
+          {/* Warehouse and City References */}
+          {(customer.warehouse || customer.cityRef) && (
+            <>
+              <div style={{ marginTop: 24, marginBottom: 16 }}>
+                <strong>Associated Locations</strong>
+              </div>
+              <Row gutter={[16, 16]}>
+                {customer.warehouse && (
+                  <Col xs={24} sm={12}>
+                    <Card size="small" title="Warehouse">
+                      <div>
+                        <strong>Name:</strong> {customer.warehouse.name}
+                      </div>
+                      {customer.warehouse.location && (
+                        <div>
+                          <strong>Location:</strong>{" "}
+                          {customer.warehouse.location}
+                        </div>
+                      )}
+                    </Card>
+                  </Col>
+                )}
+                {customer.cityRef && (
+                  <Col xs={24} sm={12}>
+                    <Card size="small" title="City">
+                      <div>
+                        <strong>City:</strong> {customer.cityRef.name}
+                      </div>
+                      {customer.cityRef.country && (
+                        <div>
+                          <strong>Country:</strong> {customer.cityRef.country}
+                        </div>
+                      )}
+                    </Card>
+                  </Col>
+                )}
+              </Row>
+            </>
+          )}
+
+          {/* Timestamps */}
+          <div style={{ marginTop: 24 }}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12}>
+                <div>
+                  <strong>Created At:</strong>
+                  <div>
+                    {dayjs(customer.createdAt).format("DD MMM, YYYY HH:mm")}
+                  </div>
+                </div>
+              </Col>
+              <Col xs={24} sm={12}>
+                <div>
+                  <strong>Updated At:</strong>
+                  <div>
+                    {dayjs(customer.updatedAt).format("DD MMM, YYYY HH:mm")}
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </div>
+        </Card>
+      ),
+    },
+    {
       key: "stats",
       label: "Statistics",
       children: (
@@ -492,7 +665,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       onCancel={onCancel}
       footer={null}
       width={1200}
-      destroyOnClose
+      destroyOnHidden
     >
       <Tabs
         activeKey={activeTab}

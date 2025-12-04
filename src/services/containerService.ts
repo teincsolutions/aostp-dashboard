@@ -134,10 +134,7 @@ export const containerService = {
   ): Promise<ContainerResponse> {
     const response = await apiService.patch<ContainerResponse>(
       `/containers/${id}/status`,
-      null,
-      {
-        params: { status },
-      }
+      { status }
     );
     return response.data;
   },

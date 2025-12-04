@@ -4,6 +4,7 @@ import React from "react";
 import { Modal, Form, Input, Button, Space, Select } from "antd";
 import { toast } from "sonner";
 import { Container, ContainerStatus } from "@/types/container";
+import { handleError } from "@/utils/forms/errorUtils";
 
 const { Option } = Select;
 
@@ -23,25 +24,22 @@ const ContainerStatusUpdateModal: React.FC<ContainerStatusUpdateModalProps> = ({
   loading = false,
 }) => {
   const [form] = Form.useForm();
-  const [newStatus, setNewStatus] = React.useState<ContainerStatus>(
-    ContainerStatus.PLANNED
-  );
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (values: { status: ContainerStatus }) => {
     if (!container) return;
 
     try {
-      await onSubmit(container.id, newStatus);
+      await onSubmit(container.id, values.status);
       onClose();
+      form.resetFields();
     } catch (error: any) {
-      console.log(error.response.data);
-      toast.error("Failed to update container status");
+      handleError(error);
     }
   };
 
   const handleClose = () => {
+    form.resetFields();
     onClose();
-    setNewStatus(ContainerStatus.PLANNED);
   };
 
   // Set form values when container changes
@@ -50,7 +48,6 @@ const ContainerStatusUpdateModal: React.FC<ContainerStatusUpdateModalProps> = ({
       form.setFieldsValue({
         status: container.status,
       });
-      setNewStatus(container.status);
     }
   }, [container, isOpen, form]);
 
@@ -74,11 +71,7 @@ const ContainerStatusUpdateModal: React.FC<ContainerStatusUpdateModalProps> = ({
           label="New Status"
           rules={[{ required: true, message: "Please select status" }]}
         >
-          <Select
-            placeholder="Select status"
-            value={newStatus}
-            onChange={setNewStatus}
-          >
+          <Select placeholder="Select status">
             <Option value={ContainerStatus.PLANNED}>Planned</Option>
             <Option value={ContainerStatus.LOADED}>Loaded</Option>
             <Option value={ContainerStatus.SHIPPED}>Shipped</Option>

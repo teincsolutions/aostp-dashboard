@@ -4,6 +4,8 @@ import {
   getInvoicePdf,
   getInvoicesByCustomer,
   regenerateInvoicePdf,
+  updateInvoice,
+  getPendingInvoices,
 } from "@/services/invoiceService";
 
 export const useCustomerInvoices = (
@@ -27,10 +29,21 @@ export const useInvoices = (params?: {
   limit?: number;
   customerId?: string;
   status?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  packingListId?: string;
 }) => {
   return useQuery({
     queryKey: ["invoices", params],
     queryFn: () => getInvoices(params),
+  });
+};
+
+export const usePendingInvoices = (params?: { customerId?: string }) => {
+  return useQuery({
+    queryKey: ["pending-invoices", params],
+    queryFn: () => getPendingInvoices(params),
   });
 };
 
@@ -48,6 +61,29 @@ export const useRegenerateInvoicePdf = () => {
   return useMutation({
     mutationFn: (invoiceId: string) => regenerateInvoicePdf(invoiceId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice-pdf"] });
+    },
+  });
+};
+
+export const useUpdateInvoice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      invoiceId,
+      data,
+    }: {
+      invoiceId: string;
+      data: {
+        status?: string;
+        paidAmount?: number;
+        notes?: string;
+        dueDate?: string;
+      };
+    }) => updateInvoice(invoiceId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["invoice-pdf"] });
     },
   });

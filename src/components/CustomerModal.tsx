@@ -20,6 +20,8 @@ import {
 } from "@/utils/forms/customerSchemas";
 import { getServerValidationErrors } from "@/utils/forms/errorUtils";
 import { toast } from "sonner";
+import { useWarehouses } from "@/hooks/useWarehouse";
+import { useCities } from "@/hooks/useCities";
 
 const { Option } = Select;
 
@@ -30,7 +32,8 @@ interface CustomerFormikValues {
   address: string;
   email?: string;
   alternatePhone?: string;
-  city?: string;
+  warehouseId?: string;
+  cityId?: string;
   idType?: string;
   idNumber?: string;
   preferredChannel?: string;
@@ -69,6 +72,14 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   const schema =
     mode === "create" ? customerCreateSchema : customerUpdateSchema;
 
+  // Fetch warehouses and cities for select dropdowns
+  const { data: warehousesData, isLoading: warehousesLoading } = useWarehouses({
+    limit: 100, // Maximum allowed limit
+  });
+  const { data: citiesData, isLoading: citiesLoading } = useCities({
+    limit: 100, // Maximum allowed limit
+  });
+
   return (
     <Modal
       title={mode === "create" ? "Create New Customer" : "Edit Customer"}
@@ -85,7 +96,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           address: "",
           email: "",
           alternatePhone: "",
-          city: "",
+          warehouseId: "",
+          cityId: "",
           idType: "",
           idNumber: "",
           preferredChannel: "SMS",
@@ -265,17 +277,51 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
-                    City
+                    Warehouse
                   </label>
-                  <Input
-                    placeholder="Enter city"
-                    value={formik.values.city}
-                    onChange={(e) =>
-                      formik.setFieldValue("city", e.target.value)
+                  <Select
+                    placeholder="Select warehouse (optional)"
+                    value={formik.values.warehouseId}
+                    onChange={(value) =>
+                      formik.setFieldValue("warehouseId", value)
                     }
-                  />
+                    allowClear
+                    loading={warehousesLoading}
+                    showSearch
+                    className="w-full"
+                  >
+                    {warehousesData?.data?.map((warehouse: any) => (
+                      <Option key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name} - {warehouse.location || "N/A"}
+                      </Option>
+                    ))}
+                  </Select>
                 </div>
               </Col>
+              <Col xs={24} sm={12}>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    City
+                  </label>
+                  <Select
+                    placeholder="Select city (optional)"
+                    value={formik.values.cityId}
+                    onChange={(value) => formik.setFieldValue("cityId", value)}
+                    allowClear
+                    loading={citiesLoading}
+                    showSearch
+                    className="w-full"
+                  >
+                    {citiesData?.data?.map((city: any) => (
+                      <Option key={city.id} value={city.id}>
+                        {city.name}, {city.country}
+                      </Option>
+                    ))}
+                  </Select>
+                </div>
+              </Col>
+            </Row>
+            <Row gutter={16}>
               <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
@@ -302,8 +348,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                   )}
                 </div>
               </Col>
-            </Row>
-            <Row gutter={16}>
               <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">

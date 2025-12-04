@@ -41,7 +41,7 @@ export interface Invoice {
   };
   packingListId: string;
   packingList: PackingList;
-  packages: Array<Package>;
+  package: Package;
   totalAmount: number;
   localAmount: number;
   paidAmount: number;
