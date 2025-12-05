@@ -289,9 +289,8 @@ export default function PublicInvoiceView() {
             </Col>
             <Col xs={12} sm={6}>
               <Statistic
-                title="Total Packages"
-                value={invoice.packages?.length || 0}
-                prefix="#"
+                title="Package Status"
+                value={invoice.package ? "Linked" : "None"}
               />
             </Col>
           </Row>
@@ -299,14 +298,17 @@ export default function PublicInvoiceView() {
 
         {/* Package Details */}
         <Card title="Package Details">
-          <Table
-            columns={invoiceColumns}
-            dataSource={invoice.packages || []}
-            rowKey="id"
-            pagination={false}
-            size="small"
-            locale={{ emptyText: <Empty description="No packages found" /> }}
-          />
+          {invoice.package ? (
+            <Table
+              columns={invoiceColumns}
+              dataSource={[invoice.package]}
+              rowKey="id"
+              pagination={false}
+              size="small"
+            />
+          ) : (
+            <Empty description="No package linked to this invoice" />
+          )}
         </Card>
 
         {/* Payment History - Comment out until backend provides payment data */}

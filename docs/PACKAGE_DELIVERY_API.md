@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Package Delivery API manages the recording and tracking of package item deliveries to customers. It handles the entire delivery process including creating delivery records, updating package statuses, and sending notifications.
+The Package Delivery API manages the recording and tracking of package deliveries to customers. It handles the entire delivery process including creating delivery records, updating package statuses, and sending notifications.
 
 ## Base URL
 
@@ -15,7 +15,7 @@ The Package Delivery API manages the recording and tracking of package item deli
 All endpoints require:
 
 - **Bearer Token** authentication
-- **Role**: `OPERATIONS_CLERK`
+- **Role**: `OPERATIONS_CLERK` or `SUPER_ADMIN`
 
 ---
 
@@ -23,18 +23,18 @@ All endpoints require:
 
 ### 1. Create Package Delivery Record
 
-Creates a delivery record when a package item is delivered to a customer.
+Creates a delivery record when a package is delivered to a customer.
 
 **Endpoint:** `POST /package-delivery`
 
-**Authorization:** `OPERATIONS_CLERK` role required
+**Authorization:** `OPERATIONS_CLERK` or `SUPER_ADMIN` role required
 
 #### Request Body
 
 ```json
 {
   "invoiceId": "60f1b2b5c1d9e2f4e6b4f1a2",
-  "packageItemIntakeTrackingCode": "PKG2025001001",
+  "trackingCode": "TR-2025-001",
   "receiverName": "John Doe",
   "quantity": 5,
   "notes": "Delivered to front gate",
@@ -44,24 +44,24 @@ Creates a delivery record when a package item is delivered to a customer.
 
 #### Request Fields
 
-| Field                           | Type     | Required | Description                                                   |
-| ------------------------------- | -------- | -------- | ------------------------------------------------------------- |
-| `invoiceId`                     | string   | Yes      | UUID of the invoice where the delivery belongs                |
-| `packageItemIntakeTrackingCode` | string   | Yes      | Package item intake tracking code (e.g., PKG2025001001)       |
-| `receiverName`                  | string   | No       | Name of the person who received the package                   |
-| `quantity`                      | number   | No       | Quantity released (defaults to full quantity if not provided) |
-| `notes`                         | string   | No       | Optional delivery notes                                       |
-| `photos`                        | string[] | No       | Array of delivery photo URLs                                  |
+| Field          | Type     | Required | Description                                                      |
+| -------------- | -------- | -------- | ---------------------------------------------------------------- |
+| `invoiceId`    | string   | Yes      | UUID of the invoice where the delivery belongs                   |
+| `trackingCode` | string   | Yes      | Package tracking code (e.g., TR-2025-001)                        |
+| `receiverName` | string   | No       | Name of the person who received the package                      |
+| `quantity`     | number   | No       | Quantity released (defaults to package quantity if not provided) |
+| `notes`        | string   | No       | Optional delivery notes                                          |
+| `photos`       | string[] | No       | Array of delivery photo URLs                                     |
 
 #### Business Logic
 
 1. **Validates Invoice**: Checks if the invoice exists
-2. **Finds Package Item**: Locates the package item using the intake tracking code
-3. **Validates Association**: Ensures the package item belongs to the specified invoice
-4. **Prevents Duplicates**: Checks if a delivery record already exists for this item
+2. **Finds Package**: Locates the package using the tracking code
+3. **Validates Association**: Ensures the package belongs to the specified invoice
+4. **Prevents Duplicates**: Checks if a delivery record already exists for this package
 5. **Generates Delivery ID**: Creates a unique delivery ID (format: `DEL001-2025001`)
 6. **Creates Record**: Creates the delivery record in a database transaction
-7. **Updates Package Status**: If all items are released, updates the package status to `RELEASED`
+7. **Updates Package Status**: Updates the package status to `RELEASED`
 8. **Logs Action**: Creates an audit log entry
 9. **Sends Notification**: Sends a delivery notification to the customer
 
@@ -73,7 +73,7 @@ Creates a delivery record when a package item is delivered to a customer.
   "deliveryId": "DEL001-2025001",
   "customerId": "uuid-customer-456",
   "invoiceId": "60f1b2b5c1d9e2f4e6b4f1a2",
-  "packageItemId": "uuid-item-789",
+  "packageId": "uuid-package-101",
   "receiverName": "John Doe",
   "quantity": 5,
   "releaseDate": "2025-12-04T10:30:00.000Z",
@@ -82,12 +82,12 @@ Creates a delivery record when a package item is delivered to a customer.
     "https://example.com/photo1.jpg",
     "https://example.com/photo2.jpg"
   ],
-  "packageItem": {
-    "id": "uuid-item-789",
-    "intakeTrackingCode": "IT001-2025001",
-    "package": {
-      "id": "uuid-package-101",
-      "trackingCode": "AOSTP-123456789-001"
+  "package": {
+    "id": "uuid-package-101",
+    "trackingCode": "TR-2025-001",
+    "warehouse": {
+      "id": "uuid-warehouse-555",
+      "name": "Main Warehouse"
     }
   }
 }
@@ -107,9 +107,9 @@ Creates a delivery record when a package item is delivered to a customer.
 
 Common 400 error scenarios:
 
-- Package item does not belong to the specified invoice
-- Delivery record already exists for this package item
-- Package item is not associated with any package
+- Package does not belong to the specified invoice
+- Delivery record already exists for this package
+- Invoice does not have an associated package
 - Validation errors in request body
 
 **401 Unauthorized**
@@ -127,7 +127,7 @@ Common 400 error scenarios:
 ```json
 {
   "statusCode": 403,
-  "message": "Insufficient permissions (requires OPERATIONS_CLERK role)",
+  "message": "Insufficient permissions (requires OPERATIONS_CLERK or SUPER_ADMIN role)",
   "error": "Forbidden"
 }
 ```
@@ -147,7 +147,7 @@ Or:
 ```json
 {
   "statusCode": 404,
-  "message": "Package item with intake tracking code {code} not found",
+  "message": "Package with tracking code {trackingCode} not found for the provided invoice",
   "error": "Not Found"
 }
 ```
@@ -156,11 +156,11 @@ Or:
 
 ### 2. Get Deliveries by Invoice
 
-Retrieves all package item deliveries associated with a specific invoice.
+Retrieves all package deliveries associated with a specific invoice.
 
 **Endpoint:** `GET /package-delivery/by-invoice/:invoiceId`
 
-**Authorization:** `OPERATIONS_CLERK` role required
+**Authorization:** `OPERATIONS_CLERK` or `SUPER_ADMIN` role required
 
 #### URL Parameters
 
@@ -186,18 +186,13 @@ Authorization: Bearer {token}
     "quantity": 5,
     "receiverName": "John Doe",
     "photos": ["https://example.com/photo1.jpg"],
-    "packageItem": {
-      "id": "uuid-item-789",
-      "intakeTrackingCode": "IT001-2025001",
+    "package": {
+      "id": "uuid-package-101",
+      "trackingCode": "TR-2025-001",
       "description": "Electronics",
-      "package": {
-        "id": "uuid-package-101",
-        "trackingCode": "AOSTP-123456789-001"
-      },
       "warehouse": {
         "id": "uuid-warehouse-555",
-        "name": "Main Warehouse",
-        "location": "Building A"
+        "name": "Main Warehouse"
       }
     }
   }
@@ -220,11 +215,11 @@ Authorization: Bearer {token}
 
 ### 3. Get Deliveries by Customer
 
-Retrieves all package item deliveries for a specific customer across all invoices.
+Retrieves all package deliveries for a specific customer across all invoices.
 
 **Endpoint:** `GET /package-delivery/by-customer/:customerId`
 
-**Authorization:** `OPERATIONS_CLERK` role required
+**Authorization:** `OPERATIONS_CLERK` or `SUPER_ADMIN` role required
 
 #### URL Parameters
 
@@ -283,7 +278,7 @@ Retrieves detailed information for a specific delivery record.
 
 **Endpoint:** `GET /package-delivery/by-id/:deliveryId`
 
-**Authorization:** `OPERATIONS_CLERK` role required
+**Authorization:** `OPERATIONS_CLERK` or `SUPER_ADMIN` role required
 
 #### URL Parameters
 
@@ -326,18 +321,13 @@ Authorization: Bearer {token}
       }
     }
   },
-  "packageItem": {
-    "id": "uuid-item-789",
-    "intakeTrackingCode": "IT001-2025001",
+  "package": {
+    "id": "uuid-package-101",
+    "trackingCode": "TR-2025-001",
     "description": "Electronics",
-    "package": {
-      "id": "uuid-package-101",
-      "trackingCode": "AOSTP-123456789-001"
-    },
     "warehouse": {
       "id": "uuid-warehouse-555",
-      "name": "Main Warehouse",
-      "location": "Building A"
+      "name": "Main Warehouse"
     }
   }
 }
@@ -361,22 +351,20 @@ Authorization: Bearer {token}
 
 ### PackageDelivery
 
-| Field           | Type           | Description                                       |
-| --------------- | -------------- | ------------------------------------------------- |
-| `id`            | string (UUID)  | Unique identifier                                 |
-| `deliveryId`    | string         | Human-readable delivery ID (e.g., DEL001-2025001) |
-| `customerId`    | string (UUID)  | Customer who received the package                 |
-| `invoiceId`     | string (UUID)  | Associated invoice                                |
-| `packageItemId` | string (UUID)  | Package item that was delivered                   |
-| `receiverName`  | string \| null | Name of receiver (optional)                       |
-| `quantity`      | number         | Quantity delivered                                |
-| `releaseDate`   | Date           | Timestamp when delivery was recorded              |
-| `notes`         | string \| null | Delivery notes                                    |
-| `photos`        | string[]       | Array of photo URLs                               |
-| `warehouseId`   | string (UUID)  | Warehouse from which item was released            |
-| `createdById`   | string (UUID)  | User who created the delivery record              |
-| `createdAt`     | Date           | Creation timestamp                                |
-| `updatedAt`     | Date           | Last update timestamp                             |
+| Field          | Type           | Description                                       |
+| -------------- | -------------- | ------------------------------------------------- |
+| `id`           | string (UUID)  | Unique identifier                                 |
+| `deliveryId`   | string         | Human-readable delivery ID (e.g., DEL001-2025001) |
+| `customerId`   | string (UUID)  | Customer who received the package                 |
+| `invoiceId`    | string (UUID)  | Associated invoice                                |
+| `packageId`    | string (UUID)  | Package that was delivered                        |
+| `receiverName` | string \| null | Name of receiver (optional)                       |
+| `quantity`     | number         | Quantity delivered                                |
+| `releaseDate`  | Date           | Timestamp when delivery was recorded              |
+| `notes`        | string \| null | Delivery notes                                    |
+| `photos`       | string[]       | Array of photo URLs                               |
+| `warehouseId`  | string (UUID)  | Warehouse from which package was released         |
+| `createdById`  | string (UUID)  | User who created the delivery record              |
 
 ---
 
@@ -389,7 +377,7 @@ Authorization: Bearer {token}
    ↓
 2. System validates invoice existence
    ↓
-3. System finds package item by tracking code
+3. System finds package by tracking code
    ↓
 4. System validates package-invoice association
    ↓
@@ -399,8 +387,7 @@ Authorization: Bearer {token}
    ↓
 7. Database transaction begins
    ├─ Create delivery record
-   ├─ Check if all package items delivered
-   ├─ Update package status if complete
+   ├─ Update package status to RELEASED
    └─ Create audit log entry
    ↓
 8. Transaction commits
@@ -418,8 +405,7 @@ Authorization: Bearer {token}
 
 When a delivery is created:
 
-- **Package Item**: Implicitly marked as delivered (via delivery relationship)
-- **Package**: Status updated to `RELEASED` if ALL items have been delivered
+- **Package**: Status updated to `RELEASED` immediately upon delivery record creation
 
 ---
 
@@ -451,7 +437,7 @@ Every delivery creation is logged with:
 
 When a customer picks up their package:
 
-1. Scan the package item intake tracking code
+1. Scan the package tracking code
 2. Confirm the invoice
 3. (Optional) Record receiver name
 4. (Optional) Take delivery photos
@@ -468,11 +454,11 @@ To see all deliveries for a customer:
 
 ### 3. Audit Invoice Deliveries
 
-To check which items from an invoice have been delivered:
+To check which packages from an invoice have been delivered:
 
 1. Use the invoice ID
 2. Retrieve all delivery records
-3. Cross-reference with invoice package items
+3. Cross-reference with invoice packages
 
 ---
 
@@ -495,7 +481,7 @@ All error responses follow the NestJS standard format with `statusCode`, `messag
 ## Security
 
 - All endpoints require JWT authentication
-- Only users with `OPERATIONS_CLERK` role can access these endpoints
+- Only users with `OPERATIONS_CLERK` or `SUPER_ADMIN` roles can access these endpoints
 - All actions are logged in the audit trail
 - User identity is captured from JWT token for audit purposes
 
@@ -504,7 +490,8 @@ All error responses follow the NestJS standard format with `statusCode`, `messag
 ## Notes
 
 - Delivery IDs are auto-generated and follow the format: `DEL{warehouseCode}-{sequentialNumber}`
-- A package item can only have one delivery record (enforced at database level)
+- A package can only have one delivery record (enforced at database level with unique constraint)
 - Photos are stored as URLs (presumed to be uploaded to S3 or similar)
-- The `quantity` field allows partial deliveries (though business logic may restrict this)
-- Package status is automatically updated when all items are delivered
+- The `quantity` field represents the package quantity being delivered
+- Package status is automatically updated to `RELEASED` when delivery is created
+- Delivery is package-level, not item-level (one delivery per package)

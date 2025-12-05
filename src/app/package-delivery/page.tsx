@@ -54,7 +54,7 @@ const validateMessages = {
 const initialValues = {
   customerId: "",
   invoiceId: "",
-  packageItemIntakeTrackingCode: "",
+  trackingCode: "",
   receiverName: "",
   quantity: undefined,
   notes: "",
@@ -146,8 +146,7 @@ export default function PackageDeliveryPage() {
       // Create payload with all required fields
       const payload: CreatePackageDeliveryPayload = {
         invoiceId: values.invoiceId,
-        packageItemIntakeTrackingCode:
-          values.packageItemIntakeTrackingCode.trim(),
+        trackingCode: values.trackingCode.trim(),
         receiverName: values.receiverName || undefined,
         quantity: values.quantity || undefined,
         notes: values.notes || undefined,
@@ -280,15 +279,15 @@ export default function PackageDeliveryPage() {
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-500">Package Item</div>
+              <div className="text-sm text-gray-500">Package Tracking</div>
               <div className="font-semibold">
-                {delivery.packageItem?.intakeTrackingCode || "N/A"}
+                {delivery.package?.trackingCode || "N/A"}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-500">Package Tracking</div>
+              <div className="text-sm text-gray-500">Package Description</div>
               <div className="font-semibold">
-                {delivery.packageItem?.package?.trackingCode || "N/A"}
+                {delivery.package?.description || "N/A"}
               </div>
             </div>
             <div>
@@ -304,7 +303,7 @@ export default function PackageDeliveryPage() {
             <div>
               <div className="text-sm text-gray-500">Warehouse</div>
               <div className="font-semibold">
-                {delivery.packageItem?.warehouse?.name || "N/A"}
+                {delivery.package?.warehouse?.name || "N/A"}
               </div>
             </div>
             <div>
@@ -421,7 +420,7 @@ export default function PackageDeliveryPage() {
 
                   <Form.Item
                     label="Package Tracking Code"
-                    name="packageItemIntakeTrackingCode"
+                    name="trackingCode"
                     rules={[{ required: true }]}
                   >
                     <Input
@@ -580,7 +579,7 @@ export default function PackageDeliveryPage() {
             onCancel={() => setScannerModalVisible(false)}
             onScan={(decodedText) => {
               form.setFieldsValue({
-                packageItemIntakeTrackingCode: decodedText,
+                trackingCode: decodedText,
               });
               setScannerModalVisible(false);
               toast.success("Tracking code scanned: " + decodedText);

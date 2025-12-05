@@ -173,7 +173,7 @@ export interface PackageDelivery {
   deliveryId: string;
   customerId: string;
   invoiceId: string;
-  packageItemId: string;
+  packageId: string;
   receiverName?: string;
   quantity: number;
   releaseDate: string;
@@ -194,21 +194,17 @@ export interface PackageDelivery {
       };
     };
   };
-  packageItem?: {
+  package?: {
     id: string;
-    intakeTrackingCode: string;
+    trackingCode: string;
     description?: string;
-    package?: {
-      id: string;
-      trackingCode: string;
-    };
     warehouse?: Warehouse;
   };
 }
 
 export interface CreatePackageDeliveryPayload {
   invoiceId: string;
-  packageItemIntakeTrackingCode: string;
+  trackingCode: string;
   receiverName?: string;
   quantity?: number;
   notes?: string;

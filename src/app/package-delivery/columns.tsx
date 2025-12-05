@@ -31,16 +31,17 @@ export const packageDeliveryColumns: ColumnsType<
     render: (_, record) => record.invoice?.invoiceNumber || "N/A",
   },
   {
-    title: "Package Item",
-    key: "packageItem",
-    width: 160,
-    render: (_, record) => record.packageItem?.intakeTrackingCode || "N/A",
-  },
-  {
     title: "Package Tracking",
     key: "packageTracking",
     width: 180,
-    render: (_, record) => record.packageItem?.package?.trackingCode || "N/A",
+    render: (_, record) => record.package?.trackingCode || "N/A",
+  },
+  {
+    title: "Description",
+    key: "description",
+    width: 200,
+    ellipsis: true,
+    render: (_, record) => record.package?.description || "N/A",
   },
   {
     title: "Quantity",
@@ -59,7 +60,7 @@ export const packageDeliveryColumns: ColumnsType<
     title: "Warehouse",
     key: "warehouse",
     width: 120,
-    render: (_, record) => record.packageItem?.warehouse?.name || "N/A",
+    render: (_, record) => record.package?.warehouse?.name || "N/A",
   },
   {
     title: "Release Date",
