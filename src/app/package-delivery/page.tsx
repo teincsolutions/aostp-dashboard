@@ -125,11 +125,7 @@ export default function PackageDeliveryPage() {
 
       setUploadingPhotos(true);
       // Upload using the pictures endpoint
-      const uploadedList = await uploadPackageFiles(
-        [file],
-        "pictures",
-        "packages"
-      );
+      const uploadedList = await uploadPackageFiles([file], "pictures");
       const uploaded = uploadedList[0];
       setPhotoList((prev) => [...prev, uploaded.url]);
       if (options.onSuccess) options.onSuccess("ok");
