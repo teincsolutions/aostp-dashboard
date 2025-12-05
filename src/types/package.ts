@@ -166,3 +166,51 @@ export interface Package {
   shippingCost: number | null;
   pickupCode?: string;
 }
+
+// Package Delivery types
+export interface PackageDelivery {
+  id: string;
+  deliveryId: string;
+  customerId: string;
+  invoiceId: string;
+  packageItemId: string;
+  receiverName?: string;
+  quantity: number;
+  releaseDate: string;
+  notes?: string;
+  photos: string[];
+  warehouseId: string;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  customer?: Customer;
+  invoice?: {
+    id: string;
+    invoiceNumber: string;
+    packingList?: {
+      container?: {
+        containerNumber: string;
+        destinationCity: string;
+      };
+    };
+  };
+  packageItem?: {
+    id: string;
+    intakeTrackingCode: string;
+    description?: string;
+    package?: {
+      id: string;
+      trackingCode: string;
+    };
+    warehouse?: Warehouse;
+  };
+}
+
+export interface CreatePackageDeliveryPayload {
+  invoiceId: string;
+  packageItemIntakeTrackingCode: string;
+  receiverName?: string;
+  quantity?: number;
+  notes?: string;
+  photos?: string[];
+}

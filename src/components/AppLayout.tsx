@@ -45,6 +45,12 @@ export const menuItems: Array<MenuItem> = [
     label: "Package Intake",
     roles: ["SUPER_ADMIN", "PAYMENT_CLERK", "OPERATIONS_CLERK"],
   },
+  {
+    key: "/package-delivery",
+    icon: <BoxPlotOutlined />,
+    label: "Package Delivery",
+    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
+  },
 
   // Group: Packages, Packing Lists, Warehouse, Containers
   {

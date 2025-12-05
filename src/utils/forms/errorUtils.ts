@@ -58,6 +58,9 @@ export const handleError = (err: any) => {
     !response.data.errors[0].includes("Bad Request")
   ) {
     response.data.errors.forEach((e: string) => toast.error(e));
+    if (response?.data?.message) {
+      toast.error(response.data.message);
+    }
     // Keep modal open for correction
   } else if (response?.data?.message) {
     toast.error(response.data.message);
