@@ -58,6 +58,9 @@ export default function InvoicesPage() {
   const [invoiceModalInvoiceId, setInvoiceModalInvoiceId] = useState<
     string | null
   >(null);
+  const [regeneratingInvoiceId, setRegeneratingInvoiceId] = useState<
+    string | null
+  >(null);
 
   // React Query hooks
   const {
@@ -110,6 +113,7 @@ export default function InvoicesPage() {
   };
 
   const handleRegenerateInvoice = async (record: Invoice) => {
+    setRegeneratingInvoiceId(record.id);
     try {
       await regenerateInvoicePdfMutation(record.id);
       toast.success("Invoice PDF regenerated successfully");
@@ -119,6 +123,8 @@ export default function InvoicesPage() {
       const errorMessage =
         error?.response?.data?.message || "Failed to regenerate invoice PDF";
       toast.error(errorMessage);
+    } finally {
+      setRegeneratingInvoiceId(null);
     }
   };
 
@@ -285,8 +291,12 @@ export default function InvoicesPage() {
           },
           {
             key: "regenerate",
-            icon: <ReloadOutlined />,
-            label: "Regenerate PDF",
+            icon: <ReloadOutlined spin={regeneratingInvoiceId === record.id} />,
+            label:
+              regeneratingInvoiceId === record.id
+                ? "Regenerating..."
+                : "Regenerate PDF",
+            disabled: regeneratingInvoiceId === record.id,
             onClick: () => handleRegenerateInvoice(record),
           },
           {
