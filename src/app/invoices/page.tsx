@@ -11,13 +11,13 @@ import {
   Row,
   Col,
   Statistic,
-  message,
   Popconfirm,
   DatePicker,
   Tag,
   Dropdown,
   MenuProps,
 } from "antd";
+import { toast } from "sonner";
 import {
   SearchOutlined,
   DownloadOutlined,
@@ -112,10 +112,13 @@ export default function InvoicesPage() {
   const handleRegenerateInvoice = async (record: Invoice) => {
     try {
       await regenerateInvoicePdfMutation(record.id);
-      message.success("Invoice PDF regenerated successfully");
-    } catch (error) {
+      toast.success("Invoice PDF regenerated successfully");
+      refetch();
+    } catch (error: any) {
       console.error("Regenerate invoice failed:", error);
-      message.error("Failed to regenerate invoice PDF");
+      const errorMessage =
+        error?.response?.data?.message || "Failed to regenerate invoice PDF";
+      toast.error(errorMessage);
     }
   };
 
@@ -144,11 +147,11 @@ export default function InvoicesPage() {
           )}`,
         },
       });
-      message.success(`Invoice marked as ${status.replace("_", " ")}`);
+      toast.success(`Invoice marked as ${status.replace("_", " ")}`);
       refetch();
     } catch (error) {
       console.error("Update invoice status failed:", error);
-      message.error("Failed to update invoice status");
+      toast.error("Failed to update invoice status");
     }
   };
 
