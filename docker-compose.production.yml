@@ -1,4 +1,3 @@
-
 services:
   aostp-dashboard:
     image: ${DOCKER_IMAGE_NAME:-teincsolutions/aostp-dashboard}:${DOCKER_TAG:-latest}
@@ -6,8 +5,6 @@ services:
     restart: always
     env_file:
       - .env.production
-    ports:
-      - "8080:8080"
     networks:
       - aostp-internal-net
 
