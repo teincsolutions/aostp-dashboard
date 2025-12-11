@@ -209,6 +209,28 @@ export interface RecentAgedPackagesResponse {
   hasMore: boolean;
 }
 
+// Aging Package Row Type (for table display)
+export interface AgingPackageRow {
+  key: string;
+  trackingNumber: string;
+  customer: string;
+  daysInWarehouse: number;
+  status: string;
+  createdAt: string;
+}
+
+// Invoice Row Type (for table display)
+export interface InvoiceRow {
+  key: string;
+  invoiceNumber: string;
+  customer: string;
+  total: number;
+  paid: number;
+  balance: number;
+  status: string;
+  createdAt: string;
+}
+
 // 12. Recent Packing Lists
 export interface RecentPackingListItem {
   id: string;
