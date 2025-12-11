@@ -9,7 +9,7 @@ export const packageDeliveryColumns: ColumnsType<
   PackageDelivery & { onViewDetails?: (id: string) => void }
 > = [
   {
-    title: "Delivery ID",
+    title: "Pickup ID",
     dataIndex: "deliveryId",
     key: "deliveryId",
     width: 160,

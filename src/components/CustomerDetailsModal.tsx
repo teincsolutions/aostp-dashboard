@@ -24,6 +24,9 @@ import {
 } from "@ant-design/icons";
 import { Customer } from "@/types/customer";
 import { useCustomerStats } from "@/hooks/useCustomers";
+import { useCustomerInvoices } from "@/hooks/useInvoices";
+import { useCustomerPayments } from "@/hooks/usePayments";
+import { useDeliveriesByCustomer } from "@/hooks/usePackageDelivery";
 import dayjs from "dayjs";
 
 interface CustomerDetailsModalProps {
@@ -48,11 +51,26 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
   customer,
 }) => {
   const [activeTab, setActiveTab] = useState("stats");
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [paymentPage, setPaymentPage] = useState(1);
+  const [pickupPage, setPickupPage] = useState(1);
 
   // Fetch customer statistics and details
   const { data: customerStatsData, isLoading: statsLoading } = useCustomerStats(
     customer?.id || ""
   );
+
+  // Fetch customer invoices
+  const { data: invoicesData, isLoading: invoicesLoading } =
+    useCustomerInvoices(customer?.id || "", { page: invoicePage, limit: 10 });
+
+  // Fetch customer payments
+  const { data: paymentsData, isLoading: paymentsLoading } =
+    useCustomerPayments(customer?.id || "", { page: paymentPage, limit: 10 });
+
+  // Fetch customer pickups/deliveries
+  const { data: pickupsData, isLoading: pickupsLoading } =
+    useDeliveriesByCustomer(customer?.id || null);
 
   if (!customer) return null;
 
@@ -641,6 +659,329 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             size="small"
             locale={{
               emptyText: <Empty description="No transactions found" />,
+            }}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: "invoices",
+      label: "Invoices",
+      children: (
+        <Card title="Customer Invoices">
+          <Table
+            columns={[
+              {
+                title: "Invoice #",
+                dataIndex: "invoiceNumber",
+                key: "invoiceNumber",
+              },
+              {
+                title: "Total Amount",
+                dataIndex: "totalAmount",
+                key: "totalAmount",
+                render: (amount: number, record: any) => {
+                  const currencySymbol =
+                    record.currency === "USD"
+                      ? "$"
+                      : record.currency === "GHS"
+                      ? "₵"
+                      : "$";
+                  return `${currencySymbol}${amount.toFixed(2)}`;
+                },
+              },
+              {
+                title: "Paid Amount",
+                dataIndex: "paidAmount",
+                key: "paidAmount",
+                render: (amount: number, record: any) => {
+                  const currencySymbol =
+                    record.currency === "USD"
+                      ? "$"
+                      : record.currency === "GHS"
+                      ? "₵"
+                      : "$";
+                  return `${currencySymbol}${(amount || 0).toFixed(2)}`;
+                },
+              },
+              {
+                title: "Balance",
+                dataIndex: "balance",
+                key: "balance",
+                render: (balance: number, record: any) => {
+                  const currencySymbol =
+                    record.currency === "USD"
+                      ? "$"
+                      : record.currency === "GHS"
+                      ? "₵"
+                      : "$";
+                  const color = balance > 0 ? "#cf1322" : "#52c41a";
+                  return (
+                    <span style={{ color, fontWeight: "bold" }}>
+                      {currencySymbol}
+                      {(balance || 0).toFixed(2)}
+                    </span>
+                  );
+                },
+              },
+              {
+                title: "Status",
+                dataIndex: "status",
+                key: "status",
+                render: (status: string) => (
+                  <Tag
+                    color={
+                      status === "PAID"
+                        ? "green"
+                        : status === "PENDING"
+                        ? "orange"
+                        : status === "OVERDUE"
+                        ? "red"
+                        : "blue"
+                    }
+                  >
+                    {status}
+                  </Tag>
+                ),
+              },
+              {
+                title: "Due Date",
+                dataIndex: "dueDate",
+                key: "dueDate",
+                render: (date: string) =>
+                  date ? dayjs(date).format("DD MMM, YYYY") : "N/A",
+              },
+              {
+                title: "Created",
+                dataIndex: "createdAt",
+                key: "createdAt",
+                render: (date: string) => dayjs(date).format("DD MMM, YYYY"),
+              },
+            ]}
+            dataSource={invoicesData?.data || []}
+            loading={invoicesLoading}
+            rowKey="id"
+            pagination={{
+              current: invoicePage,
+              pageSize: 10,
+              total: invoicesData?.meta?.total || 0,
+              onChange: (page) => setInvoicePage(page),
+              showSizeChanger: false,
+              showTotal: (total) => `Total ${total} invoices`,
+            }}
+            size="small"
+            locale={{
+              emptyText: <Empty description="No invoices found" />,
+            }}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: "payments",
+      label: "Payments",
+      children: (
+        <Card title="Customer Payments">
+          <Table
+            columns={[
+              {
+                title: "Payment ID",
+                dataIndex: "id",
+                key: "id",
+                render: (id: string) => id.substring(0, 8) + "...",
+              },
+              {
+                title: "Amount",
+                dataIndex: "amount",
+                key: "amount",
+                render: (amount: number, record: any) => {
+                  const currencySymbol =
+                    record.currency === "USD"
+                      ? "$"
+                      : record.currency === "GHS"
+                      ? "₵"
+                      : "$";
+                  return (
+                    <span style={{ color: "#52c41a", fontWeight: "bold" }}>
+                      {currencySymbol}
+                      {amount.toFixed(2)}
+                    </span>
+                  );
+                },
+              },
+              {
+                title: "Payment Method",
+                dataIndex: "paymentMethod",
+                key: "paymentMethod",
+                render: (method: string) => (
+                  <Tag color="blue">{method || "N/A"}</Tag>
+                ),
+              },
+              {
+                title: "Invoice #",
+                key: "invoice",
+                render: (record: any) => record.invoice?.invoiceNumber || "N/A",
+              },
+              {
+                title: "Reference",
+                dataIndex: "transactionReference",
+                key: "transactionReference",
+                render: (ref: string) => ref || "N/A",
+              },
+              {
+                title: "Payment Date",
+                dataIndex: "paymentDate",
+                key: "paymentDate",
+                render: (date: string) =>
+                  date ? dayjs(date).format("DD MMM, YYYY HH:mm") : "N/A",
+              },
+              {
+                title: "Created",
+                dataIndex: "createdAt",
+                key: "createdAt",
+                render: (date: string) =>
+                  dayjs(date).format("DD MMM, YYYY HH:mm"),
+              },
+            ]}
+            dataSource={paymentsData?.data || []}
+            loading={paymentsLoading}
+            rowKey="id"
+            pagination={{
+              current: paymentPage,
+              pageSize: 10,
+              total: paymentsData?.meta?.total || 0,
+              onChange: (page) => setPaymentPage(page),
+              showSizeChanger: false,
+              showTotal: (total) => `Total ${total} payments`,
+            }}
+            size="small"
+            locale={{
+              emptyText: <Empty description="No payments found" />,
+            }}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: "pickups",
+      label: "Pickups/Deliveries",
+      children: (
+        <Card title="Package Pickups & Deliveries">
+          <Table
+            columns={[
+              {
+                title: "Delivery ID",
+                dataIndex: "id",
+                key: "id",
+                render: (id: string) => id.substring(0, 8) + "...",
+              },
+              {
+                title: "Invoice #",
+                key: "invoice",
+                render: (record: any) => record.invoice?.invoiceNumber || "N/A",
+              },
+              {
+                title: "Packages Count",
+                key: "packagesCount",
+                render: (record: any) => record.packages?.length || 0,
+              },
+              {
+                title: "Delivery Method",
+                dataIndex: "deliveryMethod",
+                key: "deliveryMethod",
+                render: (method: string) => (
+                  <Tag color="purple">{method || "N/A"}</Tag>
+                ),
+              },
+              {
+                title: "Receiver Name",
+                dataIndex: "receiverName",
+                key: "receiverName",
+                render: (name: string) => name || "N/A",
+              },
+              {
+                title: "Receiver Phone",
+                dataIndex: "receiverPhone",
+                key: "receiverPhone",
+                render: (phone: string) => phone || "N/A",
+              },
+              {
+                title: "Status",
+                dataIndex: "status",
+                key: "status",
+                render: (status: string) => (
+                  <Tag
+                    color={
+                      status === "DELIVERED"
+                        ? "green"
+                        : status === "PENDING"
+                        ? "orange"
+                        : status === "IN_TRANSIT"
+                        ? "blue"
+                        : "default"
+                    }
+                  >
+                    {status || "PENDING"}
+                  </Tag>
+                ),
+              },
+              {
+                title: "Delivery Date",
+                dataIndex: "deliveryDate",
+                key: "deliveryDate",
+                render: (date: string) =>
+                  date ? dayjs(date).format("DD MMM, YYYY HH:mm") : "N/A",
+              },
+              {
+                title: "Created",
+                dataIndex: "createdAt",
+                key: "createdAt",
+                render: (date: string) =>
+                  dayjs(date).format("DD MMM, YYYY HH:mm"),
+              },
+            ]}
+            dataSource={pickupsData || []}
+            loading={pickupsLoading}
+            rowKey="id"
+            pagination={{
+              current: pickupPage,
+              pageSize: 10,
+              onChange: (page) => setPickupPage(page),
+              showSizeChanger: false,
+              showTotal: (total) => `Total ${total} deliveries`,
+            }}
+            size="small"
+            locale={{
+              emptyText: <Empty description="No pickups/deliveries found" />,
+            }}
+            expandable={{
+              expandedRowRender: (record: any) => (
+                <div style={{ padding: "16px", backgroundColor: "#fafafa" }}>
+                  <Row gutter={[16, 16]}>
+                    <Col span={12}>
+                      <strong>Delivery Address:</strong>
+                      <div>{record.deliveryAddress || "N/A"}</div>
+                    </Col>
+                    <Col span={12}>
+                      <strong>Notes:</strong>
+                      <div>{record.notes || "N/A"}</div>
+                    </Col>
+                  </Row>
+                  {record.packages && record.packages.length > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <strong>Packages:</strong>
+                      <ul style={{ marginTop: 8 }}>
+                        {record.packages.map((pkg: any) => (
+                          <li key={pkg.id}>
+                            Tracking: {pkg.trackingId} -{" "}
+                            {pkg.description || "N/A"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ),
             }}
           />
         </Card>

@@ -14,8 +14,10 @@ import {
   Image,
   Select,
   Space,
+  Row,
+  Col,
 } from "antd";
-import { UploadOutlined, QrcodeOutlined, EyeOutlined } from "@ant-design/icons";
+import { UploadOutlined, EyeOutlined } from "@ant-design/icons";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import { packageDeliveryColumns } from "@/app/package-delivery/columns";
 import {
@@ -29,7 +31,6 @@ import { AuthGuard } from "@/components/AuthGuard";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
 import { UploadProps } from "antd/lib";
 import { toast } from "sonner";
-import { Html5QrcodeScanner } from "html5-qrcode";
 import { useAuth } from "@/hooks/useAuth";
 import dayjs from "dayjs";
 import { CreatePackageDeliveryPayload, PackageDelivery } from "@/types/package";
@@ -53,10 +54,9 @@ const validateMessages = {
 
 const initialValues = {
   customerId: "",
-  invoiceId: "",
-  trackingCode: "",
+  invoiceIds: [],
   receiverName: "",
-  quantity: undefined,
+  quantity: 1, // Default quantity
   notes: "",
   photos: [],
 };
@@ -71,14 +71,11 @@ export default function PackageDeliveryPage() {
   });
   const [tablePage, setTablePage] = useState(1);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>("");
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
   const [deliveryDetailsModalVisible, setDeliveryDetailsModalVisible] =
     useState(false);
   const [selectedDelivery, setSelectedDelivery] =
     useState<PackageDelivery | null>(null);
-
-  // Scanner modal state
-  const [scannerModalVisible, setScannerModalVisible] = useState(false);
 
   // Get current user
   const { user } = useAuth();
@@ -87,17 +84,12 @@ export default function PackageDeliveryPage() {
   const { data: customerInvoices, isLoading: invoicesLoading } =
     useCustomerInvoices(selectedCustomerId, { limit: 100 });
 
-  // Deliveries by selected invoice
+  // Deliveries by selected invoices (use first invoice for display)
   const {
     data: invoiceDeliveries = [],
     isLoading: deliveriesLoading,
     refetch: refetchDeliveries,
-  } = useDeliveriesByInvoice(selectedInvoiceId);
-
-  // Handler for QR/Barcode scan
-  const handleScanTrackingCode = () => {
-    setScannerModalVisible(true);
-  };
+  } = useDeliveriesByInvoice(selectedInvoiceIds[0] || null);
 
   const { createDelivery, isCreating } = usePackageDelivery();
 
@@ -141,16 +133,15 @@ export default function PackageDeliveryPage() {
     try {
       // Create payload with all required fields
       const payload: CreatePackageDeliveryPayload = {
-        invoiceId: values.invoiceId,
-        trackingCode: values.trackingCode.trim(),
+        invoiceIds: values.invoiceIds || [],
+        quantity: values.quantity, // Required field
         receiverName: values.receiverName || undefined,
-        quantity: values.quantity || undefined,
         notes: values.notes || undefined,
         photos: photoList.length > 0 ? photoList : undefined,
       };
 
-      await createDelivery(payload);
-      toast.success("Package delivery recorded successfully.");
+      const result = await createDelivery(payload);
+      toast.success(`${result.count} package pickup(s) recorded successfully.`);
 
       setPhotoList([]);
       form.resetFields();
@@ -170,58 +161,6 @@ export default function PackageDeliveryPage() {
       setSelectedDelivery(delivery);
       setDeliveryDetailsModalVisible(true);
     }
-  };
-
-  // Scanner modal component
-  const ScannerModal = ({
-    visible,
-    onCancel,
-    onScan,
-  }: {
-    visible: boolean;
-    onCancel: () => void;
-    onScan: (decodedText: string) => void;
-  }) => {
-    useEffect(() => {
-      let scanner: Html5QrcodeScanner | null = null;
-      if (visible) {
-        scanner = new Html5QrcodeScanner(
-          "reader",
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          /* verbose= */ false
-        );
-        scanner.render(
-          (decodedText) => {
-            onScan(decodedText);
-            scanner?.clear();
-          },
-          (error) => {
-            // console.warn(error);
-          }
-        );
-      }
-
-      return () => {
-        if (scanner) {
-          scanner.clear().catch((error) => {
-            console.error("Failed to clear html5-qrcode scanner. ", error);
-          });
-        }
-      };
-    }, [visible, onScan]);
-
-    return (
-      <Modal
-        open={visible}
-        onCancel={onCancel}
-        footer={null}
-        title="Scan QR/Barcode"
-        destroyOnClose
-        width={400}
-      >
-        <div id="reader" style={{ width: "100%" }}></div>
-      </Modal>
-    );
   };
 
   // Delivery Details Modal
@@ -245,95 +184,147 @@ export default function PackageDeliveryPage() {
             Close
           </Button>,
         ]}
-        title="Delivery Details"
+        title="Pickup Details"
         width={800}
       >
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-sm text-gray-500">Delivery ID</div>
-              <div className="font-semibold">{delivery.deliveryId}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Release Date</div>
-              <div className="font-semibold">
-                {dayjs(delivery.releaseDate).format("YYYY-MM-DD HH:mm")}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Customer</div>
-              <div className="font-semibold">
-                {delivery.customer
-                  ? `${delivery.customer.customerCode} - ${delivery.customer.firstName} ${delivery.customer.lastName}`
-                  : "N/A"}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Invoice</div>
-              <div className="font-semibold">
-                {delivery.invoice?.invoiceNumber || "N/A"}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Package Tracking</div>
-              <div className="font-semibold">
-                {delivery.package?.trackingCode || "N/A"}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Package Description</div>
-              <div className="font-semibold">
-                {delivery.package?.description || "N/A"}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Receiver Name</div>
-              <div className="font-semibold">
-                {delivery.receiverName || "N/A"}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Quantity</div>
-              <div className="font-semibold">{delivery.quantity}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Warehouse</div>
-              <div className="font-semibold">
-                {delivery.package?.warehouse?.name || "N/A"}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Container</div>
-              <div className="font-semibold">
-                {delivery.invoice?.packingList?.container?.containerNumber ||
-                  "N/A"}
-              </div>
-            </div>
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          <div>
+            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+              <Card size="small" title="Pickup Information">
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: "100%" }}
+                >
+                  <div>
+                    <Typography.Text type="secondary">
+                      Pickup ID:
+                    </Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {delivery.deliveryId}
+                    </Typography.Text>
+                  </div>
+                  <div>
+                    <Typography.Text type="secondary">
+                      Release Date:
+                    </Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {dayjs(delivery.releaseDate).format("YYYY-MM-DD HH:mm")}
+                    </Typography.Text>
+                  </div>
+                  <div>
+                    <Typography.Text type="secondary">
+                      Receiver Name:
+                    </Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {delivery.receiverName || "N/A"}
+                    </Typography.Text>
+                  </div>
+                  <div>
+                    <Typography.Text type="secondary">
+                      Quantity:
+                    </Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {delivery.quantity}
+                    </Typography.Text>
+                  </div>
+                </Space>
+              </Card>
+
+              <Card size="small" title="Customer & Invoice">
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: "100%" }}
+                >
+                  <div>
+                    <Typography.Text type="secondary">
+                      Customer:
+                    </Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {delivery.customer
+                        ? `${delivery.customer.customerCode} - ${delivery.customer.firstName} ${delivery.customer.lastName}`
+                        : "N/A"}
+                    </Typography.Text>
+                  </div>
+                  <div>
+                    <Typography.Text type="secondary">Invoice:</Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {delivery.invoice?.invoiceNumber || "N/A"}
+                    </Typography.Text>
+                  </div>
+                </Space>
+              </Card>
+
+              <Card size="small" title="Package Details">
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: "100%" }}
+                >
+                  <div>
+                    <Typography.Text type="secondary">
+                      Package Tracking:
+                    </Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {delivery.package?.trackingCode || "N/A"}
+                    </Typography.Text>
+                  </div>
+                  <div>
+                    <Typography.Text type="secondary">
+                      Description:
+                    </Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {delivery.package?.description || "N/A"}
+                    </Typography.Text>
+                  </div>
+                  <div>
+                    <Typography.Text type="secondary">
+                      Warehouse:
+                    </Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {delivery.package?.warehouse?.name || "N/A"}
+                    </Typography.Text>
+                  </div>
+                  <div>
+                    <Typography.Text type="secondary">
+                      Container:
+                    </Typography.Text>
+                    <Typography.Text strong style={{ marginLeft: 8 }}>
+                      {delivery.invoice?.packingList?.container
+                        ?.containerNumber || "N/A"}
+                    </Typography.Text>
+                  </div>
+                </Space>
+              </Card>
+
+              {delivery.notes && (
+                <Card size="small" title="Notes">
+                  <Typography.Text>{delivery.notes}</Typography.Text>
+                </Card>
+              )}
+
+              {delivery.photos && delivery.photos.length > 0 && (
+                <Card size="small" title="Pickup Photos">
+                  <Image.PreviewGroup>
+                    <Space wrap size="small">
+                      {delivery.photos.map((url, idx) => (
+                        <Image
+                          key={idx}
+                          src={url}
+                          alt={`Delivery photo ${idx + 1}`}
+                          width={150}
+                          height={120}
+                          style={{ objectFit: "cover" }}
+                        />
+                      ))}
+                    </Space>
+                  </Image.PreviewGroup>
+                </Card>
+              )}
+            </Space>
           </div>
-          {delivery.notes && (
-            <div>
-              <div className="text-sm text-gray-500">Notes</div>
-              <div className="font-semibold">{delivery.notes}</div>
-            </div>
-          )}
-          {delivery.photos && delivery.photos.length > 0 && (
-            <div>
-              <div className="text-sm text-gray-500 mb-2">Delivery Photos</div>
-              <Image.PreviewGroup>
-                <div className="grid grid-cols-4 gap-2">
-                  {delivery.photos.map((url, idx) => (
-                    <Image
-                      key={idx}
-                      src={url}
-                      alt={`Delivery photo ${idx + 1}`}
-                      style={{ width: "100%", height: 120, objectFit: "cover" }}
-                    />
-                  ))}
-                </div>
-              </Image.PreviewGroup>
-            </div>
-          )}
-        </div>
+        </Space>
       </Modal>
     );
   };
@@ -341,17 +332,21 @@ export default function PackageDeliveryPage() {
   return (
     <AuthGuard requiredRoles={rolesAllowed}>
       <AppLayout>
-        <div className="px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
+        <Space
+          direction="vertical"
+          size="large"
+          style={{ width: "100%", padding: 24 }}
+        >
           {/* Top Heading */}
-          <div className="mb-4">
-            <Title level={3} className="!mb-0">
-              Package Delivery
+          <Space direction="vertical" size="small">
+            <Title level={3} style={{ margin: 0 }}>
+              Package Pickup
             </Title>
-            <p className="text-gray-500 text-sm mt-1">
-              Record package item deliveries to customers
-            </p>
-          </div>
-          {/* Main Form Grid */}
+            <Typography.Text type="secondary">
+              Record package pickups by customers
+            </Typography.Text>
+          </Space>
+          {/* Main Form */}
           <Form
             form={form}
             layout="vertical"
@@ -359,12 +354,11 @@ export default function PackageDeliveryPage() {
             validateMessages={validateMessages}
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
-            className="mb-2"
+            className="max-w-5xl"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              {/* Delivery Details Card */}
-              <Card className="shadow-sm rounded-2xl">
-                <div className="space-y-4">
+            <Card title="Pickup Details">
+              <Row gutter={[16, 16]}>
+                <Col xs={24} lg={12}>
                   <Form.Item
                     label="Customer"
                     name="customerId"
@@ -376,25 +370,31 @@ export default function PackageDeliveryPage() {
                         setSelectedCustomerId(value || "");
                         form.setFieldsValue({
                           customerId: value,
-                          invoiceId: undefined,
+                          invoiceIds: [],
                         });
-                        setSelectedInvoiceId("");
+                        setSelectedInvoiceIds([]);
                       }}
                       placeholder="Search customer by name, code, or phone"
                     />
                   </Form.Item>
 
                   <Form.Item
-                    label="Invoice"
-                    name="invoiceId"
-                    rules={[{ required: true }]}
+                    label="Invoices (Select one or more)"
+                    name="invoiceIds"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select at least one invoice",
+                      },
+                    ]}
                   >
                     <Select
-                      className="w-full"
-                      placeholder="Select invoice"
+                      mode="multiple"
+                      style={{ width: "100%" }}
+                      placeholder="Select invoices"
                       loading={invoicesLoading}
                       disabled={!selectedCustomerId}
-                      onChange={(value) => setSelectedInvoiceId(value)}
+                      onChange={(values) => setSelectedInvoiceIds(values)}
                       showSearch
                       filterOption={(input, option) =>
                         String(option?.children || "")
@@ -415,24 +415,6 @@ export default function PackageDeliveryPage() {
                   </Form.Item>
 
                   <Form.Item
-                    label="Package Tracking Code"
-                    name="trackingCode"
-                    rules={[{ required: true }]}
-                  >
-                    <Input
-                      placeholder="Enter or scan tracking code"
-                      suffix={
-                        <Button
-                          type="text"
-                          icon={<QrcodeOutlined />}
-                          onClick={handleScanTrackingCode}
-                          size="small"
-                        />
-                      }
-                    />
-                  </Form.Item>
-
-                  <Form.Item
                     label="Receiver Name (Optional)"
                     name="receiverName"
                   >
@@ -440,36 +422,42 @@ export default function PackageDeliveryPage() {
                   </Form.Item>
 
                   <Form.Item
-                    label="Quantity (Optional)"
+                    label="Quantity"
                     name="quantity"
-                    help="Leave empty to release full quantity"
+                    rules={[
+                      { required: true, message: "Quantity is required" },
+                      {
+                        type: "number",
+                        min: 1,
+                        message: "Quantity must be at least 1",
+                      },
+                    ]}
                   >
                     <InputNumber
-                      className="w-full"
+                      style={{ width: "100%" }}
                       min={1}
-                      placeholder="Quantity released"
+                      placeholder="Enter quantity"
                     />
                   </Form.Item>
-                </div>
-              </Card>
-              {/* Notes & Photos Card */}
-              <Card className="shadow-sm rounded-2xl">
-                <div className="space-y-4">
-                  <Form.Item label="Delivery Notes (Optional)" name="notes">
+                </Col>
+
+                <Col xs={24} lg={12}>
+                  <Form.Item label="Pickup Notes (Optional)" name="notes">
                     <Input.TextArea
-                      className="w-full"
                       rows={4}
-                      placeholder="Additional notes about the delivery"
+                      placeholder="Additional notes about the pickup"
+                      style={{ width: "100%" }}
                     />
                   </Form.Item>
 
-                  <Form.Item label="Delivery Photos (Optional)">
+                  <Form.Item label="Pickup Photos (Optional)">
                     <Upload
                       multiple
                       listType="picture-card"
                       customRequest={handlePhotoUpload}
                       beforeUpload={beforeUpload}
                       showUploadList={false}
+                      style={{ marginLeft: 30 }}
                     >
                       <Button
                         icon={<UploadOutlined />}
@@ -479,45 +467,53 @@ export default function PackageDeliveryPage() {
                       </Button>
                     </Upload>
                     {photoList.length > 0 && (
-                      <div className="mt-2">
+                      <Space
+                        direction="vertical"
+                        style={{ width: "100%", marginTop: 16 }}
+                      >
                         <Image.PreviewGroup>
-                          <div className="grid grid-cols-3 gap-2">
+                          <Space wrap>
                             {photoList.map((url, idx) => (
-                              <div key={idx} className="relative">
+                              <Space key={idx} direction="vertical" size={0}>
                                 <Image
                                   src={url}
                                   alt={`Photo ${idx + 1}`}
-                                  style={{
-                                    width: "100%",
-                                    height: 80,
-                                    objectFit: "cover",
-                                  }}
+                                  width={100}
+                                  height={80}
+                                  style={{ objectFit: "cover" }}
                                 />
                                 <Button
-                                  type="text"
+                                  type="link"
                                   danger
                                   size="small"
-                                  className="absolute top-0 right-0"
+                                  block
                                   onClick={() =>
                                     setPhotoList((prev) =>
                                       prev.filter((_, i) => i !== idx)
                                     )
                                   }
                                 >
-                                  ×
+                                  Remove
                                 </Button>
-                              </div>
+                              </Space>
                             ))}
-                          </div>
+                          </Space>
                         </Image.PreviewGroup>
-                      </div>
+                      </Space>
                     )}
                   </Form.Item>
-                </div>
-              </Card>
-            </div>
-            {/* Sticky Footer */}
-            <div className="sticky bottom-0 bg-white/80 backdrop-blur border-t p-3 flex items-center gap-3 justify-end mt-4 z-10">
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Form Actions */}
+            <Space
+              style={{
+                width: "100%",
+                justifyContent: "flex-end",
+                marginTop: 16,
+              }}
+            >
               <Button
                 onClick={() => {
                   form.resetFields();
@@ -531,17 +527,18 @@ export default function PackageDeliveryPage() {
                 loading={isCreating || uploadingPhotos}
                 onClick={() => form.submit()}
               >
-                Record Delivery
+                Record Pickup
               </Button>
-            </div>
+            </Space>
           </Form>
-          {/* Recent Deliveries Table */}
-          <div className="mt-6 shadow-sm rounded-2xl p-4 bg-white">
-            <Title level={4}>
-              {selectedInvoiceId
-                ? "Deliveries for Selected Invoice"
-                : "Recent Deliveries"}
-            </Title>
+          {/* Recent Pickups Table */}
+          <Card
+            title={
+              selectedInvoiceIds.length > 0
+                ? "Pickups for Selected Invoices"
+                : "Recent Pickups"
+            }
+          >
             <Table
               columns={packageDeliveryColumns}
               dataSource={invoiceDeliveries.map((item) => ({
@@ -561,26 +558,21 @@ export default function PackageDeliveryPage() {
               size="middle"
               locale={{
                 emptyText: (
-                  <div className="py-8 text-center text-gray-400">
-                    {selectedInvoiceId
-                      ? "No deliveries found for this invoice"
-                      : "Select a customer and invoice to view deliveries"}
-                  </div>
+                  <Space
+                    direction="vertical"
+                    align="center"
+                    style={{ padding: "32px 0", width: "100%" }}
+                  >
+                    <Typography.Text type="secondary">
+                      {selectedInvoiceIds.length > 0
+                        ? "No pickups found for these invoices"
+                        : "Select a customer and invoices to view pickups"}
+                    </Typography.Text>
+                  </Space>
                 ),
               }}
             />
-          </div>
-          <ScannerModal
-            visible={scannerModalVisible}
-            onCancel={() => setScannerModalVisible(false)}
-            onScan={(decodedText) => {
-              form.setFieldsValue({
-                trackingCode: decodedText,
-              });
-              setScannerModalVisible(false);
-              toast.success("Tracking code scanned: " + decodedText);
-            }}
-          />
+          </Card>
           <DeliveryDetailsModal
             visible={deliveryDetailsModalVisible}
             onCancel={() => {
@@ -589,7 +581,7 @@ export default function PackageDeliveryPage() {
             }}
             delivery={selectedDelivery}
           />
-        </div>
+        </Space>
       </AppLayout>
     </AuthGuard>
   );

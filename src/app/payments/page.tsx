@@ -46,6 +46,7 @@ import {
   usePaymentMutations,
   usePaymentDetail,
   usePaymentReceipt,
+  usePaymentStats,
 } from "@/hooks/usePayments";
 import { useCustomerInvoices, usePendingInvoices } from "@/hooks/useInvoices";
 import {
@@ -85,9 +86,11 @@ export default function PaymentsPage() {
     useState<Currency>(Currency.USD);
   const [paymentAmount, setPaymentAmount] = useState<string>("");
   // Filter states for payments table
-  const [invoiceNumberFilter, setInvoiceNumberFilter] = useState("");
-  const [customerFilter, setCustomerFilter] = useState("");
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [filterCustomerId, setFilterCustomerId] = useState<string>("");
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>("");
+  const [filterCurrency, setFilterCurrency] = useState<string>("");
   const [dateRange, setDateRange] = useState<[string, string] | null>(null);
 
   // Export states
@@ -107,13 +110,28 @@ export default function PaymentsPage() {
   // Forms
   const [paymentForm] = Form.useForm();
 
-  const { data: allPaymentsData, isLoading: isLoadingAllPayments } =
+  const { data: allPaymentsResponse, isLoading: isLoadingAllPayments } =
     useAllPayments({
-      page: 1,
-      limit: 10,
-      sortBy: "createdAt",
+      page,
+      limit,
+      sortBy: "processedAt",
       sortOrder: "desc",
+      customerId: filterCustomerId || undefined,
+      paymentMethod: filterPaymentMethod || undefined,
+      currency: filterCurrency || undefined,
+      dateFrom: dateRange?.[0] || undefined,
+      dateTo: dateRange?.[1] || undefined,
     });
+
+  const allPaymentsData = allPaymentsResponse?.data || [];
+  const paymentsMeta = allPaymentsResponse?.meta;
+
+  // Fetch payment statistics with same filters
+  const { data: paymentStats } = usePaymentStats({
+    dateFrom: dateRange?.[0] || undefined,
+    dateTo: dateRange?.[1] || undefined,
+    customerId: filterCustomerId || undefined,
+  });
 
   const { makePayment, isProcessingPayment, deletePayment } =
     usePaymentMutations();
@@ -286,9 +304,9 @@ export default function PaymentsPage() {
       return;
     }
 
-    const payments = allPaymentsData || [];
+    const payments = allPaymentsData;
 
-    if (payments.length === 0) {
+    if (!payments || payments.length === 0) {
       toast.error("No payments to export");
       return;
     }
@@ -712,34 +730,125 @@ export default function PaymentsPage() {
             invoiceId={viewInvoiceId}
           />
 
+          {/* Payment Statistics */}
+          {paymentStats && (
+            <Row gutter={[16, 16]} className="mb-6">
+              <Col xs={24} sm={12} md={6}>
+                <Card>
+                  <Statistic
+                    title="Total Payments"
+                    value={paymentStats.totalPayments || 0}
+                    prefix={<FileTextOutlined />}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Card>
+                  <Statistic
+                    title="Total Amount"
+                    value={paymentStats.totalAmount || 0}
+                    prefix={<DollarOutlined />}
+                    precision={2}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Card>
+                  <Statistic
+                    title="Average Payment"
+                    value={paymentStats.averagePaymentAmount || 0}
+                    prefix={<DollarOutlined />}
+                    precision={2}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Card>
+                  <Statistic
+                    title="Cash Payments"
+                    value={paymentStats.paymentsByMethod?.CASH || 0}
+                  />
+                </Card>
+              </Col>
+            </Row>
+          )}
+
           {/* Payment History */}
-          <Card title="All Payments" className="mt-6">
+          <Card
+            title="All Payments"
+            className="mt-6"
+            extra={
+              <Button
+                onClick={() => {
+                  setFilterCustomerId("");
+                  setFilterPaymentMethod("");
+                  setFilterCurrency("");
+                  setDateRange(null);
+                  setPage(1);
+                }}
+                disabled={
+                  !filterCustomerId &&
+                  !filterPaymentMethod &&
+                  !filterCurrency &&
+                  !dateRange
+                }
+              >
+                Clear All Filters
+              </Button>
+            }
+          >
             {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <Input
-                placeholder="Filter by invoice number"
-                value={invoiceNumberFilter}
-                onChange={(e) => setInvoiceNumberFilter(e.target.value)}
-                allowClear
-                prefix={<SearchOutlined />}
-              />
-              <Input
-                placeholder="Filter by customer"
-                value={customerFilter}
-                onChange={(e) => setCustomerFilter(e.target.value)}
-                allowClear
-                prefix={<UserOutlined />}
-              />
+              <Space.Compact style={{ width: "100%" }}>
+                <CustomerSearchSelect
+                  placeholder="Filter by customer"
+                  onSelect={(customerId) => {
+                    setFilterCustomerId(customerId);
+                    setPage(1);
+                  }}
+                  value={filterCustomerId || undefined}
+                />
+                {filterCustomerId && (
+                  <Button
+                    onClick={() => {
+                      setFilterCustomerId("");
+                      setPage(1);
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </Space.Compact>
               <Select
-                placeholder="Payment status"
-                value={paymentStatusFilter}
-                onChange={setPaymentStatusFilter}
+                placeholder="Payment method"
+                value={filterPaymentMethod || undefined}
+                onChange={(value) => {
+                  setFilterPaymentMethod(value || "");
+                  setPage(1);
+                }}
                 allowClear
               >
-                <Option value="COMPLETED">Completed</Option>
-                <Option value="PENDING">Pending</Option>
-                <Option value="FAILED">Failed</Option>
-                <Option value="REFUNDED">Refunded</Option>
+                <Option value="CASH">Cash</Option>
+                <Option value="BANK_TRANSFER">Bank Transfer</Option>
+                <Option value="DIRECT_MOMO_TRANSFER">
+                  Direct Momo Transfer
+                </Option>
+                <Option value="MOBILE_MONEY">Mobile Money</Option>
+                <Option value="CARD">Card</Option>
+                <Option value="CREDIT_CARD">Credit Card</Option>
+              </Select>
+              <Select
+                placeholder="Currency"
+                value={filterCurrency || undefined}
+                onChange={(value) => {
+                  setFilterCurrency(value || "");
+                  setPage(1);
+                }}
+                allowClear
+              >
+                <Option value="USD">USD</Option>
+                <Option value="GHS">GHS</Option>
+                <Option value="CNY">CNY</Option>
               </Select>
               <DatePicker.RangePicker
                 placeholder={["From date", "To date"]}
@@ -749,10 +858,43 @@ export default function PaymentsPage() {
                       ? [dateStrings[0], dateStrings[1]]
                       : null
                   );
+                  setPage(1);
                 }}
                 className="w-full"
               />
             </div>
+
+            {/* Active Filters Summary */}
+            {(filterCustomerId ||
+              filterPaymentMethod ||
+              filterCurrency ||
+              dateRange) && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <Space size={[0, 8]} wrap>
+                  <Text strong>Active Filters:</Text>
+                  {filterCustomerId && (
+                    <Tag closable onClose={() => setFilterCustomerId("")}>
+                      Customer: {filterCustomerId.substring(0, 8)}...
+                    </Tag>
+                  )}
+                  {filterPaymentMethod && (
+                    <Tag closable onClose={() => setFilterPaymentMethod("")}>
+                      Method: {filterPaymentMethod}
+                    </Tag>
+                  )}
+                  {filterCurrency && (
+                    <Tag closable onClose={() => setFilterCurrency("")}>
+                      Currency: {filterCurrency}
+                    </Tag>
+                  )}
+                  {dateRange && (
+                    <Tag closable onClose={() => setDateRange(null)}>
+                      Date: {dateRange[0]} to {dateRange[1]}
+                    </Tag>
+                  )}
+                </Space>
+              </div>
+            )}
 
             <Table
               columns={getPaymentColumns({
@@ -769,13 +911,24 @@ export default function PaymentsPage() {
                   setIsReceiptDrawerVisible(true);
                 },
               })}
-              dataSource={allPaymentsData || []}
+              dataSource={allPaymentsData}
               loading={isLoadingAllPayments}
               rowKey="id"
               pagination={{
-                pageSize: 10,
+                current: page,
+                pageSize: limit,
+                total: paymentsMeta?.total || 0,
                 showTotal: (total, range) =>
                   `${range[0]}-${range[1]} of ${total} payments`,
+                showSizeChanger: true,
+                pageSizeOptions: ["10", "20", "50", "100"],
+                onChange: (newPage, newPageSize) => {
+                  setPage(newPage);
+                  if (newPageSize !== limit) {
+                    setLimit(newPageSize);
+                    setPage(1);
+                  }
+                },
               }}
               locale={{ emptyText: <Empty description="No payments found" /> }}
               scroll={{ x: true }}

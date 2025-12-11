@@ -34,6 +34,7 @@ import {
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { InvoiceModal } from "@/components/InvoiceModal";
+import { PackingListSearchSelect } from "@/components/PackingListSearchSelect";
 import {
   useInvoices,
   useRegenerateInvoicePdf,
@@ -49,6 +50,7 @@ export default function InvoicesPage() {
   // State for filters
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [packingListFilter, setPackingListFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([
     null,
     null,
@@ -72,6 +74,7 @@ export default function InvoicesPage() {
     limit: pageSize,
     search: search || undefined,
     status: statusFilter || undefined,
+    packingListId: packingListFilter || undefined,
     dateFrom: dateRange[0] ? dateRange[0].toISOString() : undefined,
     dateTo: dateRange[1] ? dateRange[1].toISOString() : undefined,
   });
@@ -90,6 +93,11 @@ export default function InvoicesPage() {
     setCurrentPage(1);
   };
 
+  const handlePackingListFilter = (packingListId: string) => {
+    setPackingListFilter(packingListId);
+    setCurrentPage(1);
+  };
+
   const handleDateRangeChange = (
     dates: null | [Dayjs | null, Dayjs | null]
   ) => {
@@ -100,6 +108,7 @@ export default function InvoicesPage() {
   const handleClearFilters = () => {
     setSearch("");
     setStatusFilter("");
+    setPackingListFilter("");
     setDateRange([null, null]);
     setCurrentPage(1);
   };
@@ -442,7 +451,7 @@ export default function InvoicesPage() {
           {/* Filters */}
           <Card className="mb-6">
             <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Input
                   placeholder="Search by invoice #, tracking code, pickup code, container..."
                   prefix={<SearchOutlined />}
@@ -463,6 +472,11 @@ export default function InvoicesPage() {
                     Partially Paid
                   </Option>
                 </Select>
+                <PackingListSearchSelect
+                  value={packingListFilter || undefined}
+                  onChange={handlePackingListFilter}
+                  placeholder="Filter by packing list"
+                />
                 <RangePicker
                   value={dateRange}
                   onChange={handleDateRangeChange}
@@ -473,7 +487,11 @@ export default function InvoicesPage() {
                 <Button
                   onClick={handleClearFilters}
                   disabled={
-                    !search && !statusFilter && !dateRange[0] && !dateRange[1]
+                    !search &&
+                    !statusFilter &&
+                    !packingListFilter &&
+                    !dateRange[0] &&
+                    !dateRange[1]
                   }
                 >
                   Clear Filters

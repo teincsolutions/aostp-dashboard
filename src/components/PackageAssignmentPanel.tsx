@@ -12,13 +12,19 @@ import {
   Select,
   Tag,
   Popconfirm,
+  Modal,
+  Checkbox,
+  Divider,
 } from "antd";
 import {
   PlusOutlined,
   MinusOutlined,
   EditOutlined,
   ReloadOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
+import { toast } from "sonner";
+import dayjs from "dayjs";
 import { Package, Currency, PackageStatusPackages } from "@/types/package";
 import { ShippingMode } from "@/types/exchangeRate";
 import { usePackingList, useUnassignedPackages } from "@/hooks/usePackingLists";
@@ -67,6 +73,20 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [tempPackage, setTempPackage] = useState<Partial<Package> | null>(null);
+  const [isExportModalVisible, setIsExportModalVisible] = useState(false);
+  const [selectedExportColumns, setSelectedExportColumns] = useState<string[]>([
+    "trackingCode",
+    "customer",
+    "description",
+    "weightOrCbm",
+    "destinationCity",
+    "shippingRate",
+    "shippingCost",
+    "currency",
+    "status",
+    "paymentStatus",
+    "pickupCode",
+  ]);
 
   const selectedPackages = useMemo(() => {
     return (
@@ -87,6 +107,211 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     } catch (error) {
       console.error("Regenerate invoice failed:", error);
       // Handle error
+    }
+  };
+
+  // Export column options
+  const exportColumnOptions = [
+    { label: "Tracking Code", value: "trackingCode" },
+    { label: "Customer", value: "customer" },
+    { label: "Description", value: "description" },
+    {
+      label: shippingMode === ShippingMode.AIR ? "Weight (kg)" : "CBM",
+      value: "weightOrCbm",
+    },
+    { label: "Destination City", value: "destinationCity" },
+    { label: "Shipping Rate", value: "shippingRate" },
+    { label: "Shipping Cost", value: "shippingCost" },
+    { label: "Currency", value: "currency" },
+    { label: "Mode", value: "shippingMode" },
+    { label: "Status", value: "status" },
+    { label: "Payment Status", value: "paymentStatus" },
+    { label: "Pickup Code", value: "pickupCode" },
+  ];
+
+  // Export functions
+  const handleExport = (format: "csv" | "excel" | "pdf") => {
+    if (selectedExportColumns.length === 0) {
+      toast.error("Please select at least one column to export");
+      return;
+    }
+
+    const assignedPackages = packingListData?.packages || [];
+    if (assignedPackages.length === 0) {
+      toast.error("No packages to export");
+      return;
+    }
+
+    // Prepare data based on selected columns
+    const dataToExport = assignedPackages.map((pkg: Package) => {
+      const row: any = {};
+
+      selectedExportColumns.forEach((col) => {
+        switch (col) {
+          case "trackingCode":
+            row["Tracking Code"] = pkg.trackingCode;
+            break;
+          case "customer":
+            row["Customer"] = pkg.customer
+              ? `${pkg.customer.firstName} ${pkg.customer.lastName}`
+              : "N/A";
+            break;
+          case "description":
+            row["Description"] = pkg.description || "N/A";
+            break;
+          case "weightOrCbm":
+            const isWeight = shippingMode === ShippingMode.AIR;
+            row[isWeight ? "Weight (kg)" : "CBM"] = isWeight
+              ? pkg.weight
+                ? pkg.weight.toFixed(2)
+                : "0.00"
+              : pkg.cbm
+              ? pkg.cbm.toFixed(3)
+              : "0.000";
+            break;
+          case "destinationCity":
+            const city = cities?.data?.find(
+              (c) => c.id === pkg.destinationCityId
+            );
+            row["Destination City"] = city ? city.name : "N/A";
+            break;
+          case "shippingRate":
+            row["Shipping Rate"] = pkg.shippingRate
+              ? pkg.shippingRate.toFixed(2)
+              : "0.00";
+            break;
+          case "shippingCost":
+            row["Shipping Cost"] = pkg.shippingCost
+              ? pkg.shippingCost.toFixed(2)
+              : "0.00";
+            break;
+          case "currency":
+            row["Currency"] = pkg.shippingCurrency || Currency.USD;
+            break;
+          case "shippingMode":
+            row["Mode"] = pkg.shippingMode || "N/A";
+            break;
+          case "status":
+            row["Status"] = pkg.status ? pkg.status.replace("_", " ") : "N/A";
+            break;
+          case "paymentStatus":
+            row["Payment Status"] = pkg.paymentStatus || "N/A";
+            break;
+          case "pickupCode":
+            row["Pickup Code"] = pkg.pickupCode || "N/A";
+            break;
+        }
+      });
+
+      return row;
+    });
+
+    // Export based on format
+    if (format === "csv") {
+      exportToCSV(dataToExport);
+    } else if (format === "excel") {
+      exportToExcel(dataToExport);
+    } else if (format === "pdf") {
+      exportToPDF(dataToExport);
+    }
+
+    setIsExportModalVisible(false);
+    toast.success(
+      `Assigned packages exported as ${format.toUpperCase()} successfully`
+    );
+  };
+
+  const exportToCSV = (data: any[]) => {
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row) =>
+        headers.map((header) => `"${row[header] || ""}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `packing-list-${
+      packingListData?.name || "packages"
+    }-${dayjs().format("YYYY-MM-DD")}.csv`;
+    link.click();
+  };
+
+  const exportToExcel = (data: any[]) => {
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row) =>
+        headers.map((header) => `"${row[header] || ""}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `packing-list-${
+      packingListData?.name || "packages"
+    }-${dayjs().format("YYYY-MM-DD")}.xlsx`;
+    link.click();
+  };
+
+  const exportToPDF = (data: any[]) => {
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Packing List Packages - ${
+            packingListData?.name || "Export"
+          }</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { text-align: center; margin-bottom: 10px; }
+            .subtitle { text-align: center; color: #666; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #4CAF50; color: white; }
+            tr:nth-child(even) { background-color: #f2f2f2; }
+          </style>
+        </head>
+        <body>
+          <h1>Assigned Packages - ${
+            packingListData?.name || "Packing List"
+          }</h1>
+          <div class="subtitle">${dayjs().format("DD MMM, YYYY HH:mm")}</div>
+          <div class="subtitle">Total Packages: ${data.length}</div>
+          <table>
+            <thead>
+              <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              ${data
+                .map(
+                  (row) =>
+                    `<tr>${headers
+                      .map((h) => `<td>${row[h] || ""}</td>`)
+                      .join("")}</tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.print();
     }
   };
 
@@ -593,9 +818,21 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       <div className="grid grid-cols-1 gap-6">
         {/* Assigned Packages */}
         <div>
-          <Text strong className="text-lg mb-2 block">
-            Assigned Packages ({packingListData?.totalPackages})
-          </Text>
+          <div className="flex justify-between items-center mb-2">
+            <Text strong className="text-lg">
+              Assigned Packages ({packingListData?.totalPackages})
+            </Text>
+            {packingListData?.packages &&
+              packingListData.packages.length > 0 && (
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={() => setIsExportModalVisible(true)}
+                  size="small"
+                >
+                  Export
+                </Button>
+              )}
+          </div>
           {packingListData?.status === "FINALIZED" && (
             <Alert
               message="This packing list is finalized. You cannot modify assigned packages."
@@ -663,6 +900,65 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
           </div>
         )}
       </div>
+
+      {/* Export Modal */}
+      <Modal
+        title="Export Assigned Packages"
+        open={isExportModalVisible}
+        onCancel={() => setIsExportModalVisible(false)}
+        footer={null}
+        width={600}
+      >
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium mb-3">Select Columns to Export:</h4>
+            <Checkbox.Group
+              options={exportColumnOptions}
+              value={selectedExportColumns}
+              onChange={(values) =>
+                setSelectedExportColumns(values as string[])
+              }
+              className="flex flex-col gap-2"
+            />
+          </div>
+
+          <Divider />
+
+          <div>
+            <h4 className="font-medium mb-3">Select Export Format:</h4>
+            <Space size="middle" className="w-full" direction="vertical">
+              <Button
+                block
+                icon={<DownloadOutlined />}
+                onClick={() => handleExport("csv")}
+                disabled={selectedExportColumns.length === 0}
+              >
+                Export as CSV
+              </Button>
+              <Button
+                block
+                icon={<DownloadOutlined />}
+                onClick={() => handleExport("excel")}
+                disabled={selectedExportColumns.length === 0}
+              >
+                Export as Excel
+              </Button>
+              <Button
+                block
+                icon={<DownloadOutlined />}
+                onClick={() => handleExport("pdf")}
+                disabled={selectedExportColumns.length === 0}
+              >
+                Export as PDF (Print)
+              </Button>
+            </Space>
+          </div>
+
+          <div className="text-xs text-gray-500 mt-4">
+            * {packingListData?.packages?.length || 0} packages will be exported
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

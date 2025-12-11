@@ -48,7 +48,7 @@ export const menuItems: Array<MenuItem> = [
   {
     key: "/package-delivery",
     icon: <BoxPlotOutlined />,
-    label: "Package Delivery",
+    label: "Package Pickup",
     roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
   },
 

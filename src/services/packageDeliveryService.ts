@@ -1,14 +1,30 @@
 // src/services/packageDeliveryService.ts
 
 import { apiService } from "@/services/api";
-import { PackageDelivery, CreatePackageDeliveryPayload } from "@/types/package";
+import {
+  PackageDelivery,
+  CreatePackageDeliveryPayload,
+  PackageDeliveryResponse,
+  GetPackageDeliveriesParams,
+  PackageDeliveriesResponse,
+} from "@/types/package";
 
 export const createPackageDelivery = async (
   payload: CreatePackageDeliveryPayload
-): Promise<PackageDelivery> => {
-  const res = await apiService.post<PackageDelivery>(
+): Promise<PackageDeliveryResponse> => {
+  const res = await apiService.post<PackageDeliveryResponse>(
     "/package-delivery",
     payload
+  );
+  return res.data;
+};
+
+export const getAllPackageDeliveries = async (
+  params?: GetPackageDeliveriesParams
+): Promise<PackageDeliveriesResponse> => {
+  const res = await apiService.get<PackageDeliveriesResponse>(
+    "/package-delivery",
+    { params }
   );
   return res.data;
 };
@@ -40,13 +56,15 @@ export const getDeliveryById = async (
   return res.data;
 };
 
-// Get recent deliveries (using by-customer with pagination if needed)
+// Get recent deliveries with pagination
 export const getRecentDeliveries = async (params?: {
   page?: number;
   limit?: number;
-}): Promise<PackageDelivery[]> => {
-  // Since there's no general list endpoint, we'll need to fetch by customer
-  // For now, return empty array and handle via invoice/customer specific queries
-  // Or if there's a generic endpoint, use it here
-  return [];
+}): Promise<PackageDeliveriesResponse> => {
+  return getAllPackageDeliveries({
+    page: params?.page || 1,
+    limit: params?.limit || 20,
+    sortBy: "releaseDate",
+    sortOrder: "desc",
+  });
 };

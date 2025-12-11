@@ -84,13 +84,20 @@ export const paymentService = {
     return response.data;
   },
 
-  // Get all payments records
+  // Get all payments records with filtering
   async getAllPayments(
     params: {
       page?: number;
       limit?: number;
       sortBy?: string;
       sortOrder?: string;
+      customerId?: string;
+      paymentMethod?: string;
+      currency?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      packingListId?: string;
+      warehouseId?: string;
     } = {}
   ): Promise<PaymentsResponse> {
     const response = await apiService.get<PaymentsResponse>("/payments", {

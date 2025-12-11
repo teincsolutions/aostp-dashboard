@@ -97,20 +97,27 @@ export const usePaymentHistory = (params: PaymentHistoryParams = {}) => {
   });
 };
 
-// Hook for fetching all payments records
+// Hook for fetching all payments records with filtering
 export const useAllPayments = (
   params: {
     page?: number;
     limit?: number;
     sortBy?: string;
     sortOrder?: string;
+    customerId?: string;
+    paymentMethod?: string;
+    currency?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    packingListId?: string;
+    warehouseId?: string;
   } = {}
 ) => {
   return useQuery({
     queryKey: [...paymentKeys.all, "all", params],
     queryFn: async () => {
       const response = await paymentService.getAllPayments(params);
-      return response.data;
+      return response; // Return full response with data and meta
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

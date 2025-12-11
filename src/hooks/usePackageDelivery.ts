@@ -3,18 +3,33 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createPackageDelivery,
+  getAllPackageDeliveries,
   getDeliveriesByInvoice,
   getDeliveriesByCustomer,
   getDeliveryById,
 } from "@/services/packageDeliveryService";
-import { CreatePackageDeliveryPayload, PackageDelivery } from "@/types/package";
+import {
+  CreatePackageDeliveryPayload,
+  PackageDelivery,
+  GetPackageDeliveriesParams,
+  PackageDeliveriesResponse,
+} from "@/types/package";
 
 const QUERY_KEYS = {
   deliveries: "deliveries",
+  allDeliveries: "allDeliveries",
   deliveryByInvoice: "deliveryByInvoice",
   deliveryByCustomer: "deliveryByCustomer",
   deliveryById: "deliveryById",
 };
+
+// Hook for fetching all deliveries with filters
+export function useAllPackageDeliveries(params?: GetPackageDeliveriesParams) {
+  return useQuery<PackageDeliveriesResponse>({
+    queryKey: [QUERY_KEYS.allDeliveries, params],
+    queryFn: () => getAllPackageDeliveries(params),
+  });
+}
 
 // Hook for creating a package delivery
 export function useCreatePackageDelivery() {
@@ -26,6 +41,7 @@ export function useCreatePackageDelivery() {
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.deliveries] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.allDeliveries] });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.deliveryByInvoice],
       });

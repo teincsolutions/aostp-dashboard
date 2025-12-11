@@ -203,10 +203,45 @@ export interface PackageDelivery {
 }
 
 export interface CreatePackageDeliveryPayload {
-  invoiceId: string;
-  trackingCode: string;
+  invoiceIds: string[];
+  trackingCodes?: string[]; // Optional - if omitted, all packages from invoices will be picked up
   receiverName?: string;
-  quantity?: number;
+  quantity: number; // Required - must be at least 1
   notes?: string;
   photos?: string[];
+}
+
+export interface GetPackageDeliveriesParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  customerId?: string;
+  invoiceId?: string;
+  packageId?: string;
+  trackingCode?: string;
+  warehouseId?: string;
+  packingListId?: string;
+  deliveryId?: string;
+  receiverName?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface PackageDeliveriesResponse {
+  data: PackageDelivery[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface PackageDeliveryResponse {
+  success: boolean;
+  count: number;
+  deliveries: PackageDelivery[];
 }

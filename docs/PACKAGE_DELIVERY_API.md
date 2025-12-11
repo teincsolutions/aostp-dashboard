@@ -21,9 +21,135 @@ All endpoints require:
 
 ## Endpoints
 
-### 1. Create Package Delivery Record
+### 1. Get All Package Deliveries (with Filters & Pagination)
 
-Creates a delivery record when a package is delivered to a customer.
+Retrieve all package delivery records with advanced filtering and pagination.
+
+**Endpoint:** `GET /package-delivery`
+
+**Authorization:** `OPERATIONS_CLERK` or `SUPER_ADMIN` role required
+
+#### Query Parameters
+
+All parameters are optional and can be combined for advanced filtering.
+
+| Parameter       | Type   | Required | Description                                 |
+| --------------- | ------ | -------- | ------------------------------------------- |
+| `page`          | number | No       | Page number (default: 1)                    |
+| `limit`         | number | No       | Items per page (default: 20, max: 100)      |
+| `sortBy`        | string | No       | Field to sort by (default: releaseDate)     |
+| `sortOrder`     | string | No       | Sort order: `asc` or `desc` (default: desc) |
+| `customerId`    | string | No       | Filter by customer ID (UUID)                |
+| `invoiceId`     | string | No       | Filter by invoice ID (UUID)                 |
+| `packageId`     | string | No       | Filter by package ID (UUID)                 |
+| `trackingCode`  | string | No       | Filter by tracking code (partial match)     |
+| `warehouseId`   | string | No       | Filter by warehouse ID (UUID)               |
+| `packingListId` | string | No       | Filter by packing list ID (UUID)            |
+| `deliveryId`    | string | No       | Filter by delivery ID (partial match)       |
+| `receiverName`  | string | No       | Filter by receiver name (partial match)     |
+| `dateFrom`      | string | No       | Filter from date (ISO format: YYYY-MM-DD)   |
+| `dateTo`        | string | No       | Filter to date (ISO format: YYYY-MM-DD)     |
+
+#### Example Requests
+
+```bash
+# Get all deliveries with pagination
+GET /api/package-delivery?page=1&limit=20
+
+# Filter by customer
+GET /api/package-delivery?customerId=uuid-customer-123
+
+# Filter by warehouse
+GET /api/package-delivery?warehouseId=uuid-warehouse-456
+
+# Filter by date range
+GET /api/package-delivery?dateFrom=2025-12-01&dateTo=2025-12-31
+
+# Filter by tracking code (partial match)
+GET /api/package-delivery?trackingCode=TR-2025
+
+# Multiple filters combined
+GET /api/package-delivery?customerId=uuid-customer-123&dateFrom=2025-12-01&warehouseId=uuid-warehouse-456
+
+# Filter by packing list
+GET /api/package-delivery?packingListId=uuid-packing-list-789
+```
+
+#### Success Response (200)
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid-delivery-123",
+      "deliveryId": "DEL001-2025001",
+      "customerId": "uuid-customer-123",
+      "invoiceId": "uuid-invoice-456",
+      "packageId": "uuid-package-789",
+      "quantity": 5,
+      "receiverName": "John Doe",
+      "releaseDate": "2025-12-04T10:30:00.000Z",
+      "notes": "Picked up at front gate",
+      "photos": ["https://s3.amazonaws.com/bucket/photo1.jpg"],
+      "customer": {
+        "id": "uuid-customer-123",
+        "customerCode": "JOH12567",
+        "firstName": "John",
+        "lastName": "Doe",
+        "phoneNumber": "+233501234567",
+        "email": "john.doe@example.com"
+      },
+      "invoice": {
+        "id": "uuid-invoice-456",
+        "invoiceNumber": "INV-2025-001",
+        "packingList": {
+          "id": "uuid-packing-list-789",
+          "name": "2025-12-01",
+          "container": {
+            "id": "uuid-container-321",
+            "containerNumber": "CONT-2025-001",
+            "destinationCity": {
+              "id": "uuid-city-111",
+              "name": "Accra"
+            }
+          }
+        }
+      },
+      "package": {
+        "id": "uuid-package-789",
+        "trackingCode": "TR-2025-001",
+        "warehouse": {
+          "id": "uuid-warehouse-456",
+          "warehouseId": "WH001",
+          "name": "China Main Warehouse",
+          "location": "Guangzhou, China"
+        }
+      },
+      "createdBy": {
+        "id": "uuid-user-999",
+        "firstName": "Jane",
+        "lastName": "Clerk",
+        "email": "jane.clerk@company.com"
+      },
+      "createdAt": "2025-12-04T10:30:00.000Z"
+    }
+  ],
+  "meta": {
+    "total": 156,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 8,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  }
+}
+```
+
+---
+
+### 2. Create Package Pickup Records (Multiple Invoices)
+
+Creates pickup records when packages are picked up by a customer. Supports multiple invoices and packages in a single pickup transaction.
 
 **Endpoint:** `POST /package-delivery`
 
@@ -31,65 +157,89 @@ Creates a delivery record when a package is delivered to a customer.
 
 #### Request Body
 
+**Example 1: Pick up specific packages**
+
 ```json
 {
-  "invoiceId": "60f1b2b5c1d9e2f4e6b4f1a2",
-  "trackingCode": "TR-2025-001",
+  "invoiceIds": ["60f1b2b5c1d9e2f4e6b4f1a2", "60f1b2b5c1d9e2f4e6b4f1a3"],
+  "trackingCodes": ["TR-2025-001", "TR-2025-002", "TR-2025-003"],
   "receiverName": "John Doe",
-  "quantity": 5,
-  "notes": "Delivered to front gate",
+  "notes": "Picked up at front gate",
   "photos": ["https://example.com/photo1.jpg", "https://example.com/photo2.jpg"]
+}
+```
+
+**Example 2: Pick up all packages from invoices**
+
+```json
+{
+  "invoiceIds": ["60f1b2b5c1d9e2f4e6b4f1a2", "60f1b2b5c1d9e2f4e6b4f1a3"],
+  "receiverName": "John Doe",
+  "notes": "Picked up at front gate"
 }
 ```
 
 #### Request Fields
 
-| Field          | Type     | Required | Description                                                      |
-| -------------- | -------- | -------- | ---------------------------------------------------------------- |
-| `invoiceId`    | string   | Yes      | UUID of the invoice where the delivery belongs                   |
-| `trackingCode` | string   | Yes      | Package tracking code (e.g., TR-2025-001)                        |
-| `receiverName` | string   | No       | Name of the person who received the package                      |
-| `quantity`     | number   | No       | Quantity released (defaults to package quantity if not provided) |
-| `notes`        | string   | No       | Optional delivery notes                                          |
-| `photos`       | string[] | No       | Array of delivery photo URLs                                     |
+| Field           | Type     | Required | Description                                                                                   |
+| --------------- | -------- | -------- | --------------------------------------------------------------------------------------------- |
+| `invoiceIds`    | string[] | Yes      | Array of invoice UUIDs (all must belong to same customer)                                     |
+| `trackingCodes` | string[] | No       | Array of package tracking codes. If omitted, all packages from the invoices will be picked up |
+| `receiverName`  | string   | No       | Name of the person who picked up the packages                                                 |
+| `quantity`      | number   | **Yes**  | Quantity being picked up (must be at least 1)                                                 |
+| `notes`         | string   | No       | Optional pickup notes                                                                         |
+| `photos`        | string[] | No       | Array of photo URLs (must be uploaded first via `/api/v1/uploads/packages` endpoint)          |
+
+**Important**: Photos must be uploaded separately using the uploads endpoint **before** creating the pickup record. See the "Photo Upload Process" section below.
 
 #### Business Logic
 
-1. **Validates Invoice**: Checks if the invoice exists
-2. **Finds Package**: Locates the package using the tracking code
-3. **Validates Association**: Ensures the package belongs to the specified invoice
-4. **Prevents Duplicates**: Checks if a delivery record already exists for this package
-5. **Generates Delivery ID**: Creates a unique delivery ID (format: `DEL001-2025001`)
-6. **Creates Record**: Creates the delivery record in a database transaction
-7. **Updates Package Status**: Updates the package status to `RELEASED`
-8. **Logs Action**: Creates an audit log entry
-9. **Sends Notification**: Sends a delivery notification to the customer
+1. **Validates Invoices**: Checks if all invoices exist
+2. **Validates Customer**: Ensures all invoices belong to the same customer
+3. **Finds Packages**: Locates all packages using the tracking codes
+4. **Validates Associations**: Ensures all packages belong to the specified invoices
+5. **Prevents Duplicates**: Checks if delivery records already exist for any packages
+6. **Generates Delivery IDs**: Creates unique delivery IDs for each package (format: `DEL001-2025001`)
+7. **Creates Records**: Creates all delivery records in a single database transaction
+8. **Updates Package Statuses**: Updates all package statuses to `RELEASED`
+9. **Logs Actions**: Creates audit log entries for each delivery
+10. **Sends Notifications**: Sends pickup notification to the customer for each package
 
 #### Success Response (201)
 
 ```json
 {
-  "id": "uuid-delivery-123",
-  "deliveryId": "DEL001-2025001",
-  "customerId": "uuid-customer-456",
-  "invoiceId": "60f1b2b5c1d9e2f4e6b4f1a2",
-  "packageId": "uuid-package-101",
-  "receiverName": "John Doe",
-  "quantity": 5,
-  "releaseDate": "2025-12-04T10:30:00.000Z",
-  "notes": "Delivered to front gate",
-  "photos": [
-    "https://example.com/photo1.jpg",
-    "https://example.com/photo2.jpg"
-  ],
-  "package": {
-    "id": "uuid-package-101",
-    "trackingCode": "TR-2025-001",
-    "warehouse": {
-      "id": "uuid-warehouse-555",
-      "name": "Main Warehouse"
+  "success": true,
+  "count": 3,
+  "deliveries": [
+    {
+      "id": "uuid-delivery-123",
+      "deliveryId": "DEL001-2025001",
+      "invoiceId": "60f1b2b5c1d9e2f4e6b4f1a2",
+      "packageId": "uuid-package-101",
+      "trackingCode": "TR-2025-001",
+      "quantity": 5,
+      "releaseDate": "2025-12-04T10:30:00.000Z"
+    },
+    {
+      "id": "uuid-delivery-124",
+      "deliveryId": "DEL001-2025002",
+      "invoiceId": "60f1b2b5c1d9e2f4e6b4f1a2",
+      "packageId": "uuid-package-102",
+      "trackingCode": "TR-2025-002",
+      "quantity": 3,
+      "releaseDate": "2025-12-04T10:30:00.000Z"
+    },
+    {
+      "id": "uuid-delivery-125",
+      "deliveryId": "DEL001-2025003",
+      "invoiceId": "60f1b2b5c1d9e2f4e6b4f1a3",
+      "packageId": "uuid-package-103",
+      "trackingCode": "TR-2025-003",
+      "quantity": 2,
+      "releaseDate": "2025-12-04T10:30:00.000Z"
     }
-  }
+  ]
 }
 ```
 
@@ -107,10 +257,11 @@ Creates a delivery record when a package is delivered to a customer.
 
 Common 400 error scenarios:
 
-- Package does not belong to the specified invoice
-- Delivery record already exists for this package
-- Invoice does not have an associated package
-- Validation errors in request body
+- Invoices belong to different customers (all invoices must be for same customer)
+- One or more packages do not belong to the specified invoices
+- Delivery record already exists for one or more packages
+- One or more invoices do not have associated packages
+- Validation errors in request body (missing required fields, empty arrays, etc.)
 
 **401 Unauthorized**
 
@@ -137,7 +288,7 @@ Common 400 error scenarios:
 ```json
 {
   "statusCode": 404,
-  "message": "Invoice with ID {invoiceId} not found",
+  "message": "No invoices found with the provided IDs",
   "error": "Not Found"
 }
 ```
@@ -147,14 +298,24 @@ Or:
 ```json
 {
   "statusCode": 404,
-  "message": "Package with tracking code {trackingCode} not found for the provided invoice",
+  "message": "Invoices not found: {missingInvoiceIds}",
+  "error": "Not Found"
+}
+```
+
+Or:
+
+```json
+{
+  "statusCode": 404,
+  "message": "Packages not found in provided invoices: {missingTrackingCodes}",
   "error": "Not Found"
 }
 ```
 
 ---
 
-### 2. Get Deliveries by Invoice
+### 3. Get Deliveries by Invoice
 
 Retrieves all package deliveries associated with a specific invoice.
 
@@ -213,7 +374,7 @@ Authorization: Bearer {token}
 
 ---
 
-### 3. Get Deliveries by Customer
+### 4. Get Deliveries by Customer
 
 Retrieves all package deliveries for a specific customer across all invoices.
 
@@ -272,7 +433,7 @@ Authorization: Bearer {token}
 
 ---
 
-### 4. Get Delivery Details by ID
+### 5. Get Delivery Details by ID
 
 Retrieves detailed information for a specific delivery record.
 
@@ -347,6 +508,93 @@ Authorization: Bearer {token}
 
 ---
 
+## Photo Upload Process
+
+Delivery photos must be uploaded **separately** before creating the delivery record. Follow this two-step process:
+
+### Step 1: Upload Photos
+
+Use the general uploads endpoint to upload delivery photos:
+
+**Endpoint:** `POST /api/v1/uploads/packages`
+
+**Request:**
+
+- Content-Type: `multipart/form-data`
+- Method: Upload up to 3 files at once
+
+**Form Data:**
+
+```
+files: [File1, File2, File3]  // Multiple files (max 3)
+folder: "pictures"             // Required: 'pictures' or 'videos'
+packageId: "uuid-package-101"  // Required: Package UUID
+fileName: "delivery-photo.jpg" // Optional: Original filename
+```
+
+**Example using cURL:**
+
+```bash
+curl -X POST https://api.aostp.com/api/v1/uploads/packages \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "files=@photo1.jpg" \
+  -F "files=@photo2.jpg" \
+  -F "folder=pictures" \
+  -F "packageId=uuid-package-101"
+```
+
+**Success Response (201):**
+
+```json
+[
+  {
+    "url": "https://s3.amazonaws.com/aostp-packages/pictures/uuid-package-101/photo1-timestamp.jpg",
+    "key": "pictures/uuid-package-101/photo1-timestamp.jpg",
+    "bucket": "aostp-packages"
+  },
+  {
+    "url": "https://s3.amazonaws.com/aostp-packages/pictures/uuid-package-101/photo2-timestamp.jpg",
+    "key": "pictures/uuid-package-101/photo2-timestamp.jpg",
+    "bucket": "aostp-packages"
+  }
+]
+```
+
+### Step 2: Create Pickup with Photo URLs
+
+Use the returned URLs in the pickup creation request:
+
+```json
+{
+  "invoiceIds": ["60f1b2b5c1d9e2f4e6b4f1a2", "60f1b2b5c1d9e2f4e6b4f1a3"],
+  "trackingCodes": ["TR-2025-001", "TR-2025-002"],
+  "receiverName": "John Doe",
+  "quantity": 5,
+  "notes": "Picked up at front gate",
+  "photos": [
+    "https://s3.amazonaws.com/aostp-packages/pictures/uuid-package-101/photo1-timestamp.jpg",
+    "https://s3.amazonaws.com/aostp-packages/pictures/uuid-package-101/photo2-timestamp.jpg"
+  ]
+}
+```
+
+**⚠️ Common Error:**
+
+If you include `bucketType`, `file`, or any upload-related fields in the delivery creation request, you will receive:
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": ["property bucketType should not exist"],
+  "timestamp": "2025-12-05T20:25:24.663Z"
+}
+```
+
+**Solution:** Only send the fields listed in the "Request Fields" table. Photos must be pre-uploaded URLs, not file uploads.
+
+---
+
 ## Data Models
 
 ### PackageDelivery
@@ -411,12 +659,19 @@ When a delivery is created:
 
 ## Notifications
 
-Upon successful delivery creation, the system sends a notification to the customer via the `NotificationsService`. The notification includes:
+Upon successful delivery creation, the system sends a notification to the customer via the `NotificationsService` confirming the package has been delivered. The notification includes:
 
 - Package tracking code
 - Delivery ID
-- Release date
+- Delivery date and time
 - Receiver name (if provided)
+- Delivered quantity
+
+**Notification Messages:**
+
+- **Email Subject**: "Package Delivered - AOSTP Logistics"
+- **Email Content**: Confirms successful delivery with full details including receiver name and delivery date
+- **SMS/WhatsApp**: Short confirmation message with receiver name (if available): "Hi [Customer], your package ([Tracking Code]) has been delivered. Received by: [Receiver Name]. Delivery ID: [ID]"
 
 ---
 
@@ -433,18 +688,40 @@ Every delivery creation is logged with:
 
 ## Common Use Cases
 
-### 1. Record a Delivery
+### 1. Record a Multi-Invoice Pickup (All Packages)
 
-When a customer picks up their package:
+When a customer picks up ALL packages from multiple invoices:
 
-1. Scan the package tracking code
-2. Confirm the invoice
+1. Collect all invoice IDs for the customer
+2. (Optional) Record receiver name
+3. (Optional) Take pickup photos
+4. Create the pickup records WITHOUT specifying trackingCodes
+5. System automatically picks up all packages from the invoices
+6. System updates all package statuses and notifies customer for each package
+
+### 2. Record a Selective Multi-Invoice Pickup
+
+When a customer picks up SPECIFIC packages from multiple invoices:
+
+1. Scan the specific package tracking codes
+2. Collect all invoice IDs for the customer
 3. (Optional) Record receiver name
-4. (Optional) Take delivery photos
-5. Create the delivery record
+4. (Optional) Take pickup photos
+5. Create the pickup records WITH trackingCodes specified
+6. System updates selected package statuses and notifies customer
+
+### 3. Record a Single Invoice Pickup
+
+When a customer picks up packages from one invoice:
+
+1. Confirm the invoice ID
+2. Either specify tracking codes OR omit them to pick up all packages
+3. (Optional) Record receiver name
+4. (Optional) Take pickup photos
+5. Create the pickup record(s)
 6. System updates package status and notifies customer
 
-### 2. View Customer Delivery History
+### 3. View Customer Pickup History
 
 To see all deliveries for a customer:
 
@@ -452,12 +729,12 @@ To see all deliveries for a customer:
 2. Retrieve all delivery records
 3. View across all invoices and containers
 
-### 3. Audit Invoice Deliveries
+### 4. Audit Invoice Pickups
 
-To check which packages from an invoice have been delivered:
+To check which packages from an invoice have been picked up:
 
 1. Use the invoice ID
-2. Retrieve all delivery records
+2. Retrieve all pickup records
 3. Cross-reference with invoice packages
 
 ---
@@ -489,9 +766,16 @@ All error responses follow the NestJS standard format with `statusCode`, `messag
 
 ## Notes
 
-- Delivery IDs are auto-generated and follow the format: `DEL{warehouseCode}-{sequentialNumber}`
-- A package can only have one delivery record (enforced at database level with unique constraint)
-- Photos are stored as URLs (presumed to be uploaded to S3 or similar)
-- The `quantity` field represents the package quantity being delivered
-- Package status is automatically updated to `RELEASED` when delivery is created
-- Delivery is package-level, not item-level (one delivery per package)
+- Pickup IDs are auto-generated and follow the format: `DEL{warehouseCode}-{sequentialNumber}`
+- A package can only have one pickup record (enforced at database level with unique constraint)
+- **Photos must be uploaded separately** using `/api/v1/uploads/packages` endpoint before creating pickup
+- Photos are stored in S3 and only the URLs are saved in the pickup record
+- **Quantity is required** and must be at least 1
+- Package status is automatically updated to `RELEASED` when pickup is created
+- Pickup is package-level, not item-level (one pickup per package)
+- Maximum 3 photos can be uploaded per batch using the uploads endpoint
+- **Multiple invoices are supported** as long as they all belong to the same customer
+- All pickups for multiple invoices are created in a single database transaction for data consistency
+- If any package fails validation, the entire transaction is rolled back (all-or-nothing)
+- Each package gets its own unique pickup ID and notification
+- **Tracking codes are optional** - if omitted, all packages from the specified invoices will be picked up
