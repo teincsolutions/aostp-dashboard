@@ -118,7 +118,7 @@ pipeline {
                     passwordVariable: 'GOOGLE_CLIENT_SECRET'),
                  ]) {
                     sh '''
-                    # extract and set up .env.test
+                     # extract and set up .env.test
                     if [ -f .env.template ]; then
                         envsubst < .env.template > .env.test
                     fi
@@ -126,7 +126,7 @@ pipeline {
                     docker compose -f docker-compose.test.yml up -d
 
                     sleep 10
-                    # Add health check
+                    # Add health check for test
                     curl -I "https://${TEST_DOMAIN}" || echo "Health check failed but deployment continued"
                     rm -f .env.test
                 '''
