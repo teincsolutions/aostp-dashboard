@@ -1,338 +1,895 @@
 "use client";
 
-import { useState } from "react";
-import { Card, Button, Table, Skeleton, Empty } from "antd";
+import { useState, useMemo } from "react";
+import {
+  Card,
+  Row,
+  Col,
+  Select,
+  DatePicker,
+  Typography,
+  Space,
+  Statistic,
+  Empty,
+  Table,
+  Tag,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { Column, DualAxes, Line, Pie, Bar } from "@ant-design/charts";
+import {
+  DollarOutlined,
+  InboxOutlined,
+  TruckOutlined,
+  FileTextOutlined,
+  ClockCircleOutlined,
+  ContainerOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useDashboard } from "@/hooks/useDashboard";
-import { columns as invoiceColumns } from "@/app/dashboard/invoices.columns";
-import { columns as agingPackageColumns } from "@/app/dashboard/aging-packages.columns";
-import { DashboardFilters } from "@/types/dashboard";
-import { DatePicker, Select } from "antd";
-import { Formik, Form, Field } from "formik";
-import * as Yup from "yup";
-import Link from "next/link";
-import { Pie, Line } from "@ant-design/charts";
-import {
-  ArrowRightOutlined,
-  ContainerOutlined,
-  DollarOutlined,
-  FileTextOutlined,
-  InboxOutlined,
-  TeamOutlined,
-} from "@ant-design/icons";
-import type { Dayjs } from "dayjs";
-import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { DashboardGraphParams } from "@/types/dashboard";
 import dayjs from "dayjs";
+import Link from "next/link";
 
-const statusOptions = [
-  { value: "RECEIVED", label: "Received" },
-  { value: "IN_TRANSIT", label: "In Transit" },
-  { value: "DELIVERED", label: "Delivered" },
-  { value: "PAID", label: "Paid" },
-  { value: "PENDING", label: "Pending" },
-];
-
-const FilterSchema = Yup.object().shape({
-  dateRange: Yup.array()
-    .of(Yup.date())
-    .nullable()
-    .test("valid-range", "Select a valid date range", (value) => {
-      if (!value || value.length !== 2) return true;
-      return value[0] && value[1] && value[0] <= value[1];
-    }),
-  status: Yup.string().nullable(),
-});
+const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 
 export default function DashboardPage() {
-  const [filters, setFilters] = useState<DashboardFilters>({});
-  const { kpis, charts, tables, isLoading, error } = useDashboard(filters);
+  const { user } = useAuth();
+  const currentYear = new Date().getFullYear();
 
-  // Error notifications
-  if (
-    error.kpis ||
-    error.packagesByStatus ||
-    error.packagesByMonth ||
-    error.revenueTrend ||
-    error.topCustomers ||
-    error.recentInvoices ||
-    error.agingPackages
-  ) {
-    toast.error("Some dashboard data failed to load. Please try again.");
-  }
+  const [filters, setFilters] = useState<DashboardGraphParams>({
+    year: currentYear,
+  });
 
-  // KPI Cards
-  const kpiItems = [
-    {
-      title: "Total Customers",
-      value: kpis?.customersTotal ?? 0,
-      icon: <TeamOutlined />,
-      caption: "",
-      loading: isLoading.kpis,
-    },
-    {
-      title: "Total Packages",
-      value: kpis?.packagesTotal ?? 0,
-      icon: <InboxOutlined />,
-      caption: `SEA: ${kpis?.seaTotal ?? 0} | AIR: ${kpis?.airTotal ?? 0}`,
-      loading: isLoading.kpis,
-    },
-    {
-      title: "Active Containers",
-      value: kpis?.activeContainers ?? 0,
-      icon: <ContainerOutlined />,
-      caption: "",
-      loading: isLoading.kpis,
-    },
-    {
-      title: "Outstanding Invoices",
-      value: kpis?.outstandingInvoicesCount ?? 0,
-      icon: <DollarOutlined />,
-      caption: kpis?.outstandingInvoicesAmount
-        ? `GHS ${kpis.outstandingInvoicesAmount.toLocaleString()}`
-        : "",
-      loading: isLoading.kpis,
-    },
-  ];
+  const dashboard = useDashboard(filters, user?.role);
 
-  // Quick Links
-  const quickLinks = [
-    {
-      href: "/package-intake",
-      label: "Package Intake",
-      icon: <InboxOutlined />,
-    },
-    { href: "/payments", label: "Payments", icon: <DollarOutlined /> },
-    { href: "/containers", label: "Containers", icon: <ContainerOutlined /> },
-    { href: "/reports", label: "Reports", icon: <FileTextOutlined /> },
-  ];
+  const handleYearChange = (value: number) => {
+    setFilters((prev) => ({ ...prev, year: value }));
+  };
+
+  const handleDateRangeChange = (dates: any) => {
+    if (dates) {
+      setFilters((prev) => ({
+        ...prev,
+        fromDate: dates[0].toISOString(),
+        toDate: dates[1].toISOString(),
+      }));
+    } else {
+      setFilters((prev) => {
+        const { fromDate, toDate, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
+  const yearOptions = useMemo(() => {
+    const years = [];
+    for (let i = currentYear; i >= currentYear - 5; i--) {
+      years.push({ label: i.toString(), value: i });
+    }
+    return years;
+  }, [currentYear]);
 
   return (
     <AuthGuard>
       <AppLayout>
-        <div className="px-4 md:px-6 lg:px-8 py-4 mx-auto space-y-4 flex-1">
-          {/* Header row: title + filters */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <Formik
-              initialValues={{
-                dateRange: [dayjs().startOf("year"), dayjs().endOf("year")] as
-                  | [Dayjs, Dayjs]
-                  | null,
-                status: "",
-              }}
-              validationSchema={FilterSchema}
-              onSubmit={(values, { setSubmitting }) => {
-                setFilters({
-                  dateFrom: values.dateRange?.[0]?.toISOString(),
-                  dateTo: values.dateRange?.[1]?.toISOString(),
-                  status: values.status || undefined,
-                });
-                setSubmitting(false);
-              }}
-              onReset={() => setFilters({})}
-            >
-              {({ values, errors, touched, setFieldValue, isSubmitting }) => (
-                <Form className="flex flex-row gap-2 items-center">
-                  <div>
-                    <Field name="dateRange">
-                      {({
-                        field,
-                      }: {
-                        field: { value: Dayjs[] | null; name: string };
-                      }) => (
-                        <DatePicker.RangePicker
-                          {...field}
-                          value={values.dateRange}
-                          onChange={(
-                            dates: [Dayjs | null, Dayjs | null] | null
-                          ) => setFieldValue("dateRange", dates)}
-                          allowClear
-                          size="middle"
-                        />
-                      )}
-                    </Field>
-                  </div>
-                  <div>
-                    <Field name="status">
-                      {({
-                        field,
-                      }: {
-                        field: { value: string; name: string };
-                      }) => (
-                        <Select
-                          {...field}
-                          value={values.status}
-                          onChange={(val) => setFieldValue("status", val)}
-                          allowClear
-                          placeholder="Status"
-                          options={statusOptions}
-                          style={{ minWidth: 120 }}
-                          size="middle"
-                        />
-                      )}
-                    </Field>
-                  </div>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={isSubmitting}
-                  >
-                    Filter
-                  </Button>
-                  <Button htmlType="reset" disabled={isSubmitting}>
-                    Reset
-                  </Button>
-                  {/* Error display */}
-                  <div>
-                    {errors.dateRange && touched.dateRange && (
-                      <span className="text-red-500 text-xs">
-                        {errors.dateRange}
-                      </span>
-                    )}
-                  </div>
-                </Form>
-              )}
-            </Formik>
-          </div>
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Title level={2}>Dashboard</Title>
+            </Col>
+            <Col>
+              <Space>
+                <Select
+                  placeholder="Year"
+                  value={filters.year}
+                  onChange={handleYearChange}
+                  options={yearOptions}
+                  style={{ width: 120 }}
+                />
+                <RangePicker onChange={handleDateRangeChange} />
+              </Space>
+            </Col>
+          </Row>
 
-          {/* KPI grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {kpiItems.map((kpi, idx) => (
-              <Card key={kpi.title} className="rounded-2xl shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">{kpi.icon}</div>
-                  <div>
-                    <div className="text-lg font-semibold">{kpi.title}</div>
-                    {kpi.loading ? (
-                      <Skeleton.Input active size="small" />
-                    ) : (
-                      <div className="text-2xl font-bold">{kpi.value}</div>
-                    )}
-                    <div className="text-xs text-gray-500">{kpi.caption}</div>
-                  </div>
-                </div>
-                {/* Quick link button */}
-                {quickLinks[idx] && (
-                  <Link href={quickLinks[idx].href}>
-                    <Button
-                      type="link"
-                      icon={quickLinks[idx].icon}
-                      className="mt-2"
-                      size="small"
-                    >
-                      {quickLinks[idx].label}
-                      <ArrowRightOutlined />
-                    </Button>
-                  </Link>
-                )}
+          {/* KPI Cards */}
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} lg={6}>
+              <Card style={{ height: "140px" }}>
+                <Statistic
+                  title="Total Customers"
+                  value={dashboard.kpis?.customersTotal ?? 0}
+                  prefix={<UserOutlined />}
+                  loading={dashboard.isLoading.kpis}
+                />
               </Card>
-            ))}
-          </div>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card style={{ height: "140px" }}>
+                <Statistic
+                  title="Packages Total"
+                  value={dashboard.kpis?.packagesTotal ?? 0}
+                  prefix={<InboxOutlined />}
+                  loading={dashboard.isLoading.kpis}
+                />
+                <Space
+                  style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+                >
+                  <Text type="secondary">
+                    AIR: {dashboard.kpis?.airTotal ?? 0}
+                  </Text>
+                  <Text type="secondary">|</Text>
+                  <Text type="secondary">
+                    SEA: {dashboard.kpis?.seaTotal ?? 0}
+                  </Text>
+                </Space>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card style={{ height: "140px" }}>
+                <Statistic
+                  title="Invoices Total"
+                  value={
+                    (dashboard.kpis?.paidInvoicesCount ?? 0) +
+                    (dashboard.kpis?.outstandingInvoicesCount ?? 0)
+                  }
+                  prefix={<FileTextOutlined />}
+                  loading={dashboard.isLoading.kpis}
+                />
+                <Space
+                  style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+                >
+                  <Text type="success">
+                    Paid: {dashboard.kpis?.paidInvoicesCount ?? 0}
+                  </Text>
+                  <Text type="secondary">|</Text>
+                  <Text type="danger">
+                    Outstanding: {dashboard.kpis?.outstandingInvoicesCount ?? 0}
+                  </Text>
+                </Space>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card style={{ height: "140px" }}>
+                <Statistic
+                  title="Payments Total"
+                  value={dashboard.kpis?.paymentsTotals?.amount ?? 0}
+                  prefix={<DollarOutlined />}
+                  precision={2}
+                  loading={dashboard.isLoading.kpis}
+                  suffix="USD"
+                />
+                <Space
+                  style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+                >
+                  <Text type="secondary">
+                    GHS:{" "}
+                    {dashboard.kpis?.paymentsTotals?.localAmount?.toFixed(2) ??
+                      "0.00"}
+                  </Text>
+                </Space>
+              </Card>
+            </Col>
+          </Row>
 
-          {/* Charts grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card className="rounded-2xl shadow-sm" title="Packages by Status">
-              {isLoading.packagesByStatus ? (
-                <Skeleton active />
-              ) : charts.packagesByStatus && charts.packagesByStatus.length ? (
-                <Pie
-                  data={charts.packagesByStatus}
-                  angleField="count"
-                  colorField="status"
-                  legend={{ position: "bottom" }}
-                  label={{ type: "outer", content: "{name}: {value}" }}
-                  height={250}
-                />
-              ) : (
-                <Empty />
+          {/* Additional KPIs - Finance View */}
+          {dashboard.hasFinanceAccess && (
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} lg={8}>
+                <Card style={{ height: "120px" }}>
+                  <Statistic
+                    title="Active Containers"
+                    value={dashboard.kpis?.activeContainers ?? 0}
+                    prefix={<ContainerOutlined />}
+                    loading={dashboard.isLoading.kpis}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={8}>
+                <Card style={{ height: "120px" }}>
+                  <Statistic
+                    title="Paid Invoices Amount"
+                    value={dashboard.kpis?.paidInvoicesAmount ?? 0}
+                    prefix={<DollarOutlined />}
+                    precision={2}
+                    valueStyle={{ color: "#52c41a" }}
+                    loading={dashboard.isLoading.kpis}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={8}>
+                <Card style={{ height: "120px" }}>
+                  <Statistic
+                    title="Outstanding Invoices Amount"
+                    value={dashboard.kpis?.outstandingInvoicesAmount ?? 0}
+                    prefix={<DollarOutlined />}
+                    precision={2}
+                    valueStyle={{ color: "#cf1322" }}
+                    loading={dashboard.isLoading.topCustomersByAmount}
+                    // Note: Shows balance from top 10 customers only
+                    // For total outstanding balance, backend needs dedicated endpoint
+                  />
+                </Card>
+              </Col>
+              {/* Chart: Invoices by Month */}
+              {dashboard.hasOperationsAccess && (
+                <Col xs={24} lg={12}>
+                  <Card
+                    title={`Invoices by Month ${
+                      dashboard.invoicesByMonth?.year
+                        ? `(${dashboard.invoicesByMonth.year})`
+                        : ""
+                    }`}
+                    loading={dashboard.isLoading.invoicesByMonth}
+                  >
+                    {dashboard.invoicesByMonth?.series &&
+                    dashboard.invoicesByMonth.series.some(
+                      (s) => s.count > 0
+                    ) ? (
+                      <Column
+                        data={dashboard.invoicesByMonth.series}
+                        xField="month"
+                        yField="count"
+                        label={{
+                          position: "top",
+                        }}
+                        xAxis={{
+                          label: {
+                            autoHide: false,
+                            autoRotate: false,
+                          },
+                        }}
+                        meta={{
+                          month: { alias: "Month" },
+                          count: { alias: "Invoices" },
+                        }}
+                      />
+                    ) : (
+                      <Empty description="No data available" />
+                    )}
+                  </Card>
+                </Col>
               )}
-            </Card>
-            <Card className="rounded-2xl shadow-sm" title="Packages by Month">
-              {isLoading.packagesByMonth ? (
-                <Skeleton active />
-              ) : charts.packagesByMonth && charts.packagesByMonth.length ? (
-                <Line
-                  data={charts.packagesByMonth}
-                  xField="x"
-                  yField="y"
-                  height={250}
-                  point={{ size: 4 }}
-                  legend={{ position: "bottom" }}
-                />
-              ) : (
-                <Empty />
-              )}
-            </Card>
-            <Card className="rounded-2xl shadow-sm" title="Revenue Trend">
-              {isLoading.revenueTrend ? (
-                <Skeleton active />
-              ) : charts.revenueTrend && charts.revenueTrend.length ? (
-                <Line
-                  data={charts.revenueTrend}
-                  xField="x"
-                  yField="y"
-                  height={250}
-                  point={{ size: 4 }}
-                  legend={{ position: "bottom" }}
-                />
-              ) : (
-                <Empty />
-              )}
-            </Card>
-            <Card
-              className="rounded-2xl shadow-sm"
-              title="Top Customers by Spend/Packages"
-            >
-              {isLoading.topCustomers ? (
-                <Skeleton active />
-              ) : charts.topCustomers && charts.topCustomers.length ? (
-                <Line
-                  data={charts.topCustomers}
-                  xField="x"
-                  yField="y"
-                  height={250}
-                  point={{ size: 4 }}
-                  legend={{ position: "bottom" }}
-                />
-              ) : (
-                <Empty />
-              )}
-            </Card>
-          </div>
+              {/* Chart: Payments AIR vs SEA */}
 
-          {/* Tables/Lists section */}
-          <div className="space-y-4">
-            <Card className="rounded-2xl shadow-sm" title="Recent Invoices">
-              <Table
-                columns={invoiceColumns}
-                dataSource={tables.recentInvoices?.rows}
-                rowKey="id"
-                loading={isLoading.recentInvoices}
-                pagination={{ pageSize: 10 }}
-                locale={{ emptyText: <Empty /> }}
-                scroll={{ x: true }}
-                size="middle"
-              />
-            </Card>
-            <Card
-              className="rounded-2xl shadow-sm"
-              title="Aging Packages (Top 10)"
-            >
-              <Table
-                columns={agingPackageColumns}
-                dataSource={tables.agingPackages?.rows}
-                rowKey="id"
-                loading={isLoading.agingPackages}
-                pagination={false}
-                locale={{ emptyText: <Empty /> }}
-                scroll={{ x: true }}
-                size="middle"
-              />
-            </Card>
-          </div>
-        </div>
+              {dashboard.hasFinanceAccess && (
+                <Col xs={24} lg={12}>
+                  <Card
+                    title={`Payments: AIR vs SEA ${
+                      dashboard.paymentsByMonth?.year
+                        ? `(${dashboard.paymentsByMonth.year})`
+                        : ""
+                    }`}
+                    loading={dashboard.isLoading.paymentsByMonth}
+                  >
+                    {dashboard.paymentsByMonth?.series &&
+                    dashboard.paymentsByMonth.series.some(
+                      (s) => s.air > 0 || s.sea > 0
+                    ) ? (
+                      <Column
+                        data={dashboard.paymentsByMonth.series.flatMap(
+                          (item) => [
+                            {
+                              month: item.month,
+                              type: "AIR",
+                              amount: item.air,
+                            },
+                            {
+                              month: item.month,
+                              type: "SEA",
+                              amount: item.sea,
+                            },
+                          ]
+                        )}
+                        xField="month"
+                        yField="amount"
+                        seriesField="type"
+                        isGroup={true}
+                        dodgePadding={4}
+                        intervalPadding={20}
+                        color={["#5B8FF9", "#5AD8A6"]}
+                        columnStyle={{
+                          radius: [4, 4, 0, 0],
+                        }}
+                        xAxis={{
+                          label: {
+                            autoHide: false,
+                            autoRotate: false,
+                          },
+                        }}
+                        yAxis={{
+                          label: {
+                            formatter: (v: string) => `$${v}`,
+                          },
+                        }}
+                        tooltip={{
+                          formatter: (datum: any) => {
+                            return {
+                              name: datum.type,
+                              value: `$${datum.amount?.toFixed(2) ?? "0.00"}`,
+                            };
+                          },
+                        }}
+                        label={{
+                          position: "top",
+                          formatter: (datum: any) => {
+                            if (!datum || !datum.amount || datum.amount === 0)
+                              return "";
+                            return `$${datum.amount.toFixed(0)}`;
+                          },
+                        }}
+                        legend={{
+                          position: "top-right",
+                        }}
+                      />
+                    ) : (
+                      <Empty description="No data available" />
+                    )}
+                  </Card>
+                </Col>
+              )}
+            </Row>
+          )}
+
+          {/* Charts: Intakes and Pickups by Month */}
+          {dashboard.hasOperationsAccess && (
+            <Row gutter={[16, 16]}>
+              <Col xs={24} lg={12}>
+                <Card
+                  title={`Package Intakes by Month ${
+                    dashboard.intakesByMonth?.year
+                      ? `(${dashboard.intakesByMonth.year})`
+                      : ""
+                  }`}
+                  loading={dashboard.isLoading.intakesByMonth}
+                >
+                  {dashboard.intakesByMonth?.series &&
+                  dashboard.intakesByMonth.series.some((s) => s.count > 0) ? (
+                    <Line
+                      data={dashboard.intakesByMonth.series}
+                      xField="month"
+                      yField="count"
+                      point={{
+                        size: 5,
+                        shape: "diamond",
+                      }}
+                      label={{
+                        position: "top",
+                      }}
+                    />
+                  ) : (
+                    <Empty description="No data available" />
+                  )}
+                </Card>
+              </Col>
+              <Col xs={24} lg={12}>
+                <Card
+                  title={`Pickups/Deliveries by Month ${
+                    dashboard.pickupsByMonth?.year
+                      ? `(${dashboard.pickupsByMonth.year})`
+                      : ""
+                  }`}
+                  loading={dashboard.isLoading.pickupsByMonth}
+                >
+                  {dashboard.pickupsByMonth?.series &&
+                  dashboard.pickupsByMonth.series.some((s) => s.count > 0) ? (
+                    <Line
+                      data={dashboard.pickupsByMonth.series}
+                      xField="month"
+                      yField="count"
+                      smooth
+                      point={{
+                        size: 5,
+                        shape: "circle",
+                      }}
+                    />
+                  ) : (
+                    <Empty description="No data available" />
+                  )}
+                </Card>
+              </Col>
+            </Row>
+          )}
+
+          {/* Charts: Payment Methods & Shipping Modes */}
+          <Row gutter={[16, 16]}>
+            {dashboard.hasFinanceAccess && (
+              <Col xs={24} lg={12}>
+                <Card
+                  title="Payment Methods Distribution"
+                  loading={dashboard.isLoading.paymentMethods}
+                  style={{ height: "380px" }}
+                >
+                  {dashboard.paymentMethods?.methods &&
+                  dashboard.paymentMethods.methods.length > 0 ? (
+                    <Pie
+                      data={dashboard.paymentMethods.methods}
+                      angleField="amount"
+                      colorField="method"
+                      radius={0.8}
+                      label={{
+                        formatter: (datum: any) => {
+                          if (!datum) return "";
+                          return `${datum.method ?? "Unknown"}: ${(
+                            (datum.percent ?? 0) * 100
+                          ).toFixed(1)}%`;
+                        },
+                      }}
+                      legend={{ position: "bottom" }}
+                    />
+                  ) : (
+                    <Empty description="No data available" />
+                  )}
+                </Card>
+              </Col>
+            )}
+            {dashboard.hasOperationsAccess && (
+              <Col xs={24} lg={12}>
+                <Card
+                  title="Shipping Modes Distribution"
+                  loading={dashboard.isLoading.shippingModes}
+                  style={{ height: "380px" }}
+                >
+                  {dashboard.shippingModes &&
+                  (dashboard.shippingModes.air > 0 ||
+                    dashboard.shippingModes.sea > 0) ? (
+                    <Pie
+                      data={[
+                        { mode: "AIR", count: dashboard.shippingModes.air },
+                        { mode: "SEA", count: dashboard.shippingModes.sea },
+                      ]}
+                      angleField="count"
+                      colorField="mode"
+                      radius={0.8}
+                      label={{
+                        formatter: (datum: any) => {
+                          if (!datum) return "";
+                          return `${datum.mode ?? ""}\n${datum.count ?? 0}`;
+                        },
+                      }}
+                      legend={{ position: "bottom" }}
+                    />
+                  ) : (
+                    <Empty description="No data available" />
+                  )}
+                </Card>
+              </Col>
+            )}
+          </Row>
+
+          {/* Tables: Top Customers */}
+          <Row gutter={[16, 16]}>
+            {dashboard.hasFinanceAccess && (
+              <Col xs={24} lg={12}>
+                <Card
+                  title={`Top 10 Customers by Revenue ${
+                    dashboard.topCustomersByAmount?.year
+                      ? `(${dashboard.topCustomersByAmount.year})`
+                      : ""
+                  }`}
+                  loading={dashboard.isLoading.topCustomersByAmount}
+                >
+                  <Table
+                    columns={[
+                      {
+                        title: "Rank",
+                        key: "rank",
+                        width: 60,
+                        align: "center",
+                        render: (_, __, index) => index + 1,
+                      },
+                      {
+                        title: "Customer",
+                        key: "customer",
+                        render: (_, record) => (
+                          <Space direction="vertical" size={0}>
+                            <Text strong>{record.customerName}</Text>
+                            <Text type="secondary" style={{ fontSize: "12px" }}>
+                              {record.customerCode}
+                            </Text>
+                          </Space>
+                        ),
+                      },
+                      {
+                        title: "Total Amount",
+                        dataIndex: "totalAmount",
+                        key: "totalAmount",
+                        align: "right",
+                        render: (val) => `$${val?.toFixed(2) ?? "0.00"}`,
+                      },
+                      {
+                        title: "Paid",
+                        dataIndex: "totalPaid",
+                        key: "totalPaid",
+                        align: "right",
+                        render: (val) => `$${val?.toFixed(2) ?? "0.00"}`,
+                      },
+                      {
+                        title: "Balance",
+                        dataIndex: "balance",
+                        key: "balance",
+                        align: "right",
+                        render: (val) => (
+                          <Text strong type={val > 0 ? "danger" : "success"}>
+                            ${val?.toFixed(2) ?? "0.00"}
+                          </Text>
+                        ),
+                      },
+                      {
+                        title: "Invoices",
+                        dataIndex: "invoiceCount",
+                        key: "invoiceCount",
+                        align: "center",
+                        width: 80,
+                      },
+                    ]}
+                    dataSource={dashboard.topCustomersByAmount?.top || []}
+                    rowKey="customerCode"
+                    pagination={false}
+                    size="small"
+                  />
+                </Card>
+              </Col>
+            )}
+            {dashboard.hasOperationsAccess && (
+              <Col xs={24} lg={12}>
+                <Card
+                  title={`Top 10 Customers by CBM ${
+                    dashboard.topCustomersShipping?.year
+                      ? `(${dashboard.topCustomersShipping.year})`
+                      : ""
+                  }`}
+                  loading={dashboard.isLoading.topCustomersShipping}
+                >
+                  <Table
+                    columns={[
+                      {
+                        title: "Rank",
+                        dataIndex: "rank",
+                        key: "rank",
+                        width: 60,
+                        align: "center",
+                      },
+                      {
+                        title: "Customer",
+                        key: "customer",
+                        render: (_, record) => (
+                          <Space direction="vertical" size={0}>
+                            <Text strong>{record.customerName}</Text>
+                            <Text type="secondary" style={{ fontSize: "12px" }}>
+                              {record.customerCode}
+                            </Text>
+                          </Space>
+                        ),
+                      },
+                      {
+                        title: "Total CBM",
+                        dataIndex: "totalCBM",
+                        key: "totalCBM",
+                        align: "right",
+                        render: (val) => `${val?.toFixed(2) ?? "0.00"}`,
+                      },
+                      {
+                        title: "Weight (kg)",
+                        dataIndex: "totalWeight",
+                        key: "totalWeight",
+                        align: "right",
+                        render: (val) => `${val?.toFixed(2) ?? "0.00"}`,
+                      },
+                      {
+                        title: "Invoice Amount",
+                        dataIndex: "totalInvoiceAmount",
+                        key: "totalInvoiceAmount",
+                        align: "right",
+                        render: (val) => `$${val?.toFixed(2) ?? "0.00"}`,
+                      },
+                      {
+                        title: "Paid",
+                        dataIndex: "totalPaid",
+                        key: "totalPaid",
+                        align: "right",
+                        render: (val) => `$${val?.toFixed(2) ?? "0.00"}`,
+                      },
+                    ]}
+                    dataSource={
+                      dashboard.topCustomersShipping?.topCustomers || []
+                    }
+                    rowKey="customerCode"
+                    pagination={false}
+                    size="small"
+                  />
+                </Card>
+              </Col>
+            )}
+          </Row>
+
+          {/* Recent Activity Tables */}
+          <RecentActivitySection dashboard={dashboard} />
+        </Space>
       </AppLayout>
     </AuthGuard>
+  );
+}
+
+// Recent Activity Tables Component
+function RecentActivitySection({ dashboard }: { dashboard: any }) {
+  // Recent Intakes Columns
+  const recentIntakesColumns: ColumnsType<any> = [
+    {
+      title: "Tracking Code",
+      dataIndex: "intakeTrackingCode",
+      key: "intakeTrackingCode",
+      render: (text) => <Text strong>{text}</Text>,
+    },
+    {
+      title: "Customer",
+      key: "customer",
+      render: (_, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.customerName}</Text>
+          <Text type="secondary">{record.customerCode}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
+    },
+    {
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
+      align: "center",
+    },
+    {
+      title: "Weight (kg)",
+      dataIndex: "weight",
+      key: "weight",
+      align: "right",
+      render: (val) => val?.toFixed(2),
+    },
+    {
+      title: "CBM",
+      dataIndex: "cbm",
+      key: "cbm",
+      align: "right",
+      render: (val) => val?.toFixed(2),
+    },
+    {
+      title: "Warehouse",
+      dataIndex: "warehouse",
+      key: "warehouse",
+    },
+    {
+      title: "Intake Date",
+      dataIndex: "intakeDate",
+      key: "intakeDate",
+      render: (date) => dayjs(date).format("MMM DD, YYYY HH:mm"),
+    },
+  ];
+
+  // Recent Invoices Columns
+  const recentInvoicesColumns: ColumnsType<any> = [
+    {
+      title: "Invoice #",
+      dataIndex: "invoiceNumber",
+      key: "invoiceNumber",
+      render: (text, record) => (
+        <Link href={`/invoices/${record.id}`}>{text}</Link>
+      ),
+    },
+    {
+      title: "Customer",
+      key: "customer",
+      render: (_, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.customerName}</Text>
+          <Text type="secondary">{record.customerCode}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: "Total",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      align: "right",
+      render: (val) => `$${val?.toFixed(2)}`,
+    },
+    {
+      title: "Paid",
+      dataIndex: "paidAmount",
+      key: "paidAmount",
+      align: "right",
+      render: (val) => `$${val?.toFixed(2)}`,
+    },
+    {
+      title: "Balance",
+      dataIndex: "balance",
+      key: "balance",
+      align: "right",
+      render: (val) => (
+        <Text strong type={val > 0 ? "danger" : "success"}>
+          ${val?.toFixed(2)}
+        </Text>
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => {
+        const color =
+          status === "PAID"
+            ? "success"
+            : status === "PARTIALLY_PAID"
+            ? "warning"
+            : "error";
+        return <Tag color={color}>{status}</Tag>;
+      },
+    },
+    {
+      title: "Payments",
+      dataIndex: "paymentCount",
+      key: "paymentCount",
+      align: "center",
+    },
+    {
+      title: "Created",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date) => dayjs(date).format("MMM DD, YYYY"),
+    },
+  ];
+
+  // Aged Packages Columns
+  const agedPackagesColumns: ColumnsType<any> = [
+    {
+      title: "Tracking Code",
+      dataIndex: "trackingCode",
+      key: "trackingCode",
+      render: (text) => <Text strong>{text}</Text>,
+    },
+    {
+      title: "Customer",
+      key: "customer",
+      render: (_, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.customerName}</Text>
+          <Text type="secondary">{record.customerCode}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => <Tag color="blue">{status}</Tag>,
+    },
+    {
+      title: "Days in Warehouse",
+      dataIndex: "daysInWarehouse",
+      key: "daysInWarehouse",
+      align: "center",
+      render: (days) => (
+        <Tag color={days > 90 ? "red" : days > 60 ? "orange" : "yellow"}>
+          {days} days
+        </Tag>
+      ),
+      sorter: (a, b) => a.daysInWarehouse - b.daysInWarehouse,
+    },
+    {
+      title: "Received Date",
+      dataIndex: "receivedDate",
+      key: "receivedDate",
+      render: (date) => dayjs(date).format("MMM DD, YYYY"),
+    },
+    {
+      title: "Warehouse",
+      dataIndex: "warehouse",
+      key: "warehouse",
+    },
+  ];
+
+  return (
+    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+      {/* Recent Intakes */}
+      {dashboard.hasOperationsAccess && (
+        <Card
+          title={
+            <Space>
+              <InboxOutlined />
+              20 Recent Package Intakes
+            </Space>
+          }
+          extra={
+            dashboard.recentIntakes?.hasMore && (
+              <Tag color="blue">More data available</Tag>
+            )
+          }
+          loading={dashboard.isLoading.recentIntakes}
+        >
+          <Table
+            columns={recentIntakesColumns}
+            dataSource={dashboard.recentIntakes?.items || []}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              total: dashboard.recentIntakes?.total || 0,
+              showTotal: (total) => `Total ${total} items`,
+            }}
+            scroll={{ x: 1200 }}
+          />
+        </Card>
+      )}
+
+      {/* Recent Invoices & Payments */}
+      {dashboard.hasFinanceAccess && (
+        <Card
+          title={
+            <Space>
+              <DollarOutlined />
+              20 Recent Invoices & Payments
+            </Space>
+          }
+          extra={
+            dashboard.recentInvoicesPayments?.hasMore && (
+              <Tag color="blue">More data available</Tag>
+            )
+          }
+          loading={dashboard.isLoading.recentInvoicesPayments}
+        >
+          <Table
+            columns={recentInvoicesColumns}
+            dataSource={dashboard.recentInvoicesPayments?.items || []}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              total: dashboard.recentInvoicesPayments?.total || 0,
+              showTotal: (total) => `Total ${total} items`,
+            }}
+            scroll={{ x: 1400 }}
+          />
+        </Card>
+      )}
+
+      {/* Aged Packages */}
+      {dashboard.hasOperationsAccess && (
+        <Card
+          title={
+            <Space>
+              <ClockCircleOutlined />
+              20 Aged Packages (Over 30 Days)
+            </Space>
+          }
+          extra={
+            dashboard.recentAgedPackages?.hasMore && (
+              <Tag color="orange">More data available</Tag>
+            )
+          }
+          loading={dashboard.isLoading.recentAgedPackages}
+        >
+          <Table
+            columns={agedPackagesColumns}
+            dataSource={dashboard.recentAgedPackages?.items || []}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              total: dashboard.recentAgedPackages?.total || 0,
+              showTotal: (total) => `Total ${total} aged packages`,
+            }}
+            scroll={{ x: 1000 }}
+          />
+        </Card>
+      )}
+    </Space>
   );
 }
