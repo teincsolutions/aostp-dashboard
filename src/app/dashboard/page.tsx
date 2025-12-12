@@ -24,6 +24,7 @@ import {
   ClockCircleOutlined,
   ContainerOutlined,
   UserOutlined,
+  ArrowRightOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -98,80 +99,106 @@ export default function DashboardPage() {
           {/* KPI Cards */}
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} lg={6}>
-              <Card style={{ height: "140px" }}>
-                <Statistic
-                  title="Total Customers"
-                  value={dashboard.kpis?.customersTotal ?? 0}
-                  prefix={<UserOutlined />}
-                  loading={dashboard.isLoading.kpis}
-                />
-              </Card>
+              <Link href="/customers" style={{ textDecoration: "none" }}>
+                <Card
+                  hoverable
+                  style={{ height: "140px", cursor: "pointer" }}
+                  extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
+                >
+                  <Statistic
+                    title="Total Customers"
+                    value={dashboard.kpis?.customersTotal ?? 0}
+                    prefix={<UserOutlined />}
+                    loading={dashboard.isLoading.kpis}
+                  />
+                </Card>
+              </Link>
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <Card style={{ height: "140px" }}>
-                <Statistic
-                  title="Packages Total"
-                  value={dashboard.kpis?.packagesTotal ?? 0}
-                  prefix={<InboxOutlined />}
-                  loading={dashboard.isLoading.kpis}
-                />
-                <Space
-                  style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+              <Link href="/packages" style={{ textDecoration: "none" }}>
+                <Card
+                  hoverable
+                  style={{ height: "140px", cursor: "pointer" }}
+                  extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
                 >
-                  <Text type="secondary">
-                    AIR: {dashboard.kpis?.airTotal ?? 0}
-                  </Text>
-                  <Text type="secondary">|</Text>
-                  <Text type="secondary">
-                    SEA: {dashboard.kpis?.seaTotal ?? 0}
-                  </Text>
-                </Space>
-              </Card>
+                  <Statistic
+                    title="Packages Total"
+                    value={dashboard.kpis?.packagesTotal ?? 0}
+                    prefix={<InboxOutlined />}
+                    loading={dashboard.isLoading.kpis}
+                  />
+                  <Space
+                    style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+                  >
+                    <Text type="secondary">
+                      AIR: {dashboard.kpis?.airTotal ?? 0}
+                    </Text>
+                    <Text type="secondary">|</Text>
+                    <Text type="secondary">
+                      SEA: {dashboard.kpis?.seaTotal ?? 0}
+                    </Text>
+                  </Space>
+                </Card>
+              </Link>
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <Card style={{ height: "140px" }}>
-                <Statistic
-                  title="Invoices Total"
-                  value={
-                    (dashboard.kpis?.paidInvoicesCount ?? 0) +
-                    (dashboard.kpis?.outstandingInvoicesCount ?? 0)
-                  }
-                  prefix={<FileTextOutlined />}
-                  loading={dashboard.isLoading.kpis}
-                />
-                <Space
-                  style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+              <Link href="/invoices" style={{ textDecoration: "none" }}>
+                <Card
+                  hoverable
+                  style={{ height: "140px", cursor: "pointer" }}
+                  extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
                 >
-                  <Text type="success">
-                    Paid: {dashboard.kpis?.paidInvoicesCount ?? 0}
-                  </Text>
-                  <Text type="secondary">|</Text>
-                  <Text type="danger">
-                    Outstanding: {dashboard.kpis?.outstandingInvoicesCount ?? 0}
-                  </Text>
-                </Space>
-              </Card>
+                  <Statistic
+                    title="Invoices Total"
+                    value={
+                      (dashboard.kpis?.paidInvoicesCount ?? 0) +
+                      (dashboard.kpis?.outstandingInvoicesCount ?? 0)
+                    }
+                    prefix={<FileTextOutlined />}
+                    loading={dashboard.isLoading.kpis}
+                  />
+                  <Space
+                    style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+                  >
+                    <Text type="success">
+                      Paid: {dashboard.kpis?.paidInvoicesCount ?? 0}
+                    </Text>
+                    <Text type="secondary">|</Text>
+                    <Text type="danger">
+                      Outstanding:{" "}
+                      {dashboard.kpis?.outstandingInvoicesCount ?? 0}
+                    </Text>
+                  </Space>
+                </Card>
+              </Link>
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <Card style={{ height: "140px" }}>
-                <Statistic
-                  title="Payments Total"
-                  value={dashboard.kpis?.paymentsTotals?.amount ?? 0}
-                  prefix={<DollarOutlined />}
-                  precision={2}
-                  loading={dashboard.isLoading.kpis}
-                  suffix="USD"
-                />
-                <Space
-                  style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+              <Link href="/payments" style={{ textDecoration: "none" }}>
+                <Card
+                  hoverable
+                  style={{ height: "140px", cursor: "pointer" }}
+                  extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
                 >
-                  <Text type="secondary">
-                    GHS:{" "}
-                    {dashboard.kpis?.paymentsTotals?.localAmount?.toFixed(2) ??
-                      "0.00"}
-                  </Text>
-                </Space>
-              </Card>
+                  <Statistic
+                    title="Payments Total"
+                    value={dashboard.kpis?.paymentsTotals?.amount ?? 0}
+                    prefix={<DollarOutlined />}
+                    precision={2}
+                    loading={dashboard.isLoading.kpis}
+                    suffix="USD"
+                  />
+                  <Space
+                    style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+                  >
+                    <Text type="secondary">
+                      GHS:{" "}
+                      {dashboard.kpis?.paymentsTotals?.localAmount?.toFixed(
+                        2
+                      ) ?? "0.00"}
+                    </Text>
+                  </Space>
+                </Card>
+              </Link>
             </Col>
           </Row>
 
@@ -179,40 +206,58 @@ export default function DashboardPage() {
           {dashboard.hasFinanceAccess && (
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12} lg={8}>
-                <Card style={{ height: "120px" }}>
-                  <Statistic
-                    title="Active Containers"
-                    value={dashboard.kpis?.activeContainers ?? 0}
-                    prefix={<ContainerOutlined />}
-                    loading={dashboard.isLoading.kpis}
-                  />
-                </Card>
+                <Link href="/containers" style={{ textDecoration: "none" }}>
+                  <Card
+                    hoverable
+                    style={{ height: "120px", cursor: "pointer" }}
+                    extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
+                  >
+                    <Statistic
+                      title="Active Containers"
+                      value={dashboard.kpis?.activeContainers ?? 0}
+                      prefix={<ContainerOutlined />}
+                      loading={dashboard.isLoading.kpis}
+                    />
+                  </Card>
+                </Link>
               </Col>
               <Col xs={24} sm={12} lg={8}>
-                <Card style={{ height: "120px" }}>
-                  <Statistic
-                    title="Paid Invoices Amount"
-                    value={dashboard.kpis?.paidInvoicesAmount ?? 0}
-                    prefix={<DollarOutlined />}
-                    precision={2}
-                    valueStyle={{ color: "#52c41a" }}
-                    loading={dashboard.isLoading.kpis}
-                  />
-                </Card>
+                <Link href="/invoices" style={{ textDecoration: "none" }}>
+                  <Card
+                    hoverable
+                    style={{ height: "120px", cursor: "pointer" }}
+                    extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
+                  >
+                    <Statistic
+                      title="Paid Invoices Amount"
+                      value={dashboard.kpis?.paidInvoicesAmount ?? 0}
+                      prefix={<DollarOutlined />}
+                      precision={2}
+                      valueStyle={{ color: "#52c41a" }}
+                      loading={dashboard.isLoading.kpis}
+                    />
+                  </Card>
+                </Link>
               </Col>
               <Col xs={24} sm={12} lg={8}>
-                <Card style={{ height: "120px" }}>
-                  <Statistic
-                    title="Outstanding Invoices Amount"
-                    value={dashboard.kpis?.outstandingInvoicesAmount ?? 0}
-                    prefix={<DollarOutlined />}
-                    precision={2}
-                    valueStyle={{ color: "#cf1322" }}
-                    loading={dashboard.isLoading.topCustomersByAmount}
-                    // Note: Shows balance from top 10 customers only
-                    // For total outstanding balance, backend needs dedicated endpoint
-                  />
-                </Card>
+                <Link href="/invoices" style={{ textDecoration: "none" }}>
+                  <Card
+                    hoverable
+                    style={{ height: "120px", cursor: "pointer" }}
+                    extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
+                  >
+                    <Statistic
+                      title="Outstanding Invoices Amount"
+                      value={dashboard.kpis?.outstandingInvoicesAmount ?? 0}
+                      prefix={<DollarOutlined />}
+                      precision={2}
+                      valueStyle={{ color: "#cf1322" }}
+                      loading={dashboard.isLoading.topCustomersByAmount}
+                      // Note: Shows balance from top 10 customers only
+                      // For total outstanding balance, backend needs dedicated endpoint
+                    />
+                  </Card>
+                </Link>
               </Col>
               {/* Chart: Invoices by Month */}
               {dashboard.hasOperationsAccess && (
@@ -401,7 +446,6 @@ export default function DashboardPage() {
                 <Card
                   title="Payment Methods Distribution"
                   loading={dashboard.isLoading.paymentMethods}
-                  style={{ height: "380px" }}
                 >
                   {dashboard.paymentMethods?.methods &&
                   dashboard.paymentMethods.methods.length > 0 ? (
@@ -431,7 +475,6 @@ export default function DashboardPage() {
                 <Card
                   title="Shipping Modes Distribution"
                   loading={dashboard.isLoading.shippingModes}
-                  style={{ height: "380px" }}
                 >
                   {dashboard.shippingModes &&
                   (dashboard.shippingModes.air > 0 ||
