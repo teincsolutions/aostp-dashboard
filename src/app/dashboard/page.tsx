@@ -100,13 +100,14 @@ export default function DashboardPage() {
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} lg={6}>
               <Link href="/customers" style={{ textDecoration: "none" }}>
-                <Card
-                  hoverable
-                  style={{ height: "140px", cursor: "pointer" }}
-                  extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
-                >
+                <Card hoverable style={{ height: "140px", cursor: "pointer" }}>
                   <Statistic
-                    title="Total Customers"
+                    title={
+                      <Space>
+                        <span>Total Customers</span>
+                        <ArrowRightOutlined style={{ color: "#1890ff" }} />
+                      </Space>
+                    }
                     value={dashboard.kpis?.customersTotal ?? 0}
                     prefix={<UserOutlined />}
                     loading={dashboard.isLoading.kpis}
@@ -116,13 +117,14 @@ export default function DashboardPage() {
             </Col>
             <Col xs={24} sm={12} lg={6}>
               <Link href="/packages" style={{ textDecoration: "none" }}>
-                <Card
-                  hoverable
-                  style={{ height: "140px", cursor: "pointer" }}
-                  extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
-                >
+                <Card hoverable style={{ height: "140px", cursor: "pointer" }}>
                   <Statistic
-                    title="Packages Total"
+                    title={
+                      <Space>
+                        <span>Packages Total</span>
+                        <ArrowRightOutlined style={{ color: "#1890ff" }} />
+                      </Space>
+                    }
                     value={dashboard.kpis?.packagesTotal ?? 0}
                     prefix={<InboxOutlined />}
                     loading={dashboard.isLoading.kpis}
@@ -143,13 +145,14 @@ export default function DashboardPage() {
             </Col>
             <Col xs={24} sm={12} lg={6}>
               <Link href="/invoices" style={{ textDecoration: "none" }}>
-                <Card
-                  hoverable
-                  style={{ height: "140px", cursor: "pointer" }}
-                  extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
-                >
+                <Card hoverable style={{ height: "140px", cursor: "pointer" }}>
                   <Statistic
-                    title="Invoices Total"
+                    title={
+                      <Space>
+                        <span>Invoices Total</span>
+                        <ArrowRightOutlined style={{ color: "#1890ff" }} />
+                      </Space>
+                    }
                     value={
                       (dashboard.kpis?.paidInvoicesCount ?? 0) +
                       (dashboard.kpis?.outstandingInvoicesCount ?? 0)
@@ -174,13 +177,14 @@ export default function DashboardPage() {
             </Col>
             <Col xs={24} sm={12} lg={6}>
               <Link href="/payments" style={{ textDecoration: "none" }}>
-                <Card
-                  hoverable
-                  style={{ height: "140px", cursor: "pointer" }}
-                  extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
-                >
+                <Card hoverable style={{ height: "140px", cursor: "pointer" }}>
                   <Statistic
-                    title="Payments Total"
+                    title={
+                      <Space>
+                        <span>Payments Total</span>
+                        <ArrowRightOutlined style={{ color: "#1890ff" }} />
+                      </Space>
+                    }
                     value={dashboard.kpis?.paymentsTotals?.amount ?? 0}
                     prefix={<DollarOutlined />}
                     precision={2}
@@ -210,10 +214,14 @@ export default function DashboardPage() {
                   <Card
                     hoverable
                     style={{ height: "120px", cursor: "pointer" }}
-                    extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
                   >
                     <Statistic
-                      title="Active Containers"
+                      title={
+                        <Space>
+                          <span>Active Containers</span>
+                          <ArrowRightOutlined style={{ color: "#1890ff" }} />
+                        </Space>
+                      }
                       value={dashboard.kpis?.activeContainers ?? 0}
                       prefix={<ContainerOutlined />}
                       loading={dashboard.isLoading.kpis}
@@ -226,10 +234,14 @@ export default function DashboardPage() {
                   <Card
                     hoverable
                     style={{ height: "120px", cursor: "pointer" }}
-                    extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
                   >
                     <Statistic
-                      title="Paid Invoices Amount"
+                      title={
+                        <Space>
+                          <span>Paid Invoices Amount</span>
+                          <ArrowRightOutlined style={{ color: "#1890ff" }} />
+                        </Space>
+                      }
                       value={dashboard.kpis?.paidInvoicesAmount ?? 0}
                       prefix={<DollarOutlined />}
                       precision={2}
@@ -244,10 +256,14 @@ export default function DashboardPage() {
                   <Card
                     hoverable
                     style={{ height: "120px", cursor: "pointer" }}
-                    extra={<ArrowRightOutlined style={{ color: "#1890ff" }} />}
                   >
                     <Statistic
-                      title="Outstanding Invoices Amount"
+                      title={
+                        <Space>
+                          <span>Outstanding Invoices Amount</span>
+                          <ArrowRightOutlined style={{ color: "#1890ff" }} />
+                        </Space>
+                      }
                       value={dashboard.kpis?.outstandingInvoicesAmount ?? 0}
                       prefix={<DollarOutlined />}
                       precision={2}
