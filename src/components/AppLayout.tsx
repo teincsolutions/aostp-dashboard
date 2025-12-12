@@ -10,6 +10,7 @@ import {
   FileTextOutlined,
   ContainerOutlined,
   GlobalOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
@@ -22,6 +23,7 @@ export type MenuItem = {
   icon: ReactNode;
   label: string;
   roles: UserRole[];
+  children?: MenuItem[];
 };
 
 export const menuItems: Array<MenuItem> = [
@@ -147,6 +149,58 @@ export const menuItems: Array<MenuItem> = [
     label: "Settings",
     roles: ["SUPER_ADMIN"],
   },
+
+  // Reports submenu
+  {
+    key: "/reports",
+    icon: <BarChartOutlined />,
+    label: "Reports",
+    roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+    children: [
+      {
+        key: "/reports/payments",
+        icon: <FileTextOutlined />,
+        label: "Payments Report",
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+      },
+      {
+        key: "/reports/packing-lists",
+        icon: <FileTextOutlined />,
+        label: "Packing List Report",
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+      },
+      {
+        key: "/reports/customer-league",
+        icon: <FileTextOutlined />,
+        label: "Customer League Report",
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+      },
+      {
+        key: "/reports/shipping-method",
+        icon: <FileTextOutlined />,
+        label: "Shipping Method Report",
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+      },
+      {
+        key: "/reports/general",
+        icon: <FileTextOutlined />,
+        label: "General Report",
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+      },
+      {
+        key: "/reports/pickups",
+        icon: <FileTextOutlined />,
+        label: "Pickup Report",
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+      },
+      {
+        key: "/reports/warehouses",
+        icon: <FileTextOutlined />,
+        label: "Warehouse Report",
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+      },
+    ],
+  },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -157,7 +211,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // Filter menu items by role and remove 'roles' property for AntD Menu
   const filteredMenuItems = menuItems
     .filter((item) => item.roles?.includes(user?.role as UserRole))
-    .map(({ roles, ...rest }) => rest);
+    .map(({ roles, children, ...rest }) => {
+      // Filter children if they exist
+      if (children) {
+        const filteredChildren = children
+          .filter((child) => child.roles?.includes(user?.role as UserRole))
+          .map(({ roles: childRoles, ...childRest }) => childRest);
+
+        // Only include parent if it has accessible children
+        if (filteredChildren.length > 0) {
+          return { ...rest, children: filteredChildren };
+        }
+        return null;
+      }
+      return rest;
+    })
+    .filter((item): item is Exclude<typeof item, null> => item !== null);
 
   // Close Drawer on route change
   // (You may want to use useRouter/usePathname for this in production)
