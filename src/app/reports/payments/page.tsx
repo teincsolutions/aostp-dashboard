@@ -112,7 +112,7 @@ export default function PaymentsReportPage() {
             })}
           </div>
           <div style={{ fontSize: "12px", color: "#666" }}>
-            Local:{" "}
+            GHS:{" "}
             {record.localAmount.toLocaleString("en-US", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
