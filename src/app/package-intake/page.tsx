@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Form,
   Input,
@@ -174,6 +174,14 @@ export default function PackageIntakePage() {
     }
   };
 
+  // Memoized callback for QR scanner to prevent circular reference warnings
+  const handleScanResult = useCallback((decodedText: string) => {
+    form.setFieldsValue({ trackingCode: decodedText });
+    setScannerModalVisible(false);
+    toast.success("Tracking code scanned: " + decodedText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const {
     recentIntakes,
     recentIntakesTotal,
@@ -320,6 +328,8 @@ export default function PackageIntakePage() {
   }) => {
     useEffect(() => {
       let scanner: Html5QrcodeScanner | null = null;
+      let isScanning = true;
+
       if (visible) {
         scanner = new Html5QrcodeScanner(
           "reader",
@@ -328,16 +338,23 @@ export default function PackageIntakePage() {
         );
         scanner.render(
           (decodedText) => {
-            onScan(decodedText);
-            scanner?.clear();
+            if (isScanning) {
+              isScanning = false;
+              onScan(decodedText);
+              // Clear scanner after successful scan
+              scanner?.clear().catch((error) => {
+                console.error("Failed to clear scanner after scan", error);
+              });
+            }
           },
           (error) => {
-            // console.warn(error);
+            // Ignore error logs during scanning
           }
         );
       }
 
       return () => {
+        isScanning = false;
         if (scanner) {
           scanner.clear().catch((error) => {
             console.error("Failed to clear html5-qrcode scanner. ", error);
@@ -352,7 +369,7 @@ export default function PackageIntakePage() {
         onCancel={onCancel}
         footer={null}
         title="Scan QR/Barcode"
-        destroyOnClose
+        destroyOnHidden
         width={400}
       >
         <div id="reader" style={{ width: "100%" }}></div>
@@ -491,7 +508,6 @@ export default function PackageIntakePage() {
 
                   <Form.Item
                     label="Tracking Code (Optional)"
-                    name="trackingCode"
                     rules={[
                       {
                         min: 3,
@@ -504,10 +520,12 @@ export default function PackageIntakePage() {
                     ]}
                   >
                     <Space.Compact className="w-full">
-                      <Input
-                        placeholder="Scan or enter tracking code"
-                        style={{ width: "calc(100% - 100px)" }}
-                      />
+                      <Form.Item name="trackingCode" noStyle>
+                        <Input
+                          placeholder="Scan or enter tracking code"
+                          style={{ width: "calc(100% - 100px)" }}
+                        />
+                      </Form.Item>
                       <Button
                         type="primary"
                         icon={<QrcodeOutlined />}
@@ -742,11 +760,7 @@ export default function PackageIntakePage() {
           <ScannerModal
             visible={scannerModalVisible}
             onCancel={() => setScannerModalVisible(false)}
-            onScan={(decodedText) => {
-              form.setFieldsValue({ trackingCode: decodedText });
-              setScannerModalVisible(false);
-              toast.success("Tracking code scanned: " + decodedText);
-            }}
+            onScan={handleScanResult}
           />
         </div>
       </AppLayout>

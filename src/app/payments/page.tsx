@@ -262,6 +262,7 @@ export default function PaymentsPage() {
       const payment = await makePayment(paymentData);
       toast.success("Payment processed successfully");
       paymentForm.resetFields();
+      setSelectedCustomerId("");
       setSelectedInvoices([]);
       setCurrentPayment(payment);
       setIsPaymentModalVisible(false);
@@ -848,7 +849,6 @@ export default function PaymentsPage() {
               >
                 <Option value="USD">USD</Option>
                 <Option value="GHS">GHS</Option>
-                <Option value="CNY">CNY</Option>
               </Select>
               <DatePicker.RangePicker
                 placeholder={["From date", "To date"]}
