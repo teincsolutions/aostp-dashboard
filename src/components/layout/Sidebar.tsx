@@ -26,6 +26,9 @@ export function Sidebar({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const items = customMenuItems || menuItems;
 
+  // Determine which submenus should be open based on current path
+  const openKeys = pathname.startsWith("/reports") ? ["/reports"] : [];
+
   // Focus trap for mobile Drawer
   useEffect(() => {
     if (mobile && open && sidebarRef.current) {
@@ -43,7 +46,9 @@ export function Sidebar({
           } bg-gray-900 text-white overflow-y-auto h-screen fixed left-0 top-0 z-30`}
         >
           <div className="flex items-center justify-between px-4 py-3">
-            <span className={`font-bold text-lg ${collapsed ? "hidden" : "block"}`}>
+            <span
+              className={`font-bold text-lg ${collapsed ? "hidden" : "block"}`}
+            >
               Admin Panel
             </span>
             <Button
@@ -57,6 +62,8 @@ export function Sidebar({
             theme="dark"
             mode="inline"
             selectedKeys={[pathname]}
+            openKeys={openKeys}
+            defaultOpenKeys={openKeys}
             items={items}
             style={{ border: "none", background: "transparent" }}
             onClick={({ key }) => {
@@ -79,7 +86,7 @@ export function Sidebar({
         >
           <aside
             className="w-64 bg-gray-900 text-white h-full flex flex-col"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3">
               <span className="font-bold text-lg">Admin Panel</span>
@@ -94,6 +101,8 @@ export function Sidebar({
               theme="dark"
               mode="inline"
               selectedKeys={[pathname]}
+              openKeys={openKeys}
+              defaultOpenKeys={openKeys}
               items={items}
               style={{ border: "none", background: "transparent" }}
               onClick={({ key }) => {
