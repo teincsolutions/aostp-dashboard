@@ -5,6 +5,7 @@ export interface Payment {
   id: string;
   customerId: string;
   amount: number;
+  localAmount: number;
   currency: string;
   status: string;
   date: string;

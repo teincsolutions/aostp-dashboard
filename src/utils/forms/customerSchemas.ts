@@ -5,8 +5,8 @@ export const customerCreateSchema = Yup.object({
     .required("First name is required")
     .max(100, "First name must be shorter than or equal to 100 characters"),
   lastName: Yup.string()
-    .required("Last name is required")
-    .max(100, "Last name must be shorter than or equal to 100 characters"),
+    .max(100, "Last name must be shorter than or equal to 100 characters")
+    .notRequired(),
   phoneNumber: Yup.string().required("Phone number is required"),
   address: Yup.string().required("Address is required"),
   email: Yup.string().email("Please enter a valid email"),

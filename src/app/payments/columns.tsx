@@ -35,7 +35,12 @@ export const getPaymentColumns = ({
       title: "Amount",
       key: "amount",
       width: 120,
-      render: (_, record) => `${record.currency} ${record.amount.toFixed(2)}`,
+      render: (_, record) =>
+        `${record.currency} ${
+          record.currency === "GHS"
+            ? record.localAmount.toFixed(2)
+            : record.amount.toFixed(2)
+        }`,
     },
     {
       title: "Date",

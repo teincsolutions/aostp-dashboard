@@ -5,7 +5,7 @@ import { Menu, Button } from "antd";
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { usePathname } from "next/navigation";
 import { menuItems } from "@/components/AppLayout";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function Sidebar({
   collapsed,
@@ -26,8 +26,18 @@ export function Sidebar({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const items = customMenuItems || menuItems;
 
-  // Determine which submenus should be open based on current path
-  const openKeys = pathname.startsWith("/reports") ? ["/reports"] : [];
+  // Determine default open keys based on current path
+  const defaultOpenKeys = pathname.startsWith("/reports") ? ["/reports"] : [];
+
+  // State to manage which submenus are open
+  const [openKeys, setOpenKeys] = useState<string[]>(defaultOpenKeys);
+
+  // Update open keys when pathname changes
+  useEffect(() => {
+    if (pathname.startsWith("/reports")) {
+      setOpenKeys(["/reports"]);
+    }
+  }, [pathname]);
 
   // Focus trap for mobile Drawer
   useEffect(() => {
@@ -63,7 +73,7 @@ export function Sidebar({
             mode="inline"
             selectedKeys={[pathname]}
             openKeys={openKeys}
-            defaultOpenKeys={openKeys}
+            onOpenChange={(keys) => setOpenKeys(keys)}
             items={items}
             style={{ border: "none", background: "transparent" }}
             onClick={({ key }) => {
@@ -102,7 +112,7 @@ export function Sidebar({
               mode="inline"
               selectedKeys={[pathname]}
               openKeys={openKeys}
-              defaultOpenKeys={openKeys}
+              onOpenChange={(keys) => setOpenKeys(keys)}
               items={items}
               style={{ border: "none", background: "transparent" }}
               onClick={({ key }) => {
