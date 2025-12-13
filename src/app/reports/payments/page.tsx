@@ -105,7 +105,7 @@ export default function PaymentsReportPage() {
       render: (value, record) => (
         <div>
           <div style={{ fontWeight: 500 }}>
-            {record.currency}{" "}
+            USD:{" "}
             {value.toLocaleString("en-US", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
