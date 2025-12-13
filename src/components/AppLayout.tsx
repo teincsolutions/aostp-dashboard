@@ -161,7 +161,7 @@ export const menuItems: Array<MenuItem> = [
         key: "/reports/payments",
         icon: <FileTextOutlined />,
         label: "Payments Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
       },
       {
         key: "/reports/packing-lists",
@@ -173,7 +173,7 @@ export const menuItems: Array<MenuItem> = [
         key: "/reports/customer-league",
         icon: <FileTextOutlined />,
         label: "Customer League Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+        roles: ["SUPER_ADMIN", "OPERATIONS_CLERK", "FINANCE_MANAGER"],
       },
       {
         key: "/reports/shipping-method",
@@ -197,7 +197,7 @@ export const menuItems: Array<MenuItem> = [
         key: "/reports/warehouses",
         icon: <FileTextOutlined />,
         label: "Warehouse Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+        roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
       },
     ],
   },

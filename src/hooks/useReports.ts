@@ -45,7 +45,7 @@ const hasAccess = (
 /**
  * Hook to fetch Payments Report
  *
- * Permissions: SUPER_ADMIN, FINANCE_MANAGER, OPERATIONS_CLERK
+ * Permissions: SUPER_ADMIN, FINANCE_MANAGER
  *
  * @param filters - Optional filters (fromDate, toDate, warehouseId, customerId)
  * @param userRole - Current user role for access control
@@ -58,7 +58,7 @@ export const usePaymentsReport = (
 ): UseQueryResult<PaymentsReportResponse, Error> => {
   const canAccess = hasAccess(
     userRole,
-    ALLOWED_ROLES.OPERATIONS_CLERK as UserRole[]
+    ALLOWED_ROLES.FINANCE_MANAGER as UserRole[]
   );
 
   return useQuery<PaymentsReportResponse, Error>({
@@ -67,9 +67,7 @@ export const usePaymentsReport = (
     enabled: enabled && canAccess,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-};
-
-// ===================================
+}; // ===================================
 // 2. Packing Lists Report Hook
 // ===================================
 
@@ -107,7 +105,7 @@ export const usePackingListsReport = (
 /**
  * Hook to fetch Customer League Report
  *
- * Permissions: SUPER_ADMIN, FINANCE_MANAGER
+ * Permissions: SUPER_ADMIN, OPERATIONS_CLERK, FINANCE_MANAGER
  *
  * @param filters - Optional filters (fromDate, toDate, warehouseId, customerId)
  * @param userRole - Current user role for access control
@@ -120,7 +118,7 @@ export const useCustomerLeagueReport = (
 ): UseQueryResult<CustomerLeagueReportResponse, Error> => {
   const canAccess = hasAccess(
     userRole,
-    ALLOWED_ROLES.FINANCE_MANAGER as UserRole[]
+    ALLOWED_ROLES.OPERATIONS_CLERK as UserRole[]
   );
 
   return useQuery<CustomerLeagueReportResponse, Error>({
@@ -129,9 +127,7 @@ export const useCustomerLeagueReport = (
     enabled: enabled && canAccess,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-};
-
-// ===================================
+}; // ===================================
 // 4. Shipping Method Report Hook
 // ===================================
 
@@ -231,7 +227,7 @@ export const usePickupsReport = (
 /**
  * Hook to fetch Warehouse Report
  *
- * Permissions: SUPER_ADMIN, FINANCE_MANAGER
+ * Permissions: SUPER_ADMIN, OPERATIONS_CLERK
  *
  * @param filters - Optional filters (fromDate, toDate, warehouseId)
  * @param userRole - Current user role for access control
@@ -242,10 +238,10 @@ export const useWarehouseReport = (
   userRole?: UserRole,
   enabled: boolean = true
 ): UseQueryResult<WarehouseReportResponse, Error> => {
-  const canAccess = hasAccess(
-    userRole,
-    ALLOWED_ROLES.FINANCE_MANAGER as UserRole[]
-  );
+  const canAccess = hasAccess(userRole, [
+    "SUPER_ADMIN",
+    "OPERATIONS_CLERK",
+  ] as UserRole[]);
 
   return useQuery<WarehouseReportResponse, Error>({
     queryKey: ["reports", "warehouses", filters],

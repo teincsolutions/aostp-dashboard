@@ -136,6 +136,16 @@ export default function PickupsReportPage() {
       dataIndex: "receiverName",
       key: "receiverName",
       width: 150,
+      render: (receiverName) => {
+        if (!receiverName) return "N/A";
+        if (typeof receiverName === "string") {
+          return receiverName;
+        }
+        if (receiverName && typeof receiverName === "object") {
+          return `${receiverName.firstName} ${receiverName.lastName}`;
+        }
+        return "N/A";
+      },
     },
     {
       title: "Pickup Date",

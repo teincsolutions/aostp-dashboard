@@ -155,6 +155,15 @@ export default function PaymentsReportPage() {
       dataIndex: "processedBy",
       key: "processedBy",
       width: 200,
+      render: (processedBy) => {
+        if (typeof processedBy === "string") {
+          return processedBy;
+        }
+        if (processedBy && typeof processedBy === "object") {
+          return `${processedBy.firstName} ${processedBy.lastName}`;
+        }
+        return "N/A";
+      },
     },
   ];
 

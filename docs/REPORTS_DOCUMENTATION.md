@@ -39,7 +39,7 @@ All report endpoints support these optional filters:
 
 **Description:** Returns a comprehensive list of all payments across warehouses with currency-based aggregations and conversion to local currency.
 
-**Permissions:** SUPER_ADMIN, FINANCE_MANAGER, OPERATIONS_CLERK
+**Permissions:** SUPER_ADMIN, FINANCE_MANAGER
 
 **Filters Supported:**
 
@@ -172,7 +172,7 @@ All report endpoints support these optional filters:
 
 **Description:** Ranks top customers across multiple dimensions: invoice totals, payment totals, CBM, and weight.
 
-**Permissions:** SUPER_ADMIN, FINANCE_MANAGER
+**Permissions:** SUPER_ADMIN, OPERATIONS_CLERK, FINANCE_MANAGER
 
 **Filters Supported:**
 
@@ -438,7 +438,7 @@ pickupRate = (packages with status RELEASED) / (total packages)
 
 **Description:** Aggregates statistics by warehouse including packages, customers, volume/weight metrics, and financial data.
 
-**Permissions:** SUPER_ADMIN, FINANCE_MANAGER
+**Permissions:** SUPER_ADMIN, OPERATIONS_CLERK
 
 **Filters Supported:**
 
@@ -546,14 +546,17 @@ All endpoints may return these standard error responses:
 ### Optimization Techniques
 
 1. **Prisma Aggregations:**
+
    - All reports use `groupBy` and `aggregate` at database level
    - Minimizes data transfer and processing in application layer
 
 2. **Selective Field Projection:**
+
    - Only required fields are selected using `select` clauses
    - Reduces payload size and query execution time
 
 3. **Indexed Queries:**
+
    - Filters use indexed columns (`customerId`, `warehouseId`, `createdAt`, `status`)
    - Ensures fast query execution even with large datasets
 
@@ -582,14 +585,14 @@ For extremely large reports, offload to background processing:
 
 ```typescript
 // Enqueue report generation
-const job = await this.reportsQueue.add('generate-report', {
-  reportType: 'payments',
+const job = await this.reportsQueue.add("generate-report", {
+  reportType: "payments",
   filters: query,
   userId: user.id,
 });
 
 // Return job ID for status tracking
-return { jobId: job.id, status: 'PROCESSING' };
+return { jobId: job.id, status: "PROCESSING" };
 ```
 
 ---
@@ -733,19 +736,23 @@ PackageDelivery
 ### Planned Features
 
 1. **Export Functionality:**
+
    - CSV/Excel export for all reports
    - PDF generation for printable reports
 
 2. **Scheduled Reports:**
+
    - Daily/weekly/monthly automated reports
    - Email delivery to stakeholders
 
 3. **Advanced Analytics:**
+
    - Trend analysis over time
    - Predictive analytics for revenue forecasting
    - Customer churn prediction
 
 4. **Custom Report Builder:**
+
    - User-defined metrics
    - Custom aggregations
    - Saved report configurations

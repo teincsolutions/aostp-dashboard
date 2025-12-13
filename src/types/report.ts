@@ -24,7 +24,10 @@ export interface PaymentReportItem {
   paymentMethod: string;
   processedAt: string;
   warehouse: string;
-  processedBy: string;
+  processedBy:
+    | string
+    | { firstName: string; lastName: string }
+    | { firstName: string; lastName: string; email: string };
 }
 
 export interface PaymentReportTotals {
@@ -163,7 +166,7 @@ export interface PickupReportItem {
   trackingCode: string;
   description: string;
   deliveryId: string;
-  receiverName?: string;
+  receiverName?: string | { firstName: string; lastName: string };
   notes?: string;
 }
 
