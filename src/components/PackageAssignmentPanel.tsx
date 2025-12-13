@@ -22,18 +22,25 @@ import {
   EditOutlined,
   ReloadOutlined,
   DownloadOutlined,
+  RollbackOutlined,
 } from "@ant-design/icons";
 import { toast } from "sonner";
 import dayjs from "dayjs";
 import { Package, Currency, PackageStatusPackages } from "@/types/package";
 import { ShippingMode } from "@/types/exchangeRate";
-import { usePackingList, useUnassignedPackages } from "@/hooks/usePackingLists";
+import {
+  usePackingList,
+  useUnassignedPackages,
+  usePackingListMutations,
+} from "@/hooks/usePackingLists";
 import { Customer } from "@/types/customer";
 import { useCities } from "@/hooks/useCities";
 import { usePackages } from "@/hooks/usePackages";
 import { PackingListStatus } from "@/types/packingList";
 import { packageStatusColors } from "@/app/packages/page";
 import { useRegenerateInvoicePdf } from "@/hooks/useInvoices";
+import { useAuth } from "@/hooks/useAuth";
+import { Role } from "@/types/user";
 
 const { Text } = Typography;
 
@@ -57,6 +64,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   isRemovingPackages,
 }) => {
   const { data: packingListData } = usePackingList(packingListId || "");
+  const { user } = useAuth();
 
   const [unassignedPage, setUnassignedPage] = useState(1);
   const shippingMode =
@@ -70,6 +78,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   const { updateMutation } = usePackages();
   const { mutateAsync: regenerateInvoicePdfMutation } =
     useRegenerateInvoicePdf();
+  const { unfinalizePackingList, isUnfinalizing } = usePackingListMutations();
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [tempPackage, setTempPackage] = useState<Partial<Package> | null>(null);
@@ -107,6 +116,22 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     } catch (error) {
       console.error("Regenerate invoice failed:", error);
       // Handle error
+    }
+  };
+
+  // Unfinalize packing list (SUPER_ADMIN only)
+  const handleUnfinalizePackingList = async () => {
+    if (!packingListId) return;
+
+    try {
+      await unfinalizePackingList.mutateAsync(packingListId);
+      toast.success(
+        "Packing list unfinalized successfully. You can now add more packages."
+      );
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to unfinalize packing list"
+      );
     }
   };
 
@@ -905,12 +930,48 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               )}
           </div>
           {packingListData?.status === "FINALIZED" && (
-            <Alert
-              message="This packing list is finalized. You cannot modify assigned packages."
-              type="warning"
-              showIcon
-              className="mb-2"
-            />
+            <>
+              {user?.role === Role.SUPER_ADMIN ? (
+                <Alert
+                  message="Packing List is Finalized"
+                  description={
+                    <div className="flex items-center justify-between">
+                      <span>
+                        This packing list is finalized. As SUPER ADMIN, you can
+                        unfinalize it to add more packages.
+                      </span>
+                      <Popconfirm
+                        title="Unfinalize Packing List?"
+                        description="This will change the status back to DRAFT. Existing invoices will remain unchanged."
+                        onConfirm={handleUnfinalizePackingList}
+                        okText="Yes, Unfinalize"
+                        cancelText="Cancel"
+                      >
+                        <Button
+                          type="primary"
+                          icon={<RollbackOutlined />}
+                          loading={isUnfinalizing}
+                          danger
+                          size="small"
+                        >
+                          Unfinalize
+                        </Button>
+                      </Popconfirm>
+                    </div>
+                  }
+                  type="warning"
+                  showIcon
+                  className="mb-2"
+                />
+              ) : (
+                <Alert
+                  message="This packing list is finalized. You cannot modify assigned packages."
+                  type="warning"
+                  showIcon
+                  className="mb-2"
+                />
+              )}
+            </>
           )}
           {packingListData?.packages && packingListData.packages.length > 0 ? (
             <Table

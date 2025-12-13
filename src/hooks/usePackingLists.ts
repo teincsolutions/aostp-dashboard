@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { GetPackagesParams, packingListService } from "@/services/packingListService";
+import {
+  GetPackagesParams,
+  packingListService,
+} from "@/services/packingListService";
 import {
   PackingListCreatePayload,
   PackingListUpdatePayload,
@@ -55,12 +58,11 @@ export const usePackingListSummary = (id: string) => {
 };
 
 // Hook for fetching unassigned packages
-export const useUnassignedPackages = (
-  params: GetPackagesParams = {}
-) => {
+export const useUnassignedPackages = (params: GetPackagesParams = {}) => {
   return useQuery({
     queryKey: packingListKeys.unassignedPackages(params),
-    queryFn: async () => (await packingListService.getUnassignedPackages(params)).data,
+    queryFn: async () =>
+      (await packingListService.getUnassignedPackages(params)).data,
     staleTime: 2 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
@@ -186,6 +188,17 @@ export const usePackingListMutations = () => {
     },
   });
 
+  // Unfinalize packing list mutation (SUPER_ADMIN only)
+  const unfinalizePackingList = useMutation({
+    mutationFn: (id: string) => packingListService.unfinalizePackingList(id),
+    onSuccess: (data, id) => {
+      // Invalidate packing lists to refresh data
+      queryClient.invalidateQueries({ queryKey: packingListKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: packingListKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: packingListKeys.summary(id) });
+    },
+  });
+
   return {
     createPackingList,
     updatePackingList,
@@ -194,6 +207,7 @@ export const usePackingListMutations = () => {
     removePackagesFromPackingList,
     exportPackingList,
     finalizePackingList,
+    unfinalizePackingList,
     // Loading states
     isCreating: createPackingList.isPending,
     isUpdating: updatePackingList.isPending,
@@ -202,5 +216,6 @@ export const usePackingListMutations = () => {
     isRemovingPackages: removePackagesFromPackingList.isPending,
     isExporting: exportPackingList.isPending,
     isFinalizing: finalizePackingList.isPending,
+    isUnfinalizing: unfinalizePackingList.isPending,
   };
 };

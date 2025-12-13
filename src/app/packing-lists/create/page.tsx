@@ -16,7 +16,12 @@ import {
   Popconfirm,
 } from "antd";
 import { toast } from "sonner";
-import { LeftOutlined, RightOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  LeftOutlined,
+  RightOutlined,
+  PlusOutlined,
+  RollbackOutlined,
+} from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { usePackingListMutations } from "@/hooks/usePackingLists";
@@ -24,7 +29,11 @@ import {
   useActiveContainers,
   useContainerMutations,
 } from "@/hooks/useContainers";
-import { PackingListCreatePayload, PackingList } from "@/types/packingList";
+import {
+  PackingListCreatePayload,
+  PackingList,
+  PackingListStatus,
+} from "@/types/packingList";
 import { ContainerCreatePayload } from "@/types/container";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
@@ -33,6 +42,7 @@ import { Role } from "@/types/user";
 import { handleError } from "@/utils/forms/errorUtils";
 import { PackageAssignmentPanel } from "@/components/PackageAssignmentPanel";
 import { getPacklistTotals } from "@/utils/forms/getPacklistTotals";
+import { useAuth } from "@/hooks/useAuth";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -49,6 +59,9 @@ const PackingListCreatePage: React.FC = () => {
   const [basicInfoForm] = Form.useForm();
   const [containerForm] = Form.useForm();
 
+  // Auth hook to check user role
+  const { user } = useAuth();
+
   // React Query hooks
   const { data: activeContainers = [] } = useActiveContainers();
   const { createContainer, isCreating: isCreatingContainer } =
@@ -59,8 +72,10 @@ const PackingListCreatePage: React.FC = () => {
     addPackagesToPackingList,
     isAddingPackages,
     finalizePackingList,
+    unfinalizePackingList,
     isRemovingPackages,
     isFinalizing,
+    isUnfinalizing,
     removePackagesFromPackingList,
     createPackingList,
     isCreating,
@@ -178,6 +193,24 @@ const PackingListCreatePage: React.FC = () => {
     } catch (error: any) {
       toast.error(
         error.response?.data?.message || "Failed to finalize packing list"
+      );
+    }
+  };
+
+  // Unfinalize packing list (SUPER_ADMIN only)
+  const handleUnfinalizePackingList = async () => {
+    if (!packingList) return;
+
+    try {
+      const result = await unfinalizePackingList.mutateAsync(packingList.id!);
+      toast.success(
+        "Packing list unfinalized successfully. You can now add more packages."
+      );
+      setPackingList(result);
+      setCurrentStep(1); // Go back to package assignment step
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to unfinalize packing list"
       );
     }
   };
@@ -340,6 +373,40 @@ const PackingListCreatePage: React.FC = () => {
             {currentStep === 1 && (
               // Step 2: Package Assignment
               <div className="space-y-4">
+                {/* Unfinalize button (SUPER_ADMIN only, when finalized) */}
+                {packingList?.status === PackingListStatus.FINALIZED &&
+                  user?.role === Role.SUPER_ADMIN && (
+                    <Alert
+                      message="Packing List is Finalized"
+                      description={
+                        <div className="flex items-center justify-between">
+                          <span>
+                            This packing list is finalized. As SUPER_ADMIN, you
+                            can unfinalize it to add more packages.
+                          </span>
+                          <Popconfirm
+                            title="Unfinalize Packing List?"
+                            description="This will change the status back to DRAFT. Existing invoices will remain unchanged."
+                            onConfirm={handleUnfinalizePackingList}
+                            okText="Yes, Unfinalize"
+                            cancelText="Cancel"
+                          >
+                            <Button
+                              type="primary"
+                              icon={<RollbackOutlined />}
+                              loading={isUnfinalizing}
+                              danger
+                            >
+                              Unfinalize Packing List
+                            </Button>
+                          </Popconfirm>
+                        </div>
+                      }
+                      type="warning"
+                      showIcon
+                    />
+                  )}
+
                 <PackageAssignmentPanel
                   packingListId={packingList?.id || ""}
                   selectedPackageIds={selectedPackageIds}
