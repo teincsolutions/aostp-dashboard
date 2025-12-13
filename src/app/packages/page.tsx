@@ -159,7 +159,7 @@ export default function PackagesPage() {
     ...pkg,
     // Add display fields for compatibility
     customerName: pkg.customer
-      ? `${pkg.customer.firstName} ${pkg.customer.lastName}`
+      ? `${pkg.customer.firstName} ${pkg.customer.lastName || ""}`
       : pkg.customerId,
     shipmentType: pkg.shippingMode,
     createdByName: pkg.createdBy

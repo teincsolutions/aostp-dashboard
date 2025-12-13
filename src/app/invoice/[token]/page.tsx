@@ -222,7 +222,7 @@ export default function PublicInvoiceView() {
             <Card title="Ship To">
               <Descriptions column={1} size="small">
                 <Descriptions.Item label="Customer">
-                  {invoice.customer.firstName} {invoice.customer.lastName}
+                  {invoice.customer.firstName} {invoice.customer.lastName || ""}
                 </Descriptions.Item>
                 <Descriptions.Item label="Email">
                   {invoice.customer.email}

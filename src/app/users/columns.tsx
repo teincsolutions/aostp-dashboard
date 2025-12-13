@@ -131,7 +131,7 @@ export function getUserColumns(actions: UserActions): ColumnsType<User> {
                 title={isActivating ? "Activate user?" : "Deactivate user?"}
                 description={`Are you sure you want to ${
                   isActivating ? "activate" : "deactivate"
-                } ${record.firstName} ${record.lastName}?`}
+                } ${record.firstName} ${record.lastName || ""}?`}
                 onConfirm={() =>
                   actions.onToggleStatus(record.id, isActivating)
                 }
@@ -155,7 +155,11 @@ export function getUserColumns(actions: UserActions): ColumnsType<User> {
             <Tooltip title="Reset Password">
               <Popconfirm
                 title="Reset Password"
-                description={`Are you sure you want to reset the password for ${record.firstName} ${record.lastName}? This will send a password reset email to the user.`}
+                description={`Are you sure you want to reset the password for ${
+                  record.firstName
+                } ${
+                  record.lastName || ""
+                }? This will send a password reset email to the user.`}
                 onConfirm={() => actions.onResetPassword(record)}
                 okText="Yes, Reset"
                 cancelText="Cancel"

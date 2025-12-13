@@ -153,7 +153,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
             break;
           case "customer":
             row["Customer"] = pkg.customer
-              ? `${pkg.customer.firstName} ${pkg.customer.lastName}`
+              ? `${pkg.customer.firstName} ${pkg.customer.lastName || ""}`
               : "N/A";
             break;
           case "description":
@@ -328,8 +328,21 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       dataIndex: "customer",
       key: "customer",
       render: (customer: Customer) =>
-        customer ? `${customer.firstName} ${customer.lastName}` : "N/A",
-      width: 150,
+        customer ? (
+          <div>
+            <div>{`${customer.firstName} ${
+              customer.lastName || "" || ""
+            }`}</div>
+            {customer.phoneNumber && (
+              <div className="text-xs text-gray-500">
+                Contact: {customer.phoneNumber}
+              </div>
+            )}
+          </div>
+        ) : (
+          "N/A"
+        ),
+      width: 180,
     },
     {
       title: "Description",
@@ -337,6 +350,30 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       key: "description",
       ellipsis: true,
       width: 200,
+    },
+    {
+      title: "Qty",
+      dataIndex: "quantity",
+      key: "quantity",
+      width: 70,
+      render: (quantity: number, record: Package) => {
+        if (editingKey === record.id) {
+          return (
+            <InputNumber
+              value={tempPackage?.quantity ?? quantity ?? 1}
+              onChange={(v) =>
+                setTempPackage((prev) =>
+                  prev ? { ...prev, quantity: v ?? 1 } : null
+                )
+              }
+              min={1}
+              style={{ width: "100%" }}
+            />
+          );
+        } else {
+          return quantity || 1;
+        }
+      },
     },
     {
       title: shippingMode === ShippingMode.AIR ? "Weight (kg)" : "CBM",
@@ -589,6 +626,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                 onClick={() => {
                   setEditingKey(record.id);
                   setTempPackage({
+                    quantity: record.quantity,
                     weight: record.weight,
                     cbm: record.cbm,
                     destinationCityId: record.destinationCityId,
@@ -645,8 +683,21 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       dataIndex: "customer",
       key: "customer",
       render: (customer: any) =>
-        customer ? `${customer.firstName} ${customer.lastName}` : "N/A",
-      width: 150,
+        customer ? (
+          <div>
+            <div>{`${customer.firstName} ${
+              customer.lastName || "" || ""
+            }`}</div>
+            {customer.phoneNumber && (
+              <div className="text-xs text-gray-500">
+                Contact: {customer.phoneNumber}
+              </div>
+            )}
+          </div>
+        ) : (
+          "N/A"
+        ),
+      width: 180,
     },
     {
       title: "Description",
@@ -654,6 +705,13 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       key: "description",
       ellipsis: true,
       width: 200,
+    },
+    {
+      title: "Qty",
+      dataIndex: "quantity",
+      key: "quantity",
+      width: 60,
+      render: (quantity: number) => quantity || 1,
     },
     {
       title: shippingMode === ShippingMode.AIR ? "Weight (kg)" : "CBM",
@@ -736,8 +794,21 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       dataIndex: "customer",
       key: "customer",
       render: (customer: Customer) =>
-        customer ? `${customer.firstName} ${customer.lastName}` : "N/A",
-      width: 150,
+        customer ? (
+          <div>
+            <div>{`${customer.firstName} ${
+              customer.lastName || "" || ""
+            }`}</div>
+            {customer.phoneNumber && (
+              <div className="text-xs text-gray-500">
+                Contact: {customer.phoneNumber}
+              </div>
+            )}
+          </div>
+        ) : (
+          "N/A"
+        ),
+      width: 180,
     },
     {
       title: shippingMode === ShippingMode.AIR ? "Weight (kg)" : "CBM",

@@ -363,7 +363,9 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                         ...(Array.isArray(customers?.data)
                           ? customers.data.map((customer) => ({
                               value: customer.id,
-                              label: `${customer.customerCode} - ${customer.firstName} ${customer.lastName}`,
+                              label: `${customer.customerCode} - ${
+                                customer.firstName
+                              } ${customer.lastName || "" || ""}`,
                             }))
                           : []),
                         { value: "__add_new__", label: "+ Add New Customer" },

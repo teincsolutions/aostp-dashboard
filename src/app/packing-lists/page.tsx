@@ -750,7 +750,7 @@ export default function PackingListsPage() {
                             <div>
                               <h4 className="font-medium mb-2">
                                 {summary.customer.firstName}{" "}
-                                {summary.customer.lastName} ({" "}
+                                {summary.customer.lastName || ""} ({" "}
                                 {summary.customer.customerCode})
                               </h4>
                               <p className="text-sm text-gray-600 mb-2">

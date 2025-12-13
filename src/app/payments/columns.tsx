@@ -25,9 +25,11 @@ export const getPaymentColumns = ({
       width: 200,
       render: (_, record) => (
         <Tooltip
-          title={`${record.customer.firstName} ${record.customer.lastName}`}
+          title={`${record.customer.firstName} ${
+            record.customer.lastName || ""
+          }`}
         >
-          {record.customer.firstName} {record.customer.lastName}
+          {record.customer.firstName} {record.customer.lastName || ""}
         </Tooltip>
       ),
     },

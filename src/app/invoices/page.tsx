@@ -191,7 +191,9 @@ export default function InvoicesPage() {
       key: "customer",
       width: 150,
       render: (customer: any) =>
-        customer ? `${customer.firstName} ${customer.lastName}` : "N/A",
+        customer
+          ? `${customer.firstName} ${customer.lastName || "" || ""}`
+          : "N/A",
     },
     {
       title: "Packing List",

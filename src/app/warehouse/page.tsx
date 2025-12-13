@@ -23,6 +23,7 @@ import type {
   SorterResult,
   TableCurrentDataSource,
 } from "antd/es/table/interface";
+import type { TabsProps } from "antd";
 import { columns } from "@/app/warehouse/columns";
 import {
   useWarehousePackages,
@@ -44,7 +45,6 @@ import { useAuth } from "@/hooks/useAuth";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
-const { TabPane } = Tabs;
 
 const allowedRoles = ["OPERATIONS_CLERK", "SUPER_ADMIN"];
 
@@ -307,140 +307,154 @@ export default function WarehousePage() {
             </div>
           </div>
 
-          <Tabs activeKey={activeTab} onChange={setActiveTab}>
-            <TabPane tab="Warehouse Locations" key="1">
-              <Table
-                columns={warehouseColumns}
-                dataSource={warehousesData?.data || []}
-                rowKey="id"
-                loading={warehousesLoading}
-                pagination={{
-                  current: warehousesPage,
-                  pageSize: warehousesLimit,
-                  total: warehousesData?.meta?.total || 0,
-                  showSizeChanger: true,
-                  onChange: (page, size) => {
-                    setWarehousesPage(page);
-                  },
-                }}
-                locale={{
-                  emptyText: <Empty description="No warehouses found" />,
-                }}
-                scroll={{ x: true }}
-              />
-            </TabPane>
-            <TabPane tab="Packages in Warehouse" key="2">
-              <Space wrap className="mb-4">
-                <Input.Search
-                  placeholder="Search Tracking # / Customer"
-                  allowClear
-                  onSearch={(v) =>
-                    setPackageFilters((prev) => ({
-                      ...prev,
-                      search: v,
-                      page: 1,
-                    }))
-                  }
-                  style={{ width: 220 }}
-                />
-                <Select
-                  placeholder="Warehouse"
-                  allowClear
-                  style={{ width: 140 }}
-                  onChange={(v) =>
-                    setPackageFilters((prev) => ({
-                      ...prev,
-                      warehouseId: v,
-                      page: 1,
-                    }))
-                  }
-                >
-                  {warehousesData?.data?.map((w) => (
-                    <Option key={w.id} value={w.id}>
-                      {w.name} ({w.warehouseId})
-                    </Option>
-                  ))}
-                </Select>
-                <Select
-                  placeholder="Status"
-                  allowClear
-                  style={{ width: 140 }}
-                  onChange={(v) =>
-                    setPackageFilters((prev) => ({
-                      ...prev,
-                      status: v,
-                      page: 1,
-                    }))
-                  }
-                >
-                  <Option value="RECEIVED">Received</Option>
-                  <Option value="ASSIGNED">Assigned</Option>
-                  <Option value="SHIPPED">Shipped</Option>
-                </Select>
-                <Input
-                  placeholder="Days Min"
-                  type="number"
-                  style={{ width: 100 }}
-                  onChange={(e) =>
-                    setPackageFilters((prev) => ({
-                      ...prev,
-                      daysInWarehouseFrom: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                      page: 1,
-                    }))
-                  }
-                />
-                <Input
-                  placeholder="Days Max"
-                  type="number"
-                  style={{ width: 100 }}
-                  onChange={(e) =>
-                    setPackageFilters((prev) => ({
-                      ...prev,
-                      daysInWarehouseTo: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                      page: 1,
-                    }))
-                  }
-                />
-                <RangePicker
-                  onChange={(dates, dateStrings) => {
-                    setPackageFilters((prev) => ({
-                      ...prev,
-                      dateFrom: dateStrings[0] || undefined,
-                      dateTo: dateStrings[1] || undefined,
-                      page: 1,
-                    }));
-                  }}
-                />
-              </Space>
-              <Table
-                columns={columns}
-                dataSource={packagesData?.data || []}
-                rowKey="id"
-                loading={packagesLoading}
-                pagination={{
-                  current: packageFilters.page,
-                  pageSize: packageFilters.limit,
-                  total: packagesData?.meta?.total || 0,
-                  showSizeChanger: true,
-                }}
-                onChange={handleTableChange}
-                locale={{ emptyText: <Empty /> }}
-                scroll={{ x: true }}
-                size="middle"
-              />
-              {packagesError && (
-                <Result
-                  status="error"
-                  title="Failed to load warehouse packages"
-                  subTitle={packagesErrorMsg?.message || "Unknown error"}
-                />
-              )}
-            </TabPane>
-          </Tabs>
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            items={[
+              {
+                key: "1",
+                label: "Warehouse Locations",
+                children: (
+                  <Table
+                    columns={warehouseColumns}
+                    dataSource={warehousesData?.data || []}
+                    rowKey="id"
+                    loading={warehousesLoading}
+                    pagination={{
+                      current: warehousesPage,
+                      pageSize: warehousesLimit,
+                      total: warehousesData?.meta?.total || 0,
+                      showSizeChanger: true,
+                      onChange: (page, size) => {
+                        setWarehousesPage(page);
+                      },
+                    }}
+                    locale={{
+                      emptyText: <Empty description="No warehouses found" />,
+                    }}
+                    scroll={{ x: true }}
+                  />
+                ),
+              },
+              {
+                key: "2",
+                label: "Packages in Warehouse",
+                children: (
+                  <>
+                    <Space wrap className="mb-4">
+                      <Input.Search
+                        placeholder="Search Tracking # / Customer"
+                        allowClear
+                        onSearch={(v) =>
+                          setPackageFilters((prev) => ({
+                            ...prev,
+                            search: v,
+                            page: 1,
+                          }))
+                        }
+                        style={{ width: 220 }}
+                      />
+                      <Select
+                        placeholder="Warehouse"
+                        allowClear
+                        style={{ width: 140 }}
+                        onChange={(v) =>
+                          setPackageFilters((prev) => ({
+                            ...prev,
+                            warehouseId: v,
+                            page: 1,
+                          }))
+                        }
+                      >
+                        {warehousesData?.data?.map((w) => (
+                          <Option key={w.id} value={w.id}>
+                            {w.name} ({w.warehouseId})
+                          </Option>
+                        ))}
+                      </Select>
+                      <Select
+                        placeholder="Status"
+                        allowClear
+                        style={{ width: 140 }}
+                        onChange={(v) =>
+                          setPackageFilters((prev) => ({
+                            ...prev,
+                            status: v,
+                            page: 1,
+                          }))
+                        }
+                      >
+                        <Option value="RECEIVED">Received</Option>
+                        <Option value="ASSIGNED">Assigned</Option>
+                        <Option value="SHIPPED">Shipped</Option>
+                      </Select>
+                      <Input
+                        placeholder="Days Min"
+                        type="number"
+                        style={{ width: 100 }}
+                        onChange={(e) =>
+                          setPackageFilters((prev) => ({
+                            ...prev,
+                            daysInWarehouseFrom: e.target.value
+                              ? Number(e.target.value)
+                              : undefined,
+                            page: 1,
+                          }))
+                        }
+                      />
+                      <Input
+                        placeholder="Days Max"
+                        type="number"
+                        style={{ width: 100 }}
+                        onChange={(e) =>
+                          setPackageFilters((prev) => ({
+                            ...prev,
+                            daysInWarehouseTo: e.target.value
+                              ? Number(e.target.value)
+                              : undefined,
+                            page: 1,
+                          }))
+                        }
+                      />
+                      <RangePicker
+                        onChange={(dates, dateStrings) => {
+                          setPackageFilters((prev) => ({
+                            ...prev,
+                            dateFrom: dateStrings[0] || undefined,
+                            dateTo: dateStrings[1] || undefined,
+                            page: 1,
+                          }));
+                        }}
+                      />
+                    </Space>
+                    <Table
+                      columns={columns}
+                      dataSource={packagesData?.data || []}
+                      rowKey="id"
+                      loading={packagesLoading}
+                      pagination={{
+                        current: packageFilters.page,
+                        pageSize: packageFilters.limit,
+                        total: packagesData?.meta?.total || 0,
+                        showSizeChanger: true,
+                      }}
+                      onChange={handleTableChange}
+                      locale={{ emptyText: <Empty /> }}
+                      scroll={{ x: true }}
+                      size="middle"
+                    />
+                    {packagesError && (
+                      <Result
+                        status="error"
+                        title="Failed to load warehouse packages"
+                        subTitle={packagesErrorMsg?.message || "Unknown error"}
+                      />
+                    )}
+                  </>
+                ),
+              },
+            ]}
+          />
 
           {/* Create Warehouse Modal */}
           <Modal
@@ -452,56 +466,63 @@ export default function WarehousePage() {
             }}
             footer={null}
             width={600}
+            destroyOnHidden
           >
-            <Form
-              form={createForm}
-              layout="vertical"
-              onFinish={handleCreateWarehouse}
-            >
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="name"
-                    label="Warehouse Name"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please enter warehouse name",
-                      },
-                    ]}
-                  >
-                    <Input placeholder="e.g., Main Warehouse" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="location"
-                    label="Location"
-                    rules={[
-                      { required: true, message: "Please enter location" },
-                    ]}
-                  >
-                    <Input placeholder="e.g., Accra, Tema" />
-                  </Form.Item>
-                </Col>
-              </Row>
+            {isCreateModalVisible && (
+              <Form
+                form={createForm}
+                layout="vertical"
+                onFinish={handleCreateWarehouse}
+              >
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="name"
+                      label="Warehouse Name"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please enter warehouse name",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="e.g., Main Warehouse" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="location"
+                      label="Location"
+                      rules={[
+                        { required: true, message: "Please enter location" },
+                      ]}
+                    >
+                      <Input placeholder="e.g., Accra, Tema" />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={isCreating}>
-                    Create Warehouse
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsCreateModalVisible(false);
-                      createForm.resetFields();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
+                <Form.Item>
+                  <Space>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={isCreating}
+                    >
+                      Create Warehouse
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setIsCreateModalVisible(false);
+                        createForm.resetFields();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </Space>
+                </Form.Item>
+              </Form>
+            )}
           </Modal>
 
           {/* Edit Warehouse Modal */}
@@ -515,42 +536,49 @@ export default function WarehousePage() {
             }}
             footer={null}
             width={600}
+            destroyOnHidden
           >
-            <Form
-              form={editForm}
-              layout="vertical"
-              onFinish={handleUpdateWarehouse}
-            >
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="name" label="Warehouse Name">
-                    <Input placeholder="e.g., Main Warehouse" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="location" label="Location">
-                    <Input placeholder="e.g., Accra, Tema" />
-                  </Form.Item>
-                </Col>
-              </Row>
+            {isEditModalVisible && (
+              <Form
+                form={editForm}
+                layout="vertical"
+                onFinish={handleUpdateWarehouse}
+              >
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item name="name" label="Warehouse Name">
+                      <Input placeholder="e.g., Main Warehouse" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item name="location" label="Location">
+                      <Input placeholder="e.g., Accra, Tema" />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={isUpdating}>
-                    Update Warehouse
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsEditModalVisible(false);
-                      setEditingWarehouse(null);
-                      editForm.resetFields();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
+                <Form.Item>
+                  <Space>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={isUpdating}
+                    >
+                      Update Warehouse
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setIsEditModalVisible(false);
+                        setEditingWarehouse(null);
+                        editForm.resetFields();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </Space>
+                </Form.Item>
+              </Form>
+            )}
           </Modal>
         </div>
       </AuthGuard>

@@ -38,7 +38,9 @@ export const CustomerSearchSelect: React.FC<CustomerSearchSelectProps> = ({
   const options = [
     ...(customers?.data || []).map((customer) => ({
       value: customer.id,
-      label: `${customer.customerCode} - ${customer.firstName} ${customer.lastName}`,
+      label: `${customer.customerCode} - ${customer.firstName} ${
+        customer.lastName || "" || ""
+      }`,
     })),
   ];
 

@@ -3,7 +3,12 @@
 import React from "react";
 import { Modal, Button, Descriptions, Tag, message, Space } from "antd";
 import { toast } from "sonner";
-import { NotificationOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  NotificationOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import { useRetryNotification } from "@/hooks/useNotifications";
 
 interface NotificationDetailsModalProps {
@@ -28,12 +33,11 @@ interface NotificationDetailsModalProps {
   };
 }
 
-export const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
-  visible,
-  onCancel,
-  notification,
-}) => {
-  const { mutateAsync: retryNotification, isPending: isRetrying } = useRetryNotification();
+export const NotificationDetailsModal: React.FC<
+  NotificationDetailsModalProps
+> = ({ visible, onCancel, notification }) => {
+  const { mutateAsync: retryNotification, isPending: isRetrying } =
+    useRetryNotification();
 
   if (!notification) return null;
 
@@ -55,7 +59,10 @@ export const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> =
       READ: { color: "blue", icon: <CheckCircleOutlined /> },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || { color: "default", icon: <NotificationOutlined /> };
+    const config = statusConfig[status as keyof typeof statusConfig] || {
+      color: "default",
+      icon: <NotificationOutlined />,
+    };
 
     return (
       <Tag color={config.color}>
@@ -93,11 +100,7 @@ export const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> =
       ].filter(Boolean)}
       width={800}
     >
-      <Descriptions
-        bordered
-        column={2}
-        size="small"
-      >
+      <Descriptions bordered column={2} size="small">
         <Descriptions.Item label="ID" span={2}>
           <code>{notification.id}</code>
         </Descriptions.Item>
@@ -105,7 +108,8 @@ export const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> =
         {notification.customer && (
           <>
             <Descriptions.Item label="Customer Name">
-              {notification.customer.firstName} {notification.customer.lastName}
+              {notification.customer.firstName}{" "}
+              {notification.customer.lastName || ""}
             </Descriptions.Item>
             <Descriptions.Item label="Customer Phone">
               {notification.customer.phoneNumber}
@@ -132,36 +136,44 @@ export const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> =
         </Descriptions.Item>
 
         <Descriptions.Item label="Sent At">
-          {notification.sentAt ? new Date(notification.sentAt).toLocaleString() : "Not sent"}
+          {notification.sentAt
+            ? new Date(notification.sentAt).toLocaleString()
+            : "Not sent"}
         </Descriptions.Item>
 
         <Descriptions.Item label="Read At">
-          {notification.readAt ? new Date(notification.readAt).toLocaleString() : "Not read"}
+          {notification.readAt
+            ? new Date(notification.readAt).toLocaleString()
+            : "Not read"}
         </Descriptions.Item>
 
         <Descriptions.Item label="Content" span={2}>
-          <div style={{
-            maxHeight: '200px',
-            overflow: 'auto',
-            padding: '8px',
-            background: '#fafafa',
-            borderRadius: '4px',
-            whiteSpace: 'pre-wrap',
-            fontFamily: 'monospace'
-          }}>
+          <div
+            style={{
+              maxHeight: "200px",
+              overflow: "auto",
+              padding: "8px",
+              background: "#fafafa",
+              borderRadius: "4px",
+              whiteSpace: "pre-wrap",
+              fontFamily: "monospace",
+            }}
+          >
             {notification.content}
           </div>
         </Descriptions.Item>
 
         {notification.errorMessage && (
           <Descriptions.Item label="Error Message" span={2}>
-            <div style={{
-              padding: '8px',
-              background: '#fff2f0',
-              border: '1px solid #ffccc7',
-              borderRadius: '4px',
-              color: '#ff4d4f'
-            }}>
+            <div
+              style={{
+                padding: "8px",
+                background: "#fff2f0",
+                border: "1px solid #ffccc7",
+                borderRadius: "4px",
+                color: "#ff4d4f",
+              }}
+            >
               {notification.errorMessage}
             </div>
           </Descriptions.Item>

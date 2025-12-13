@@ -243,7 +243,9 @@ export default function PackageDeliveryPage() {
                     </Typography.Text>
                     <Typography.Text strong style={{ marginLeft: 8 }}>
                       {delivery.customer
-                        ? `${delivery.customer.customerCode} - ${delivery.customer.firstName} ${delivery.customer.lastName}`
+                        ? `${delivery.customer.customerCode} - ${
+                            delivery.customer.firstName
+                          } ${delivery.customer.lastName || ""}`
                         : "N/A"}
                     </Typography.Text>
                   </div>

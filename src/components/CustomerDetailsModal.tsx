@@ -282,7 +282,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         <html>
           <head>
             <title>Transaction History - ${customer.firstName} ${
-        customer.lastName
+        customer.lastName || ""
       }</title>
             <style>
               body { font-family: Arial, sans-serif; margin: 20px; }
@@ -299,7 +299,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             <div class="header">
               <h1>Transaction History</h1>
               <p><strong>Customer:</strong> ${customer.firstName} ${
-        customer.lastName
+        customer.lastName || ""
       }</p>
               <p><strong>Code:</strong> ${customer.customerCode}</p>
               <p><strong>Phone:</strong> ${customer.phoneNumber}</p>
@@ -366,7 +366,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
               <div>
                 <strong>Full Name:</strong>
                 <div>
-                  {customer.firstName} {customer.lastName}
+                  {customer.firstName} {customer.lastName || "" || ""}
                 </div>
               </div>
             </Col>
@@ -995,7 +995,8 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <EyeOutlined />
-            Customer Details: {customer.firstName} {customer.lastName}
+            Customer Details: {customer.firstName}{" "}
+            {customer.lastName || "" || ""}
           </div>
           <div className="text-sm text-gray-500 mt-1">
             Code: {customer.customerCode} | Phone: {customer.phoneNumber}

@@ -321,9 +321,9 @@ export default function PaymentsPage() {
             row["Payment Code"] = payment.paymentCode;
             break;
           case "customerName":
-            row[
-              "Customer Name"
-            ] = `${payment.customer.firstName} ${payment.customer.lastName}`;
+            row["Customer Name"] = `${payment.customer.firstName} ${
+              payment.customer.lastName || ""
+            }`;
             break;
           case "amount":
             row["Amount"] = payment.amount.toFixed(2);
@@ -1249,7 +1249,7 @@ export default function PaymentsPage() {
                     </Descriptions.Item>
                     <Descriptions.Item label="Customer">
                       {currentPayment.customer.firstName}{" "}
-                      {currentPayment.customer.lastName}
+                      {currentPayment.customer.lastName || ""}
                     </Descriptions.Item>
                     <Descriptions.Item label="Phone">
                       {currentPayment.customer.phoneNumber}

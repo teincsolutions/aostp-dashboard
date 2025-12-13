@@ -21,7 +21,9 @@ export const packageDeliveryColumns: ColumnsType<
     ellipsis: true,
     render: (_, record) =>
       record.customer
-        ? `${record.customer.customerCode} - ${record.customer.firstName} ${record.customer.lastName}`
+        ? `${record.customer.customerCode} - ${record.customer.firstName} ${
+            record.customer.lastName || ""
+          }`
         : "N/A",
   },
   {

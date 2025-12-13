@@ -40,7 +40,7 @@ export function getCustomerColumns(
       sorter: true,
       width: 180,
       render: (_: unknown, record: Customer) =>
-        `${record.firstName} ${record.lastName}`,
+        `${record.firstName} ${record.lastName || ""}`,
     },
     {
       title: "Email",

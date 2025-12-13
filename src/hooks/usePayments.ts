@@ -153,10 +153,30 @@ export const usePaymentStats = (
   return useQuery({
     queryKey: paymentKeys.stats(params),
     queryFn: async () => {
-      const response = await paymentService.getPaymentStats(params);
-      return response.data;
+      try {
+        const response = await paymentService.getPaymentStats(params);
+        return (
+          response.data || {
+            totalPayments: 0,
+            totalAmount: 0,
+            averagePaymentAmount: 0,
+            paymentsByMethod: {},
+            paymentsByCurrency: {},
+          }
+        );
+      } catch (error) {
+        // Return default values on error instead of throwing
+        return {
+          totalPayments: 0,
+          totalAmount: 0,
+          averagePaymentAmount: 0,
+          paymentsByMethod: {},
+          paymentsByCurrency: {},
+        };
+      }
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: false, // Don't retry on failure since we handle errors
   });
 };
 
