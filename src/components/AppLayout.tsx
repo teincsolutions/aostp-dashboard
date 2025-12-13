@@ -118,38 +118,6 @@ export const menuItems: Array<MenuItem> = [
     label: "Invoices",
     roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "PAYMENT_CLERK"],
   },
-  {
-    key: "/exchange-rate",
-    icon: <SettingOutlined />,
-    label: "Rate Management",
-    roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
-  },
-  // Group: Notifications, Audit Logs, Settings
-  {
-    key: "/notifications",
-    icon: <FileTextOutlined />,
-    label: "Notifications",
-    roles: [
-      "SUPER_ADMIN",
-      "OPERATIONS_CLERK",
-      "FINANCE_MANAGER",
-      "PAYMENT_CLERK",
-    ],
-  },
-  {
-    key: "/audit-logs",
-    icon: <FileTextOutlined />,
-    label: "Audit Logs",
-    roles: ["SUPER_ADMIN"],
-  },
-
-  {
-    key: "/settings",
-    icon: <SettingOutlined />,
-    label: "Settings",
-    roles: ["SUPER_ADMIN"],
-  },
-
   // Reports submenu
   {
     key: "/reports",
@@ -200,6 +168,37 @@ export const menuItems: Array<MenuItem> = [
         roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
       },
     ],
+  },
+  {
+    key: "/exchange-rate",
+    icon: <SettingOutlined />,
+    label: "Rate Management",
+    roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+  },
+  // Group: Notifications, Audit Logs, Settings
+  {
+    key: "/notifications",
+    icon: <FileTextOutlined />,
+    label: "Notifications",
+    roles: [
+      "SUPER_ADMIN",
+      "OPERATIONS_CLERK",
+      "FINANCE_MANAGER",
+      "PAYMENT_CLERK",
+    ],
+  },
+  {
+    key: "/audit-logs",
+    icon: <FileTextOutlined />,
+    label: "Audit Logs",
+    roles: ["SUPER_ADMIN"],
+  },
+
+  {
+    key: "/settings",
+    icon: <SettingOutlined />,
+    label: "Settings",
+    roles: ["SUPER_ADMIN"],
   },
 ];
 
