@@ -4,6 +4,7 @@ import {
   PaymentSearchParams,
   PaymentHistoryParams,
   PaymentCreatePayload,
+  PaymentMethod,
 } from "@/types/invoice";
 import { Payment } from "@/types/payment";
 
@@ -152,29 +153,7 @@ export const usePaymentStats = (
 ) => {
   return useQuery({
     queryKey: paymentKeys.stats(params),
-    queryFn: async () => {
-      try {
-        const response = await paymentService.getPaymentStats(params);
-        return (
-          response.data || {
-            totalPayments: 0,
-            totalAmount: 0,
-            averagePaymentAmount: 0,
-            paymentsByMethod: {},
-            paymentsByCurrency: {},
-          }
-        );
-      } catch (error) {
-        // Return default values on error instead of throwing
-        return {
-          totalPayments: 0,
-          totalAmount: 0,
-          averagePaymentAmount: 0,
-          paymentsByMethod: {},
-          paymentsByCurrency: {},
-        };
-      }
-    },
+    queryFn: async () => await paymentService.getPaymentStats(params),
     staleTime: 10 * 60 * 1000, // 10 minutes
     retry: false, // Don't retry on failure since we handle errors
   });

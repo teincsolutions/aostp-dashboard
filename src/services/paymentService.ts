@@ -139,13 +139,10 @@ export const paymentService = {
   // Get payment statistics
   async getPaymentStats(
     params: { dateFrom?: string; dateTo?: string; customerId?: string } = {}
-  ): Promise<ApiResponse<PaymentStats>> {
-    const response = await apiService.get<ApiResponse<PaymentStats>>(
-      "/payments/stats",
-      {
-        params,
-      }
-    );
+  ): Promise<PaymentStats> {
+    const response = await apiService.get<PaymentStats>("/payments/stats", {
+      params,
+    });
     return response.data;
   },
 
