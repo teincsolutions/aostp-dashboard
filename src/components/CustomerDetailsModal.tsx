@@ -117,10 +117,9 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         }`;
 
         // Show amount in alternate currency
-        // Show amount in alternate currency
         if (payment.currency === "USD") {
           description += ` USD ${(payment.totalAmount || 0).toFixed(2)}`;
-        } else if (payment.currency === "GHS") {
+        } else {
           description += ` GHS ${(payment.localAmount || 0).toFixed(2)}`;
         }
       }
@@ -131,7 +130,8 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         amount: payment.amount,
         localAmount: payment.localAmount,
         exchangeRate: payment.exchangeRate?.rate || 1,
-        displayAmount: payment.amount,
+        displayAmount:
+          payment.currency === "USD" ? payment.amount : payment.localAmount,
         currency: payment.currency,
         date: payment.createdAt,
         description,
@@ -252,14 +252,8 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       dataIndex: "displayAmount",
       key: "displayAmount",
       render: (displayAmount: number, record: any) => {
-        const currencySymbol =
-          record.currency === "USD"
-            ? "$"
-            : record.currency === "GHS"
-            ? "₵"
-            : "$";
         const sign = record.type === "invoice" ? "+" : "-";
-        return `${sign}${currencySymbol}${displayAmount.toFixed(2)}`;
+        return `${sign}$${displayAmount.toFixed(2)}`;
       },
     },
     {
@@ -697,13 +691,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                 dataIndex: "paidAmount",
                 key: "paidAmount",
                 render: (amount: number, record: any) => {
-                  const currencySymbol =
-                    record.currency === "USD"
-                      ? "$"
-                      : record.currency === "GHS"
-                      ? "₵"
-                      : "$";
-                  return `${currencySymbol}${(amount || 0).toFixed(2)}`;
+                  return `$${(amount || 0).toFixed(2)}`;
                 },
               },
               {
@@ -711,17 +699,10 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                 dataIndex: "balance",
                 key: "balance",
                 render: (balance: number, record: any) => {
-                  const currencySymbol =
-                    record.currency === "USD"
-                      ? "$"
-                      : record.currency === "GHS"
-                      ? "₵"
-                      : "$";
                   const color = balance > 0 ? "#cf1322" : "#52c41a";
                   return (
                     <span style={{ color, fontWeight: "bold" }}>
-                      {currencySymbol}
-                      {(balance || 0).toFixed(2)}
+                      ${(balance || 0).toFixed(2)}
                     </span>
                   );
                 },
