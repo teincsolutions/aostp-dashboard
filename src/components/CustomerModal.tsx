@@ -239,7 +239,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
-                    Address *
+                    Address
                   </label>
                   <Input
                     placeholder="Enter address"
