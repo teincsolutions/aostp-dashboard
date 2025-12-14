@@ -734,43 +734,42 @@ export default function PaymentsPage() {
           {/* Payment Statistics */}
           {paymentStats && (
             <Row gutter={[16, 16]} className="mb-6">
-              <Col xs={24} sm={12} md={6}>
+              <Col xs={24} sm={12} md={4}>
                 <Card>
                   <Statistic
-                    title="Total Payments"
-                    value={paymentStats.totalPayments || 0}
-                    prefix={<FileTextOutlined />}
+                    style={{ height: " 64px" }}
+                    title="Total Payments in USD"
+                    value={paymentStats.totals?.totalAmount.toFixed(2) || 0}
                   />
                 </Card>
               </Col>
-              <Col xs={24} sm={12} md={6}>
+              <Col xs={24} sm={12} md={4}>
                 <Card>
                   <Statistic
-                    title="Total Amount"
-                    value={paymentStats.totalAmount || 0}
-                    prefix={<DollarOutlined />}
+                    title="Total Payment in GHS"
+                    style={{ height: " 64px" }}
+                    value={
+                      paymentStats.totals?.totalLocalAmount.toFixed(2) || 0
+                    }
                     precision={2}
                   />
                 </Card>
               </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Average Payment"
-                    value={paymentStats.averagePaymentAmount || 0}
-                    prefix={<DollarOutlined />}
-                    precision={2}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Cash Payments"
-                    value={paymentStats.paymentsByMethod?.CASH || 0}
-                  />
-                </Card>
-              </Col>
+
+              {paymentStats.byPaymentMethod.map((methodStat) => (
+                <Col xs={24} sm={12} md={5} key={methodStat.paymentMethod}>
+                  <Card>
+                    <Statistic
+                      title={methodStat.paymentMethod}
+                      valueStyle={{ fontSize: "16px" }}
+                      style={{ height: "64px" }}
+                      value={`USD ${
+                        methodStat._sum.amount?.toFixed(2) || 0
+                      } | GHS ${methodStat._sum.localAmount?.toFixed(2) || 0}`}
+                    />
+                  </Card>
+                </Col>
+              ))}
             </Row>
           )}
 

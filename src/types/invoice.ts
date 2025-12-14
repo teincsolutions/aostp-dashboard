@@ -149,10 +149,31 @@ export interface OutstandingBalanceResponse
 
 // Payment statistics interface
 export interface PaymentStats {
-  totalPayments: number;
-  totalAmount: number;
-  paymentsByMethod: Record<PaymentMethod, number>;
-  paymentsByCurrency: Record<Currency, number>;
-  averagePaymentAmount: number;
-  correlationId: string;
+  totals: {
+    count: number;
+    totalAmount: number;
+    totalLocalAmount: number;
+    averageAmount: number;
+  };
+  byPaymentMethod: {
+    _count: {
+      id: number;
+    };
+    _sum: {
+      amount: number;
+      localAmount: number;
+    };
+    paymentMethod: PaymentMethod;
+  }[];
+
+  byCurrency: {
+    _count: {
+      id: number;
+    };
+    _sum: {
+      amount: number;
+      localAmount: number;
+    };
+    currency: Currency;
+  }[];
 }

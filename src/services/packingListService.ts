@@ -164,4 +164,12 @@ export const packingListService = {
     );
     return response.data;
   },
+
+  // Unfinalize packing list (SUPER_ADMIN only)
+  async unfinalizePackingList(id: string): Promise<PackingList> {
+    const response = await apiService.post<PackingList>(
+      `/packing-lists/${id}/unfinalize`
+    );
+    return response.data;
+  },
 };
