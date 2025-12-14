@@ -83,9 +83,9 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
 
       // Show amount in alternate currency
       if (invoice.currency === "USD") {
-        description += ` USD ${invoice.totalAmount.toFixed(2)}`;
+        description += ` USD ${(invoice.totalAmount || 0).toFixed(2)}`;
       } else if (invoice.currency === "GHS") {
-        description += ` GHS ${invoice.localAmount.toFixed(2)}`;
+        description += ` GHS ${(invoice.localAmount || 0).toFixed(2)}`;
       }
 
       return {
@@ -109,16 +109,18 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       }
 
       if (payment.exchangeRate?.rate) {
-        description += ` • Rate: ${payment.exchangeRate.rate.toFixed(2)} ${
-          payment.exchangeRate.fromCurrency
-        } ⇄ 1${payment.exchangeRate.toCurrency}`;
+        description += ` • Rate: ${(payment.exchangeRate.rate || 0).toFixed(
+          2
+        )} ${payment.exchangeRate.fromCurrency} ⇄ 1${
+          payment.exchangeRate.toCurrency
+        }`;
 
         // Show amount in alternate currency
         // Show amount in alternate currency
         if (payment.currency === "USD") {
-          description += ` GHS ${payment.totalAmount.toFixed(2)}`;
+          description += ` GHS ${(payment.totalAmount || 0).toFixed(2)}`;
         } else if (payment.currency === "GHS") {
-          description += ` USD ${payment.localAmount.toFixed(2)}`;
+          description += ` USD ${(payment.localAmount || 0).toFixed(2)}`;
         }
       }
 
