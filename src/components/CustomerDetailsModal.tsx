@@ -822,9 +822,12 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                 ),
               },
               {
-                title: "Invoice #",
+                title: "Invoices #",
                 key: "invoice",
-                render: (record: any) => record.invoice?.invoiceNumber || "N/A",
+                render: (record: Payment) =>
+                  record.invoices
+                    .map((invoice: any) => invoice.invoiceNumber)
+                    .join(", ") || "N/A",
               },
               {
                 title: "Reference",
