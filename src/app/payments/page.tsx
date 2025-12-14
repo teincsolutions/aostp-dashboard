@@ -1262,7 +1262,9 @@ export default function PaymentsPage() {
                     <Descriptions.Item label="Amount Paid">
                       <strong style={{ color: "#52c41a" }}>
                         {currentPayment.currency}{" "}
-                        {currentPayment.amount?.toFixed(2)}
+                        {currentPayment.currency === "USD"
+                          ? currentPayment.amount?.toFixed(2)
+                          : currentPayment.localAmount?.toFixed(2)}
                       </strong>
                     </Descriptions.Item>
                     <Descriptions.Item label="Reference">
@@ -1319,11 +1321,11 @@ export default function PaymentsPage() {
                           description={
                             <div>
                               <div>
-                                Total: {invoice.currency}{" "}
+                                Total: USD
                                 {invoice.totalAmount?.toFixed(2)}
                               </div>
                               <div>
-                                Balance: {invoice.currency}{" "}
+                                Balance: USD
                                 {invoice.balance?.toFixed(2)}
                               </div>
                             </div>

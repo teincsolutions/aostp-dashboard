@@ -57,36 +57,10 @@ export function getCustomerColumns(
       width: 140,
     },
     {
-      title: "ID Type",
-      dataIndex: "idType",
-      key: "idType",
-      width: 120,
-      render: (idType: string) => (idType ? idType.replace("_", " ") : "N/A"),
-      filters: [
-        { text: "NATIONAL ID", value: "NATIONAL_ID" },
-        { text: "PASSPORT", value: "PASSPORT" },
-        { text: "DRIVER LICENSE", value: "DRIVER_LICENSE" },
-      ],
-    },
-    {
-      title: "ID Number",
-      dataIndex: "idNumber",
-      key: "idNumber",
-      width: 160,
-      render: (idNumber: string) => idNumber || "N/A",
-    },
-    {
       title: "City",
       key: "city",
       width: 120,
       render: (_: unknown, record: Customer) => record.cityRef?.name || "N/A",
-    },
-    {
-      title: "Country",
-      key: "country",
-      width: 120,
-      render: (_: unknown, record: Customer) =>
-        record.cityRef?.country || "N/A",
     },
     {
       title: "Warehouse",

@@ -248,9 +248,6 @@ export default function PublicInvoiceView() {
                 <Descriptions.Item label="Currency">
                   {invoice.currency}
                 </Descriptions.Item>
-                <Descriptions.Item label="Exchange Rate">
-                  {invoice.exchangeRate}
-                </Descriptions.Item>
               </Descriptions>
             </Card>
           </Col>

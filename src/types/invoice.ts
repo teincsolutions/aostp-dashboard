@@ -47,7 +47,6 @@ export interface Invoice {
   paidAmount: number;
   balance: number;
   currency: Currency;
-  exchangeRate: number;
   status: InvoiceStatus;
   dueDate: string;
   createdAt: string;

@@ -8,7 +8,6 @@ import { Formik, FormikProps, FormikHelpers } from "formik";
 import { message } from "antd";
 import * as Yup from "yup";
 import {
-  IdType,
   PreferredChannel,
   CustomerCreatePayload,
   CustomerUpdatePayload,
@@ -29,13 +28,11 @@ interface CustomerFormikValues {
   firstName: string;
   lastName: string;
   phoneNumber: string;
-  address: string;
+  address?: string;
   email?: string;
   alternatePhone?: string;
   warehouseId?: string;
   cityId?: string;
-  idType?: string;
-  idNumber?: string;
   preferredChannel?: string;
 }
 
@@ -47,13 +44,6 @@ interface CustomerModalProps {
   initialValues?: Partial<CustomerFormikValues>;
   onSubmit: (values: any) => Promise<void>;
 }
-
-const idTypeOptions = [
-  { label: "National ID", value: IdType.NATIONAL_ID },
-  { label: "Passport", value: IdType.PASSPORT },
-  { label: "Driver License", value: IdType.DRIVERS_LICENSE },
-  { label: "Voter ID", value: IdType.VOTER_ID },
-];
 
 const preferredChannelOptions = [
   { label: "SMS", value: PreferredChannel.SMS },
@@ -98,8 +88,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           alternatePhone: "",
           warehouseId: "",
           cityId: "",
-          idType: "",
-          idNumber: "",
           preferredChannel: "SMS",
           ...initialValues,
         }}
@@ -322,52 +310,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               </Col>
             </Row>
             <Row gutter={16}>
-              <Col xs={24} sm={12}>
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    ID Type
-                  </label>
-                  <Select
-                    placeholder={"Select ID type"}
-                    value={formik.values.idType}
-                    onChange={(value) => formik.setFieldValue("idType", value)}
-                    onBlur={() => formik.setFieldTouched("idType", true)}
-                    allowClear
-                    className="w-full"
-                  >
-                    {idTypeOptions.map((option) => (
-                      <Option key={option.value} value={option.value}>
-                        {option.label}
-                      </Option>
-                    ))}
-                  </Select>
-                  {formik.touched.idType && formik.errors.idType && (
-                    <div className="text-red-500 text-xs">
-                      {formik.errors.idType}
-                    </div>
-                  )}
-                </div>
-              </Col>
-              <Col xs={24} sm={12}>
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    ID Number
-                  </label>
-                  <Input
-                    placeholder="Enter ID number"
-                    value={formik.values.idNumber}
-                    onChange={(e) =>
-                      formik.setFieldValue("idNumber", e.target.value)
-                    }
-                    onBlur={() => formik.setFieldTouched("idNumber", true)}
-                  />
-                  {formik.touched.idNumber && formik.errors.idNumber && (
-                    <div className="text-red-500 text-xs">
-                      {formik.errors.idNumber}
-                    </div>
-                  )}
-                </div>
-              </Col>
               <Col xs={24} sm={12}>
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">

@@ -28,6 +28,7 @@ import { useCustomerInvoices } from "@/hooks/useInvoices";
 import { useCustomerPayments } from "@/hooks/usePayments";
 import { useDeliveriesByCustomer } from "@/hooks/usePackageDelivery";
 import dayjs from "dayjs";
+import { Invoice } from "@/types/invoice";
 
 interface CustomerDetailsModalProps {
   visible: boolean;
@@ -76,29 +77,22 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
 
   // Combine and sort all transactions for history
   const allTransactions = [
-    ...(customerStatsData?.customer?.invoices?.map((invoice: any) => {
+    ...(customerStatsData?.customer?.invoices?.map((invoice: Invoice) => {
       // Build description with exchange rate and alternate currency amount
       let description = `Invoice #${invoice.invoiceNumber}`;
 
-      if (invoice.exchangeRate?.rate) {
-        description += ` • Rate: ${invoice.exchangeRate.rate.toFixed(2)} ${
-          invoice.exchangeRate.fromCurrency
-        } ⇄ 1${invoice.exchangeRate.toCurrency}`;
-
-        // Show amount in alternate currency
-        if (invoice.currency === "USD") {
-          const ghsAmount = invoice.totalAmount * invoice.exchangeRate.rate;
-          description += ` equivalent in GHS ${ghsAmount.toFixed(2)}`;
-        } else if (invoice.currency === "GHS") {
-          const usdAmount = invoice.totalAmount / invoice.exchangeRate.rate;
-          description += ` equivalent in USD ${usdAmount.toFixed(2)}`;
-        }
+      // Show amount in alternate currency
+      if (invoice.currency === "USD") {
+        description += ` USD ${invoice.totalAmount.toFixed(2)}`;
+      } else if (invoice.currency === "GHS") {
+        description += ` GHS ${invoice.localAmount.toFixed(2)}`;
       }
 
       return {
         id: invoice.id,
         type: "invoice" as const,
         amount: invoice.totalAmount, // Invoices are already in USD
+        localAmount: invoice.localAmount,
         displayAmount: invoice.totalAmount,
         currency: invoice.currency || "USD",
         date: invoice.createdAt,
@@ -107,11 +101,6 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       };
     }) || []),
     ...(customerStatsData?.customer?.payments?.map((payment: any) => {
-      // Convert payment amount to USD using the exchangeRate.rate field
-      const usdAmount = payment.exchangeRate?.rate
-        ? payment.amount / payment.exchangeRate.rate
-        : payment.amount;
-
       // Build description with exchange rate and alternate currency amount
       let description = `Payment - ${payment.paymentMethod || "N/A"}`;
 
@@ -125,19 +114,20 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         } ⇄ 1${payment.exchangeRate.toCurrency}`;
 
         // Show amount in alternate currency
+        // Show amount in alternate currency
         if (payment.currency === "USD") {
-          const ghsAmount = payment.amount * payment.exchangeRate.rate;
-          description += ` equivalent in GHS ${ghsAmount.toFixed(2)}`;
+          description += ` GHS ${payment.totalAmount.toFixed(2)}`;
         } else if (payment.currency === "GHS") {
-          const usdAmount = payment.amount / payment.exchangeRate.rate;
-          description += ` equivalent in USD ${usdAmount.toFixed(2)}`;
+          description += ` USD ${payment.localAmount.toFixed(2)}`;
         }
       }
 
       return {
         id: payment.id,
         type: "payment" as const,
-        amount: usdAmount, // Use converted USD amount for balance calculation
+        amount: payment.amount,
+        localAmount: payment.localAmount,
+        exchangeRate: payment.exchangeRate?.rate || 1,
         displayAmount: payment.amount,
         currency: payment.currency,
         date: payment.createdAt,
@@ -150,9 +140,16 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
   let runningBalance = 0;
   const transactionHistory = allTransactions.map((transaction) => {
     if (transaction.type === "invoice") {
-      runningBalance += transaction.amount;
+      const workingAmt = transaction.amount;
+      runningBalance += workingAmt;
     } else {
-      runningBalance -= transaction.amount;
+      const workingAmt =
+        transaction.currency === "USD"
+          ? transaction.amount
+          : Number(
+              (transaction.localAmount * transaction.exchangeRate).toFixed(2)
+            );
+      runningBalance -= workingAmt;
     }
     return {
       ...transaction,

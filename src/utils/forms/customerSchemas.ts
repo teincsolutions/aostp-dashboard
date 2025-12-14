@@ -8,15 +8,11 @@ export const customerCreateSchema = Yup.object({
     .max(100, "Last name must be shorter than or equal to 100 characters")
     .notRequired(),
   phoneNumber: Yup.string().required("Phone number is required"),
-  address: Yup.string().required("Address is required"),
+  address: Yup.string().notRequired(),
   email: Yup.string().email("Please enter a valid email"),
   alternatePhone: Yup.string(),
   warehouseId: Yup.string().uuid("Invalid warehouse ID").notRequired(),
   cityId: Yup.string().uuid("Invalid city ID").notRequired(),
-  idType: Yup.mixed().oneOf(
-    ["NATIONAL_ID", "PASSPORT", "DRIVERS_LICENSE", "VOTER_ID"],
-    "Invalid ID type"
-  ),
   idNumber: Yup.string().notRequired(),
   preferredChannel: Yup.mixed()
     .oneOf(["SMS", "EMAIL", "WHATSAPP"], "Invalid preferred channel")
@@ -38,12 +34,6 @@ export const customerUpdateSchema = Yup.object({
   address: Yup.string().notRequired(),
   warehouseId: Yup.string().uuid("Invalid warehouse ID").notRequired(),
   cityId: Yup.string().uuid("Invalid city ID").notRequired(),
-  idType: Yup.mixed()
-    .oneOf(
-      ["NATIONAL_ID", "PASSPORT", "DRIVERS_LICENSE", "VOTER_ID"],
-      "Invalid ID type"
-    )
-    .notRequired(),
   idNumber: Yup.string().notRequired(),
   preferredChannel: Yup.mixed()
     .oneOf(["SMS", "EMAIL", "WHATSAPP"], "Invalid preferred channel")
