@@ -29,6 +29,7 @@ import { useCustomerPayments } from "@/hooks/usePayments";
 import { useDeliveriesByCustomer } from "@/hooks/usePackageDelivery";
 import dayjs from "dayjs";
 import { Invoice } from "@/types/invoice";
+import { Payment } from "@/types/payment";
 
 interface CustomerDetailsModalProps {
   visible: boolean;
@@ -118,9 +119,9 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         // Show amount in alternate currency
         // Show amount in alternate currency
         if (payment.currency === "USD") {
-          description += ` GHS ${(payment.totalAmount || 0).toFixed(2)}`;
+          description += ` USD ${(payment.totalAmount || 0).toFixed(2)}`;
         } else if (payment.currency === "GHS") {
-          description += ` USD ${(payment.localAmount || 0).toFixed(2)}`;
+          description += ` GHS ${(payment.localAmount || 0).toFixed(2)}`;
         }
       }
 
@@ -149,7 +150,9 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         transaction.currency === "USD"
           ? transaction.amount
           : Number(
-              (transaction.localAmount * transaction.exchangeRate).toFixed(2)
+              (
+                (transaction.localAmount || 0) / (transaction.exchangeRate || 1)
+              ).toFixed(2)
             );
       runningBalance -= workingAmt;
     }
@@ -793,7 +796,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                 title: "Amount",
                 dataIndex: "amount",
                 key: "amount",
-                render: (amount: number, record: any) => {
+                render: (amount: number, record: Payment) => {
                   const currencySymbol =
                     record.currency === "USD"
                       ? "$"
@@ -803,7 +806,9 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                   return (
                     <span style={{ color: "#52c41a", fontWeight: "bold" }}>
                       {currencySymbol}
-                      {amount.toFixed(2)}
+                      {record.currency === "USD"
+                        ? (amount || 0).toFixed(2)
+                        : (record.localAmount || 0).toFixed(2)}
                     </span>
                   );
                 },
