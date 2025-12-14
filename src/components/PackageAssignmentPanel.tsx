@@ -180,6 +180,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
             row["Customer"] = pkg.customer
               ? `${pkg.customer.firstName} ${pkg.customer.lastName || ""}`
               : "N/A";
+            row["Contact"] = pkg.customer?.phoneNumber || "N/A";
             break;
           case "description":
             row["Description"] = pkg.description || "N/A";
