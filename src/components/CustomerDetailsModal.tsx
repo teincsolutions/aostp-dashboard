@@ -118,7 +118,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
 
         // Show amount in alternate currency
         if (payment.currency === "USD") {
-          description += ` USD ${(payment.totalAmount || 0).toFixed(2)}`;
+          description += ` USD ${payment.amount.toFixed(2)}`;
         } else {
           description += ` GHS ${(payment.localAmount || 0).toFixed(2)}`;
         }
