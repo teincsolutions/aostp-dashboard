@@ -97,6 +97,20 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     "pickupCode",
   ]);
 
+  // Search states
+  const [assignedSearch, setAssignedSearch] = useState({
+    trackingCode: "",
+    customerCode: "",
+    pickupCode: "",
+    name: "",
+  });
+  const [availableSearch, setAvailableSearch] = useState({
+    trackingCode: "",
+    customerCode: "",
+    pickupCode: "",
+    name: "",
+  });
+
   const selectedPackages = useMemo(() => {
     return (
       paginatedUnassignedPackages?.filter((pkg) =>
@@ -104,6 +118,82 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       ) || []
     );
   }, [paginatedUnassignedPackages, selectedPackageIds]);
+
+  // Filtered assigned packages
+  const filteredAssignedPackages = useMemo(() => {
+    if (!packingListData?.packages) return [];
+
+    return packingListData.packages.filter((pkg) => {
+      const matchesTrackingCode =
+        !assignedSearch.trackingCode ||
+        pkg.trackingCode
+          ?.toLowerCase()
+          .includes(assignedSearch.trackingCode.toLowerCase());
+
+      const matchesCustomerCode =
+        !assignedSearch.customerCode ||
+        pkg.customer?.phoneNumber
+          ?.toLowerCase()
+          .includes(assignedSearch.customerCode.toLowerCase());
+
+      const matchesPickupCode =
+        !assignedSearch.pickupCode ||
+        pkg.pickupCode
+          ?.toLowerCase()
+          .includes(assignedSearch.pickupCode.toLowerCase());
+
+      const matchesName =
+        !assignedSearch.name ||
+        `${pkg.customer?.firstName || ""} ${pkg.customer?.lastName || ""}`
+          .toLowerCase()
+          .includes(assignedSearch.name.toLowerCase());
+
+      return (
+        matchesTrackingCode &&
+        matchesCustomerCode &&
+        matchesPickupCode &&
+        matchesName
+      );
+    });
+  }, [packingListData?.packages, assignedSearch]);
+
+  // Filtered available packages
+  const filteredAvailablePackages = useMemo(() => {
+    if (!paginatedUnassignedPackages) return [];
+
+    return paginatedUnassignedPackages.filter((pkg) => {
+      const matchesTrackingCode =
+        !availableSearch.trackingCode ||
+        pkg.trackingCode
+          ?.toLowerCase()
+          .includes(availableSearch.trackingCode.toLowerCase());
+
+      const matchesCustomerCode =
+        !availableSearch.customerCode ||
+        pkg.customer?.phoneNumber
+          ?.toLowerCase()
+          .includes(availableSearch.customerCode.toLowerCase());
+
+      const matchesPickupCode =
+        !availableSearch.pickupCode ||
+        pkg.pickupCode
+          ?.toLowerCase()
+          .includes(availableSearch.pickupCode.toLowerCase());
+
+      const matchesName =
+        !availableSearch.name ||
+        `${pkg.customer?.firstName || ""} ${pkg.customer?.lastName || ""}`
+          .toLowerCase()
+          .includes(availableSearch.name.toLowerCase());
+
+      return (
+        matchesTrackingCode &&
+        matchesCustomerCode &&
+        matchesPickupCode &&
+        matchesName
+      );
+    });
+  }, [paginatedUnassignedPackages, availableSearch]);
 
   const handleRegenerateInvoice = async (record: Package) => {
     if (!record.invoiceId) {
@@ -917,7 +1007,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
         <div>
           <div className="flex justify-between items-center mb-2">
             <Text strong className="text-lg">
-              Assigned Packages ({packingListData?.totalPackages})
+              Assigned Packages ({filteredAssignedPackages.length})
             </Text>
             {packingListData?.packages &&
               packingListData.packages.length > 0 && (
@@ -929,6 +1019,51 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                   Export
                 </Button>
               )}
+          </div>
+
+          {/* Assigned Packages Search */}
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Input
+              placeholder="Search by Tracking Code"
+              value={assignedSearch.trackingCode}
+              onChange={(e) =>
+                setAssignedSearch((prev) => ({
+                  ...prev,
+                  trackingCode: e.target.value,
+                }))
+              }
+              allowClear
+            />
+            <Input
+              placeholder="Search by Customer Code"
+              value={assignedSearch.customerCode}
+              onChange={(e) =>
+                setAssignedSearch((prev) => ({
+                  ...prev,
+                  customerCode: e.target.value,
+                }))
+              }
+              allowClear
+            />
+            <Input
+              placeholder="Search by Pickup Code"
+              value={assignedSearch.pickupCode}
+              onChange={(e) =>
+                setAssignedSearch((prev) => ({
+                  ...prev,
+                  pickupCode: e.target.value,
+                }))
+              }
+              allowClear
+            />
+            <Input
+              placeholder="Search by Name"
+              value={assignedSearch.name}
+              onChange={(e) =>
+                setAssignedSearch((prev) => ({ ...prev, name: e.target.value }))
+              }
+              allowClear
+            />
           </div>
           {packingListData?.status === "FINALIZED" && (
             <>
@@ -977,7 +1112,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
           {packingListData?.packages && packingListData.packages.length > 0 ? (
             <Table
               columns={assignedPackageColumns}
-              dataSource={packingListData?.packages || []}
+              dataSource={filteredAssignedPackages}
               rowKey="id"
               pagination={{
                 pageSize: 10,
@@ -996,11 +1131,60 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
         {packingListData?.status === PackingListStatus.DRAFT && (
           <div>
             <Text strong className="text-lg mb-2 block">
-              Available Packages ({paginatedUnassignedPackages?.length || 0})
+              Available Packages ({filteredAvailablePackages.length})
             </Text>
+
+            {/* Available Packages Search */}
+            <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Input
+                placeholder="Search by Tracking Code"
+                value={availableSearch.trackingCode}
+                onChange={(e) =>
+                  setAvailableSearch((prev) => ({
+                    ...prev,
+                    trackingCode: e.target.value,
+                  }))
+                }
+                allowClear
+              />
+              <Input
+                placeholder="Search by Customer Code"
+                value={availableSearch.customerCode}
+                onChange={(e) =>
+                  setAvailableSearch((prev) => ({
+                    ...prev,
+                    customerCode: e.target.value,
+                  }))
+                }
+                allowClear
+              />
+              <Input
+                placeholder="Search by Pickup Code"
+                value={availableSearch.pickupCode}
+                onChange={(e) =>
+                  setAvailableSearch((prev) => ({
+                    ...prev,
+                    pickupCode: e.target.value,
+                  }))
+                }
+                allowClear
+              />
+              <Input
+                placeholder="Search by Name"
+                value={availableSearch.name}
+                onChange={(e) =>
+                  setAvailableSearch((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+                allowClear
+              />
+            </div>
+
             <Table
               columns={availablePackageColumns}
-              dataSource={paginatedUnassignedPackages || []}
+              dataSource={filteredAvailablePackages}
               rowKey="id"
               pagination={{
                 pageSize: 10,
