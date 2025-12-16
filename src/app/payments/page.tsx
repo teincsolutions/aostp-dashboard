@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   Button,
@@ -89,6 +89,9 @@ export default function PaymentsPage() {
     useState<Currency>(Currency.USD);
   const [paymentAmount, setPaymentAmount] = useState<string>("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [documentKey, setDocumentKey] = useState<string | null>(null);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   // Filter states for payments table
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -124,10 +127,11 @@ export default function PaymentsPage() {
       customerId: filterCustomerId || undefined,
       paymentMethod: filterPaymentMethod || undefined,
       currency: filterCurrency || undefined,
-      paymentSource: filterPaymentSource as
-        | "PAID_IN_GHANA"
-        | "PAID_IN_CHINA"
-        | undefined,
+      paymentSource:
+        filterPaymentSource === "PAID_IN_GHANA" ||
+        filterPaymentSource === "PAID_IN_CHINA"
+          ? (filterPaymentSource as "PAID_IN_GHANA" | "PAID_IN_CHINA")
+          : undefined,
       dateFrom: dateRange?.[0] || undefined,
       dateTo: dateRange?.[1] || undefined,
     });
@@ -160,6 +164,27 @@ export default function PaymentsPage() {
     });
 
   const { activeRate } = useExchangeRate();
+
+  // Fetch document URL when receipt drawer opens and payment has reference document
+  useEffect(() => {
+    const fetchDocumentUrl = async () => {
+      if (isReceiptDrawerVisible && currentPayment?.referenceDocumentKey) {
+        try {
+          const response = await paymentService.downloadPaymentDocument(
+            currentPayment.id
+          );
+          setDocumentUrl(response.url);
+        } catch (error) {
+          console.error("Failed to fetch document URL:", error);
+          setDocumentUrl(null);
+        }
+      } else {
+        setDocumentUrl(null);
+      }
+    };
+
+    fetchDocumentUrl();
+  }, [isReceiptDrawerVisible, currentPayment]);
 
   const handleCustomerSelect = (customerId: string) => {
     setSelectedCustomerId(customerId);
@@ -267,25 +292,11 @@ export default function PaymentsPage() {
         paymentSource: values.paymentSource || "PAID_IN_GHANA",
         reference: values.reference,
         notes: values.notes,
+        referenceDocumentKey: documentKey || undefined,
       };
 
-      // Create payment first
+      // Create payment with the document key
       const payment = await makePayment(paymentData);
-
-      // Upload reference document if provided
-      if (uploadedFile) {
-        try {
-          await paymentService.uploadPaymentDocument(
-            uploadedFile,
-            payment.id,
-            "reference-documents"
-          );
-          toast.success("Reference document uploaded successfully");
-        } catch (uploadError) {
-          console.error("Failed to upload reference document:", uploadError);
-          toast.warning("Payment created but reference document upload failed");
-        }
-      }
 
       toast.success("Payment processed successfully");
       paymentForm.resetFields();
@@ -297,6 +308,8 @@ export default function PaymentsPage() {
       setPaymentModalStep("currency");
       setPaymentAmount("");
       setUploadedFile(null);
+      setDocumentKey(null);
+      setIsUploadingDocument(false);
     } catch (error) {
       handleError(error);
     }
@@ -814,7 +827,7 @@ export default function PaymentsPage() {
               ))}
 
               {paymentStats.byPaymentSource?.map((sourceStat) => (
-                <Col xs={24} sm={12} md={6} key={sourceStat.paymentSource}>
+                <Col xs={24} sm={12} md={5} key={sourceStat.paymentSource}>
                   <Card>
                     <Statistic
                       title={`Paid in ${
@@ -1031,6 +1044,9 @@ export default function PaymentsPage() {
               setIsPaymentModalVisible(false);
               paymentForm.resetFields();
               setPaymentModalStep("currency");
+              setUploadedFile(null);
+              setDocumentKey(null);
+              setIsUploadingDocument(false);
             }}
             footer={null}
             width="95%"
@@ -1102,6 +1118,7 @@ export default function PaymentsPage() {
                 initialValues={{
                   currency: selectedPaymentCurrency,
                   paymentMethod: PaymentMethod.CASH,
+                  paymentSource: "PAID_IN_GHANA",
                 }}
               >
                 <Card size="small" className="mb-4">
@@ -1243,11 +1260,7 @@ export default function PaymentsPage() {
                   </Col>
                 </Row>
 
-                <Form.Item
-                  name="paymentSource"
-                  label="Payment Source"
-                  initialValue="PAID_IN_GHANA"
-                >
+                <Form.Item name="paymentSource" label="Payment Source">
                   <Select placeholder="Select payment source">
                     <Option value="PAID_IN_GHANA">Paid in Ghana</Option>
                     <Option value="PAID_IN_CHINA">Paid in China</Option>
@@ -1266,7 +1279,7 @@ export default function PaymentsPage() {
                   }}
                 >
                   <Upload
-                    beforeUpload={(file) => {
+                    beforeUpload={async (file) => {
                       // Validate file type
                       const allowedTypes = [
                         "application/pdf",
@@ -1284,14 +1297,45 @@ export default function PaymentsPage() {
                         message.error("File size must be less than 5MB");
                         return false;
                       }
-                      setUploadedFile(file);
+
+                      try {
+                        setIsUploadingDocument(true);
+
+                        // Upload the file immediately when selected
+                        const uploadResponse =
+                          await paymentService.uploadPaymentDocument(
+                            file,
+                            undefined, // No paymentId yet
+                            "reference-documents"
+                          );
+
+                        // Store the key for later use in payment creation
+                        setDocumentKey(uploadResponse.key);
+                        setUploadedFile(file);
+
+                        toast.success("Document uploaded successfully");
+                      } catch (error) {
+                        console.error("Failed to upload document:", error);
+                        toast.error("Failed to upload document");
+                        return false;
+                      } finally {
+                        setIsUploadingDocument(false);
+                      }
+
                       return false; // Prevent auto upload
                     }}
                     maxCount={1}
                     accept=".pdf,.jpg,.jpeg,.png"
+                    disabled={isUploadingDocument}
                   >
-                    <Button icon={<UploadOutlined />}>
-                      Upload Reference Document
+                    <Button
+                      icon={<UploadOutlined />}
+                      loading={isUploadingDocument}
+                      disabled={isUploadingDocument}
+                    >
+                      {isUploadingDocument
+                        ? "Uploading..."
+                        : "Upload Reference Document"}
                     </Button>
                   </Upload>
                 </Form.Item>
@@ -1331,6 +1375,9 @@ export default function PaymentsPage() {
                       onClick={() => {
                         setPaymentModalStep("currency");
                         paymentForm.resetFields();
+                        setUploadedFile(null);
+                        setDocumentKey(null);
+                        setIsUploadingDocument(false);
                       }}
                     >
                       Back to Currency Selection
@@ -1340,6 +1387,9 @@ export default function PaymentsPage() {
                         setIsPaymentModalVisible(false);
                         paymentForm.resetFields();
                         setPaymentModalStep("currency");
+                        setUploadedFile(null);
+                        setDocumentKey(null);
+                        setIsUploadingDocument(false);
                       }}
                     >
                       Cancel
@@ -1425,6 +1475,52 @@ export default function PaymentsPage() {
                     </Descriptions.Item>
                   </Descriptions>
                 </Card>
+
+                {/* Reference Document Display */}
+                {currentPayment?.referenceDocumentKey && (
+                  <Card
+                    title="Reference Document"
+                    size="small"
+                    className="mb-4"
+                  >
+                    <div className="text-center">
+                      {documentUrl ? (
+                        <div>
+                          <p className="mb-3 text-sm text-gray-600">
+                            Click the document below to open it in a new tab
+                          </p>
+                          <div
+                            className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                            onClick={() => window.open(documentUrl, "_blank")}
+                          >
+                            <div className="flex items-center justify-center space-x-2">
+                              <FileTextOutlined
+                                style={{ fontSize: "24px", color: "#1890ff" }}
+                              />
+                              <span className="text-blue-600 font-medium">
+                                View Reference Document
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                              {currentPayment.referenceDocumentKey
+                                .split("/")
+                                .pop()}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-8">
+                          <FileTextOutlined
+                            style={{ fontSize: "48px", color: "#d9d9d9" }}
+                          />
+                          <p className="mt-2 text-gray-500">
+                            Loading document...
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                )}
 
                 <Card title="Invoice Details" size="small">
                   <List

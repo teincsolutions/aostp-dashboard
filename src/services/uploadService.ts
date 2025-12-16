@@ -17,13 +17,13 @@ export const uploadService = {
   // Upload payment reference document
   async uploadPaymentDocument(
     file: File,
-    paymentId: string,
+    paymentId?: string,
     folder: string = "reference-documents"
   ): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("folder", folder);
-    formData.append("paymentId", paymentId);
+    // Don't append paymentId - upload without it
 
     const response = await apiService.post<UploadResponse>(
       "/uploads/payments",

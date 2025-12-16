@@ -173,7 +173,7 @@ export const paymentService = {
   // Upload payment reference document
   async uploadPaymentDocument(
     file: File,
-    paymentId: string,
+    paymentId?: string,
     folder?: string
   ): Promise<UploadResponse> {
     return await uploadService.uploadPaymentDocument(file, paymentId, folder);
