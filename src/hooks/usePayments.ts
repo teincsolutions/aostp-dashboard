@@ -108,6 +108,7 @@ export const useAllPayments = (
     customerId?: string;
     paymentMethod?: string;
     currency?: string;
+    paymentSource?: "PAID_IN_GHANA" | "PAID_IN_CHINA";
     dateFrom?: string;
     dateTo?: string;
     packingListId?: string;

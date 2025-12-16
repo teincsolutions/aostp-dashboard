@@ -58,6 +58,20 @@ export const getPaymentColumns = ({
       width: 100,
       render: (method: string) => method.replace("_", " "),
     },
+    {
+      title: "Source",
+      dataIndex: "paymentSource",
+      key: "paymentSource",
+      width: 120,
+      render: (source: string) => {
+        if (!source) return "N/A";
+        return source === "PAID_IN_GHANA" ? "Ghana" : "China";
+      },
+      filters: [
+        { text: "Paid in Ghana", value: "PAID_IN_GHANA" },
+        { text: "Paid in China", value: "PAID_IN_CHINA" },
+      ],
+    },
     // Add actions column if needed
     {
       title: "Actions",

@@ -86,7 +86,9 @@ export interface PaymentCreatePayload {
   amount: number;
   currency: Currency;
   paymentMethod: PaymentMethod;
+  paymentSource?: "PAID_IN_GHANA" | "PAID_IN_CHINA";
   reference?: string;
+  referenceDocumentKey?: string;
   notes?: string;
 }
 
@@ -175,5 +177,16 @@ export interface PaymentStats {
       localAmount: number;
     };
     currency: Currency;
+  }[];
+
+  byPaymentSource: {
+    _count: {
+      id: number;
+    };
+    _sum: {
+      amount: number;
+      localAmount: number;
+    };
+    paymentSource: "PAID_IN_GHANA" | "PAID_IN_CHINA";
   }[];
 }
