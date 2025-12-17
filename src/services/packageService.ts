@@ -1,6 +1,7 @@
 // src/services/packageService.ts
 
 import { apiService } from "@/services/api";
+import { PaginatedResponse } from "@/types/common";
 import {
   CreatePackagePayload,
   PackagePhoto,
@@ -104,8 +105,14 @@ export const getPackages = async (params?: {
   warehouse_id?: string;
   customer_code?: string;
   is_consolidated?: boolean;
-}): Promise<{ data: Package[]; total: number }> => {
-  const res = await apiService.get("/packages", { params });
+  customerId?: string;
+  shippingMode?: "SEA" | "AIR";
+  packingListId?: string;
+  paymentStatus?: string;
+}): Promise<PaginatedResponse<Package>> => {
+  const res = await apiService.get<PaginatedResponse<Package>>("/packages", {
+    params,
+  });
   return res.data;
 };
 

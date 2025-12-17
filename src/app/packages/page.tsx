@@ -70,6 +70,13 @@ const shipmentTypeOptions = [
   { label: "Sea", value: ShippingMode.SEA },
 ];
 
+const paymentStatusOptions = [
+  { label: "Pending", value: "PENDING" },
+  { label: "Paid", value: "PAID" },
+  { label: "Overdue", value: "OVERDUE" },
+  { label: "Partially Paid", value: "PARTIALLY_PAID" },
+];
+
 export const packageStatusColors = {
   [PackageStatusPackages.RECEIVED]: "gold",
   [PackageStatusPackages.ASSIGNED]: "blue",
@@ -83,7 +90,10 @@ export default function PackagesPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string | undefined>();
-  const [shipmentType, setShippingMode] = useState<string | undefined>();
+  const [shipmentType, setShippingMode] = useState<"SEA" | "AIR" | undefined>();
+  const [customerId, setCustomerId] = useState<string | undefined>();
+  const [packingListId, setPackingListId] = useState<string | undefined>();
+  const [paymentStatus, setPaymentStatus] = useState<string | undefined>();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -138,7 +148,10 @@ export default function PackagesPage() {
     limit: pageSize,
     search,
     status,
-    mode: shipmentType,
+    shippingMode: shipmentType,
+    customerId,
+    packingListId,
+    paymentStatus,
   };
 
   // Use new package management hooks
@@ -152,7 +165,7 @@ export default function PackagesPage() {
     useRegenerateInvoicePdf();
 
   const packages = packagesData?.data || [];
-  const total = packagesData?.total || 0;
+  const total = packagesData?.meta?.total || 0;
 
   // Transform data for display
   const displayPackages: DisplayPackage[] = packages.map((pkg) => ({
@@ -490,7 +503,9 @@ export default function PackagesPage() {
       title: "Customer",
       key: "customer",
       render: (record: DisplayPackage) =>
-        `${record.customer?.firstName} ${record.customer?.lastName} (${record.customer?.customerCode})`,
+        `${record.customer?.firstName} ${record.customer?.lastName || ""} (${
+          record.customer?.customerCode
+        })`,
       width: 180,
     },
     {
@@ -712,16 +727,14 @@ export default function PackagesPage() {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 md:max-w-4xl gap-2 flex-grow flex">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
             <div className="flex flex-col">
-              <label className="text-sm font-medium mb-1">
-                Search Tracking Number
-              </label>
+              <label className="text-sm font-medium mb-1">Search</label>
               <Search
-                placeholder="Search Tracking Number"
+                placeholder="Search Customer Name, Tracking Number, Pickup Code..."
                 allowClear
                 onSearch={setSearch}
-                className="cols-span-1 md:col-span-2"
+                className="w-full"
               />
             </div>
             <div className="flex flex-col">
@@ -732,18 +745,47 @@ export default function PackagesPage() {
                 options={statusOptions}
                 value={status || undefined}
                 onChange={setStatus}
-                className="cols-span-1 sm:col-span-1"
+                className="w-full"
               />
             </div>
             <div className="flex flex-col">
-              <label className="text-sm font-medium mb-1">Shipment Type</label>
+              <label className="text-sm font-medium mb-1">Shipment Mode</label>
               <Select
-                placeholder="Select Shipment Type"
+                placeholder="Select Mode"
                 allowClear
                 options={shipmentTypeOptions}
                 value={shipmentType || undefined}
                 onChange={setShippingMode}
-                className="cols-span-1 sm:col-span-1"
+                className="w-full"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Payment Status</label>
+              <Select
+                placeholder="Select Payment Status"
+                allowClear
+                options={paymentStatusOptions}
+                value={paymentStatus || undefined}
+                onChange={setPaymentStatus}
+                className="w-full"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Customer</label>
+              <CustomerSearchSelect
+                placeholder="Select Customer"
+                value={customerId}
+                onChange={setCustomerId}
+                showAddNew={false}
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Packing List</label>
+              <PackingListSearchSelect
+                placeholder="Select Packing List"
+                value={packingListId}
+                onChange={setPackingListId}
+                showAddNew={false}
               />
             </div>
           </div>

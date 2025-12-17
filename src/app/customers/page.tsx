@@ -27,6 +27,7 @@ import {
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useCustomers,
   useCustomerMutations,
@@ -45,6 +46,9 @@ import { handleError } from "@/utils/forms/errorUtils";
 const { Option } = Select;
 
 export default function CustomersPage() {
+  // Get current user
+  const { user } = useAuth();
+
   // State for UI
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -234,9 +238,12 @@ export default function CustomersPage() {
         setExportLoading(false);
       }
     },
+    onDelete: handleDeleteCustomer,
+    userRole: user?.role,
     loading: {
       toggling: isTogglingStatus,
       exporting: exportLoading,
+      deleting: isDeleting,
     },
   });
 

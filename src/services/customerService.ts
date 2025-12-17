@@ -41,6 +41,9 @@ export const customerService = {
   toggleCustomerStatus: async (id: string, isActive: boolean) =>
     (await apiService.patch<Customer>(`/customers/${id}`, { isActive })).data,
 
+  deleteCustomer: async (id: string) =>
+    (await apiService.delete(`/customers/${id}`)).data,
+
   exportCustomers: (params: Record<string, unknown>, format: "pdf" | "excel") =>
     apiService.get<Blob>(`/customers/export`, {
       params: { ...params, format },

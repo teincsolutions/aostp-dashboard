@@ -677,6 +677,9 @@ export default function PaymentsPage() {
                             ? _package.trackingCode
                             : "N/A"}
                         </Text>
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          {_package.pickupCode ? _package.pickupCode : "N/A"}
+                        </Text>
                       </div>
                     )}
                   />

@@ -1,24 +1,29 @@
 // src/app/customers/columns.tsx
 
 import { ColumnsType } from "antd/es/table";
-import { Button, Tooltip } from "antd";
+import { Button, Tooltip, Popconfirm } from "antd";
 import {
   EditOutlined,
   CheckOutlined,
   StopOutlined,
   BarChartOutlined,
   ExportOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { Customer } from "@/types/customer";
+import { Role } from "@/types/user";
 
 interface CustomerActions {
   onEdit: (customer: Customer) => void;
   onToggleStatus: (id: string, isActive: boolean) => void;
   onViewStats: (customer: Customer) => void;
   onExport: (id: string) => void;
+  onDelete?: (id: string) => void;
+  userRole?: string;
   loading?: {
     toggling?: boolean;
     exporting?: boolean;
+    deleting?: boolean;
   };
 }
 
@@ -126,6 +131,25 @@ export function getCustomerColumns(
               onClick={() => actions.onExport(record.id)}
             />
           </Tooltip>
+          {actions.userRole === Role.SUPER_ADMIN && actions.onDelete && (
+            <Popconfirm
+              title="Delete Customer"
+              description="Are you sure you want to delete this customer? This action cannot be undone."
+              onConfirm={() => actions.onDelete!(record.id)}
+              okText="Yes"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+            >
+              <Tooltip title="Delete">
+                <Button
+                  icon={<DeleteOutlined />}
+                  size="small"
+                  danger
+                  loading={actions.loading?.deleting}
+                />
+              </Tooltip>
+            </Popconfirm>
+          )}
         </div>
       ),
     },

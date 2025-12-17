@@ -124,7 +124,7 @@ export function useCustomerMutations() {
   });
 
   const deleteCustomer = useMutation({
-    mutationFn: (id: string) => customerService.toggleCustomerStatus(id, false),
+    mutationFn: (id: string) => customerService.deleteCustomer(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
