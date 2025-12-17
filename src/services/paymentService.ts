@@ -1,4 +1,9 @@
 import { apiService } from "./api";
+import {
+  uploadService,
+  UploadResponse,
+  DocumentDownloadResponse,
+} from "./uploadService";
 import { ApiResponse } from "@/types/common";
 import { ExchangeRate } from "@/types/exchangeRate";
 import {
@@ -163,5 +168,21 @@ export const paymentService = {
   // Delete a payment by ID
   async deletePayment(id: string): Promise<void> {
     return await apiService.delete(`/payments/${id}`);
+  },
+
+  // Upload payment reference document
+  async uploadPaymentDocument(
+    file: File,
+    paymentId?: string,
+    folder?: string
+  ): Promise<UploadResponse> {
+    return await uploadService.uploadPaymentDocument(file, paymentId, folder);
+  },
+
+  // Download payment reference document
+  async downloadPaymentDocument(
+    paymentId: string
+  ): Promise<DocumentDownloadResponse> {
+    return await uploadService.downloadPaymentDocument(paymentId);
   },
 };

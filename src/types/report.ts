@@ -22,6 +22,7 @@ export interface PaymentReportItem {
   localAmount: number;
   currency: string;
   paymentMethod: string;
+  paymentSource?: "PAID_IN_GHANA" | "PAID_IN_CHINA";
   processedAt: string;
   warehouse: string;
   processedBy:

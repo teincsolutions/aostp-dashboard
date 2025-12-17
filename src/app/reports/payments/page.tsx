@@ -138,6 +138,28 @@ export default function PaymentsReportPage() {
       width: 150,
     },
     {
+      title: "Payment Source",
+      dataIndex: "paymentSource",
+      key: "paymentSource",
+      render: (source) => {
+        if (!source) return "N/A";
+        const colors: Record<string, string> = {
+          PAID_IN_GHANA: "green",
+          PAID_IN_CHINA: "blue",
+        };
+        const labels: Record<string, string> = {
+          PAID_IN_GHANA: "Ghana",
+          PAID_IN_CHINA: "China",
+        };
+        return (
+          <Tag color={colors[source] || "default"}>
+            {labels[source] || source}
+          </Tag>
+        );
+      },
+      width: 120,
+    },
+    {
       title: "Warehouse",
       dataIndex: "warehouse",
       key: "warehouse",

@@ -1,21 +1,10 @@
 import "@ant-design/compatible";
 import "antd/dist/reset.css"; // keep the CSS reset
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AntdConfigProvider } from "@/components/AntdConfigProvider";
 import { QueryProvider } from "@/components/QueryProvider";
 import { Toaster } from "sonner";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "AOSTP Admin Dashboard",
@@ -37,7 +26,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>
         <QueryProvider>
           <AntdConfigProvider>
             {children}

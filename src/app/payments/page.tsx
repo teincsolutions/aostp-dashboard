@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   Button,
@@ -22,6 +22,7 @@ import {
   Typography,
   DatePicker,
   Divider,
+  Upload,
 } from "antd";
 
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ import {
   CalculatorOutlined,
   EyeOutlined,
   DownloadOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -48,6 +50,7 @@ import {
   usePaymentReceipt,
   usePaymentStats,
 } from "@/hooks/usePayments";
+import { paymentService } from "@/services/paymentService";
 import { useCustomerInvoices, usePendingInvoices } from "@/hooks/useInvoices";
 import {
   Invoice,
@@ -85,12 +88,17 @@ export default function PaymentsPage() {
   const [selectedPaymentCurrency, setSelectedPaymentCurrency] =
     useState<Currency>(Currency.USD);
   const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [documentKey, setDocumentKey] = useState<string | null>(null);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   // Filter states for payments table
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [filterCustomerId, setFilterCustomerId] = useState<string>("");
   const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>("");
   const [filterCurrency, setFilterCurrency] = useState<string>("");
+  const [filterPaymentSource, setFilterPaymentSource] = useState<string>("");
   const [dateRange, setDateRange] = useState<[string, string] | null>(null);
 
   // Export states
@@ -119,6 +127,11 @@ export default function PaymentsPage() {
       customerId: filterCustomerId || undefined,
       paymentMethod: filterPaymentMethod || undefined,
       currency: filterCurrency || undefined,
+      paymentSource:
+        filterPaymentSource === "PAID_IN_GHANA" ||
+        filterPaymentSource === "PAID_IN_CHINA"
+          ? (filterPaymentSource as "PAID_IN_GHANA" | "PAID_IN_CHINA")
+          : undefined,
       dateFrom: dateRange?.[0] || undefined,
       dateTo: dateRange?.[1] || undefined,
     });
@@ -151,6 +164,27 @@ export default function PaymentsPage() {
     });
 
   const { activeRate } = useExchangeRate();
+
+  // Fetch document URL when receipt drawer opens and payment has reference document
+  useEffect(() => {
+    const fetchDocumentUrl = async () => {
+      if (isReceiptDrawerVisible && currentPayment?.referenceDocumentKey) {
+        try {
+          const response = await paymentService.downloadPaymentDocument(
+            currentPayment.id
+          );
+          setDocumentUrl(response.url);
+        } catch (error) {
+          console.error("Failed to fetch document URL:", error);
+          setDocumentUrl(null);
+        }
+      } else {
+        setDocumentUrl(null);
+      }
+    };
+
+    fetchDocumentUrl();
+  }, [isReceiptDrawerVisible, currentPayment]);
 
   const handleCustomerSelect = (customerId: string) => {
     setSelectedCustomerId(customerId);
@@ -255,11 +289,15 @@ export default function PaymentsPage() {
         amount: amount,
         currency: values.currency,
         paymentMethod: values.paymentMethod,
+        paymentSource: values.paymentSource || "PAID_IN_GHANA",
         reference: values.reference,
         notes: values.notes,
+        referenceDocumentKey: documentKey || undefined,
       };
 
+      // Create payment with the document key
       const payment = await makePayment(paymentData);
+
       toast.success("Payment processed successfully");
       paymentForm.resetFields();
       setSelectedCustomerId("");
@@ -269,6 +307,9 @@ export default function PaymentsPage() {
       setIsReceiptDrawerVisible(true);
       setPaymentModalStep("currency");
       setPaymentAmount("");
+      setUploadedFile(null);
+      setDocumentKey(null);
+      setIsUploadingDocument(false);
     } catch (error) {
       handleError(error);
     }
@@ -285,6 +326,20 @@ export default function PaymentsPage() {
       } else {
         toast.error("Failed to open receipt");
       }
+    }
+  };
+
+  const handleDownloadDocument = async () => {
+    if (!currentPayment?.id) return;
+
+    try {
+      const response = await paymentService.downloadPaymentDocument(
+        currentPayment.id
+      );
+      window.open(response.url, "_blank");
+    } catch (error) {
+      console.error("Failed to download document:", error);
+      toast.error("Failed to download reference document");
     }
   };
 
@@ -770,6 +825,25 @@ export default function PaymentsPage() {
                   </Card>
                 </Col>
               ))}
+
+              {paymentStats.byPaymentSource?.map((sourceStat) => (
+                <Col xs={24} sm={12} md={5} key={sourceStat.paymentSource}>
+                  <Card>
+                    <Statistic
+                      title={`Paid in ${
+                        sourceStat.paymentSource === "PAID_IN_GHANA"
+                          ? "Ghana"
+                          : "China"
+                      }`}
+                      valueStyle={{ fontSize: "14px" }}
+                      style={{ height: "64px" }}
+                      value={`USD ${
+                        sourceStat._sum.amount?.toFixed(2) || 0
+                      } | GHS ${sourceStat._sum.localAmount?.toFixed(2) || 0}`}
+                    />
+                  </Card>
+                </Col>
+              ))}
             </Row>
           )}
 
@@ -783,6 +857,7 @@ export default function PaymentsPage() {
                   setFilterCustomerId("");
                   setFilterPaymentMethod("");
                   setFilterCurrency("");
+                  setFilterPaymentSource("");
                   setDateRange(null);
                   setPage(1);
                 }}
@@ -790,6 +865,7 @@ export default function PaymentsPage() {
                   !filterCustomerId &&
                   !filterPaymentMethod &&
                   !filterCurrency &&
+                  !filterPaymentSource &&
                   !dateRange
                 }
               >
@@ -798,7 +874,7 @@ export default function PaymentsPage() {
             }
           >
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
               <Space.Compact style={{ width: "100%" }}>
                 <CustomerSearchSelect
                   placeholder="Filter by customer"
@@ -849,6 +925,18 @@ export default function PaymentsPage() {
                 <Option value="USD">USD</Option>
                 <Option value="GHS">GHS</Option>
               </Select>
+              <Select
+                placeholder="Payment source"
+                value={filterPaymentSource || undefined}
+                onChange={(value) => {
+                  setFilterPaymentSource(value || "");
+                  setPage(1);
+                }}
+                allowClear
+              >
+                <Option value="PAID_IN_GHANA">Paid in Ghana</Option>
+                <Option value="PAID_IN_CHINA">Paid in China</Option>
+              </Select>
               <DatePicker.RangePicker
                 placeholder={["From date", "To date"]}
                 onChange={(dates, dateStrings) => {
@@ -867,6 +955,7 @@ export default function PaymentsPage() {
             {(filterCustomerId ||
               filterPaymentMethod ||
               filterCurrency ||
+              filterPaymentSource ||
               dateRange) && (
               <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                 <Space size={[0, 8]} wrap>
@@ -884,6 +973,14 @@ export default function PaymentsPage() {
                   {filterCurrency && (
                     <Tag closable onClose={() => setFilterCurrency("")}>
                       Currency: {filterCurrency}
+                    </Tag>
+                  )}
+                  {filterPaymentSource && (
+                    <Tag closable onClose={() => setFilterPaymentSource("")}>
+                      Source:{" "}
+                      {filterPaymentSource === "PAID_IN_GHANA"
+                        ? "Ghana"
+                        : "China"}
                     </Tag>
                   )}
                   {dateRange && (
@@ -947,6 +1044,9 @@ export default function PaymentsPage() {
               setIsPaymentModalVisible(false);
               paymentForm.resetFields();
               setPaymentModalStep("currency");
+              setUploadedFile(null);
+              setDocumentKey(null);
+              setIsUploadingDocument(false);
             }}
             footer={null}
             width="95%"
@@ -1018,6 +1118,7 @@ export default function PaymentsPage() {
                 initialValues={{
                   currency: selectedPaymentCurrency,
                   paymentMethod: PaymentMethod.CASH,
+                  paymentSource: "PAID_IN_GHANA",
                 }}
               >
                 <Card size="small" className="mb-4">
@@ -1159,6 +1260,86 @@ export default function PaymentsPage() {
                   </Col>
                 </Row>
 
+                <Form.Item name="paymentSource" label="Payment Source">
+                  <Select placeholder="Select payment source">
+                    <Option value="PAID_IN_GHANA">Paid in Ghana</Option>
+                    <Option value="PAID_IN_CHINA">Paid in China</Option>
+                  </Select>
+                </Form.Item>
+
+                <Form.Item
+                  name="referenceDocument"
+                  label="Reference Document (Optional)"
+                  valuePropName="fileList"
+                  getValueFromEvent={(e) => {
+                    if (Array.isArray(e)) {
+                      return e;
+                    }
+                    return e && e.fileList;
+                  }}
+                >
+                  <Upload
+                    beforeUpload={async (file) => {
+                      // Validate file type
+                      const allowedTypes = [
+                        "application/pdf",
+                        "image/jpeg",
+                        "image/png",
+                      ];
+                      if (!allowedTypes.includes(file.type)) {
+                        message.error(
+                          "Only PDF, JPG, and PNG files are allowed"
+                        );
+                        return false;
+                      }
+                      // Validate file size (5MB)
+                      if (file.size > 5 * 1024 * 1024) {
+                        message.error("File size must be less than 5MB");
+                        return false;
+                      }
+
+                      try {
+                        setIsUploadingDocument(true);
+
+                        // Upload the file immediately when selected
+                        const uploadResponse =
+                          await paymentService.uploadPaymentDocument(
+                            file,
+                            undefined, // No paymentId yet
+                            "reference-documents"
+                          );
+
+                        // Store the key for later use in payment creation
+                        setDocumentKey(uploadResponse.key);
+                        setUploadedFile(file);
+
+                        toast.success("Document uploaded successfully");
+                      } catch (error) {
+                        console.error("Failed to upload document:", error);
+                        toast.error("Failed to upload document");
+                        return false;
+                      } finally {
+                        setIsUploadingDocument(false);
+                      }
+
+                      return false; // Prevent auto upload
+                    }}
+                    maxCount={1}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    disabled={isUploadingDocument}
+                  >
+                    <Button
+                      icon={<UploadOutlined />}
+                      loading={isUploadingDocument}
+                      disabled={isUploadingDocument}
+                    >
+                      {isUploadingDocument
+                        ? "Uploading..."
+                        : "Upload Reference Document"}
+                    </Button>
+                  </Upload>
+                </Form.Item>
+
                 <Form.Item
                   name="reference"
                   label={`Reference ${
@@ -1194,6 +1375,9 @@ export default function PaymentsPage() {
                       onClick={() => {
                         setPaymentModalStep("currency");
                         paymentForm.resetFields();
+                        setUploadedFile(null);
+                        setDocumentKey(null);
+                        setIsUploadingDocument(false);
                       }}
                     >
                       Back to Currency Selection
@@ -1203,6 +1387,9 @@ export default function PaymentsPage() {
                         setIsPaymentModalVisible(false);
                         paymentForm.resetFields();
                         setPaymentModalStep("currency");
+                        setUploadedFile(null);
+                        setDocumentKey(null);
+                        setIsUploadingDocument(false);
                       }}
                     >
                       Cancel
@@ -1223,15 +1410,25 @@ export default function PaymentsPage() {
             }}
             width={500}
             extra={
-              <Button
-                type="primary"
-                icon={<PrinterOutlined />}
-                onClick={handlePrintReceipt}
-                loading={receiptLoading}
-                disabled={!receiptData}
-              >
-                Print Receipt
-              </Button>
+              <Space>
+                {currentPayment?.referenceDocumentKey && (
+                  <Button
+                    icon={<DownloadOutlined />}
+                    onClick={handleDownloadDocument}
+                  >
+                    Download Document
+                  </Button>
+                )}
+                <Button
+                  type="primary"
+                  icon={<PrinterOutlined />}
+                  onClick={handlePrintReceipt}
+                  loading={receiptLoading}
+                  disabled={!receiptData}
+                >
+                  Print Receipt
+                </Button>
+              </Space>
             }
           >
             {currentPayment && (
@@ -1278,6 +1475,52 @@ export default function PaymentsPage() {
                     </Descriptions.Item>
                   </Descriptions>
                 </Card>
+
+                {/* Reference Document Display */}
+                {currentPayment?.referenceDocumentKey && (
+                  <Card
+                    title="Reference Document"
+                    size="small"
+                    className="mb-4"
+                  >
+                    <div className="text-center">
+                      {documentUrl ? (
+                        <div>
+                          <p className="mb-3 text-sm text-gray-600">
+                            Click the document below to open it in a new tab
+                          </p>
+                          <div
+                            className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                            onClick={() => window.open(documentUrl, "_blank")}
+                          >
+                            <div className="flex items-center justify-center space-x-2">
+                              <FileTextOutlined
+                                style={{ fontSize: "24px", color: "#1890ff" }}
+                              />
+                              <span className="text-blue-600 font-medium">
+                                View Reference Document
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                              {currentPayment.referenceDocumentKey
+                                .split("/")
+                                .pop()}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-8">
+                          <FileTextOutlined
+                            style={{ fontSize: "48px", color: "#d9d9d9" }}
+                          />
+                          <p className="mt-2 text-gray-500">
+                            Loading document...
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                )}
 
                 <Card title="Invoice Details" size="small">
                   <List
