@@ -410,11 +410,14 @@ export default function PackingListsPage() {
     packingLists?.data?.filter(
       (pl: PackingList) => pl.status === PackingListStatus.FINALIZED
     ).length || 0;
+  // Total packages = sum of all package quantities across all packing lists
   const totalPackages =
-    packingLists?.data?.reduce(
-      (sum: number, pl: PackingList) => sum + (pl.totalPackages || 0),
-      0
-    ) || 0;
+    packingLists?.data?.reduce((sum: number, pl: PackingList) => {
+      // Sum all package quantities in this packing list
+      const plQuantity =
+        pl.packages?.reduce((s, pkg) => s + (pkg.quantity || 0), 0) || 0;
+      return sum + plQuantity;
+    }, 0) || 0;
 
   // Table columns
   const columns = getPackingListColumns(
@@ -769,17 +772,53 @@ export default function PackingListsPage() {
                                 <Text strong className="text-xs">
                                   Packages:
                                 </Text>
-                                <div className="mt-1 max-h-20 overflow-y-auto">
-                                  {summary.packages.map((pkg) => (
-                                    <div
-                                      key={pkg.id}
-                                      className="text-xs text-gray-600 border-b pb-1 mb-1 last:border-b-0"
-                                    >
-                                      {pkg.trackingCode} - {pkg.description} (
-                                      {pkg.weight}kg, {pkg.cbm}m³)
-                                    </div>
-                                  ))}
-                                </div>
+                                <Table
+                                  dataSource={summary.packages}
+                                  rowKey="id"
+                                  size="small"
+                                  pagination={false}
+                                  scroll={{ x: true }}
+                                  className="mt-1"
+                                  columns={[
+                                    {
+                                      title: "Tracking Code",
+                                      dataIndex: "trackingCode",
+                                      key: "trackingCode",
+                                      width: 140,
+                                    },
+                                    {
+                                      title: "Description",
+                                      dataIndex: "description",
+                                      key: "description",
+                                      ellipsis: true,
+                                    },
+                                    {
+                                      title: "Qty",
+                                      dataIndex: "quantity",
+                                      key: "quantity",
+                                      width: 60,
+                                      align: "center",
+                                    },
+                                    {
+                                      title: "Weight (kg)",
+                                      dataIndex: "weight",
+                                      key: "weight",
+                                      width: 100,
+                                      align: "right",
+                                      render: (val: number) =>
+                                        val?.toFixed(2) || "0.00",
+                                    },
+                                    {
+                                      title: "CBM",
+                                      dataIndex: "cbm",
+                                      key: "cbm",
+                                      width: 80,
+                                      align: "right",
+                                      render: (val: number) =>
+                                        val?.toFixed(2) || "0.00",
+                                    },
+                                  ]}
+                                />
                               </div>
                             </div>
                           </Card>
