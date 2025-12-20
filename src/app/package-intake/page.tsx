@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { InvoiceStatus } from "@/types/invoice";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useAuth } from "@/hooks/useAuth";
+import { handleError } from "@/utils/forms/errorUtils";
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -82,7 +83,6 @@ export default function PackageIntakePage() {
 
   // Customer modal state
   const [customerModalVisible, setCustomerModalVisible] = useState(false);
-  const [customerModalLoading, setCustomerModalLoading] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
 
   // Receipt modal
@@ -123,54 +123,21 @@ export default function PackageIntakePage() {
   };
 
   // Mutation hook for creating customer
-  const { mutateAsync: createCustomerMutation } = useCreateCustomer();
+  const createCustomerMutation = useCreateCustomer();
 
   // Handler for customer creation (backend)
   const handleCreateCustomer = async (values: any) => {
-    setCustomerModalLoading(true);
     try {
-      // Only handle create payloads (has firstName and lastName as required)
-      if (
-        "firstName" in values &&
-        "lastName" in values &&
-        values.firstName &&
-        values.lastName
-      ) {
-        const created = await createCustomerMutation(
-          values as CustomerCreatePayload
-        );
-        if (created?.id) {
-          form.setFieldsValue({ customerId: created.id });
-          toast.success("Customer added");
-        }
-      } else {
-        toast.error("Invalid customer payload");
+      const payload = values as CustomerCreatePayload;
+      const created = await createCustomerMutation.mutateAsync(payload);
+      if (created?.id) {
+        form.setFieldsValue({ customerId: created.id });
+        toast.success("Customer created successfully");
+        setCustomerModalVisible(false);
       }
-      setCustomerModalVisible(false);
     } catch (err) {
-      // Robust server validation error handling
-      interface ErrorResponse {
-        response?: {
-          data?: {
-            errors?: string[];
-            message?: string;
-          };
-        };
-      }
-      const response =
-        typeof err === "object" && err !== null && "response" in err
-          ? (err as ErrorResponse).response
-          : undefined;
-      if (response?.data?.errors && Array.isArray(response.data.errors)) {
-        response.data.errors.forEach((e: string) => toast.error(e));
-        // Keep modal open for correction
-      } else if (response?.data?.message) {
-        toast.error(response.data.message);
-      } else {
-        toast.error("Failed to add customer");
-      }
-    } finally {
-      setCustomerModalLoading(false);
+      handleError(err);
+      // Don't close modal on error - let user fix validation issues
     }
   };
 
@@ -749,7 +716,7 @@ export default function PackageIntakePage() {
               setCustomerModalVisible(false);
             }}
             onSubmit={handleCreateCustomer}
-            loading={customerModalLoading}
+            loading={createCustomerMutation.isPending}
             mode="create"
           />
           <ReceiptModal

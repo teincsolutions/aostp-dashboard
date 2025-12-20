@@ -733,7 +733,15 @@ export default function PackingListsPage() {
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Package Count">
-                    {packingListDetails.totalPackages || 0}
+                    {(() => {
+                      // total quantity = sum of package.quantity across the packing list
+                      const totalQty =
+                        packingListDetails?.packages?.reduce(
+                          (sum, p) => sum + (p.quantity || 0),
+                          0
+                        ) || 0;
+                      return totalQty;
+                    })()}
                   </Descriptions.Item>
                   <Descriptions.Item label="Notes" span={2}>
                     {packingListDetails.notes || "N/A"}
@@ -784,10 +792,20 @@ export default function PackingListsPage() {
                         <Row gutter={16}>
                           <Col span={6}>
                             <Statistic
-                              title="Total Packages"
+                              title="Total Quantity"
                               value={
-                                packingListSummary.packingList.totalPackages ||
-                                0
+                                // Sum quantities across all customer summaries
+                                (
+                                  packingListSummary?.customerSummaries || []
+                                ).reduce(
+                                  (acc, cs) =>
+                                    acc +
+                                    (cs.packages?.reduce(
+                                      (s, pkg) => s + (pkg.quantity || 0),
+                                      0
+                                    ) || 0),
+                                  0
+                                ) || 0
                               }
                               valueStyle={{ color: "#722ed1" }}
                             />

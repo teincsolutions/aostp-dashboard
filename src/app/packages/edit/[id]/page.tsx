@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { CustomerModal } from "@/components/CustomerModal";
 import { useGetPackage, usePackageIntake } from "@/hooks/usePackageIntake";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
-import { UpdatePackagePayload } from "@/types/package";
+import { UpdatePackagePayloadWithCustomer as UpdatePackagePayload } from "@/types/package";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import type { UploadFile } from "antd/es/upload/interface";
@@ -30,6 +30,7 @@ import { ShippingMode } from "@/types/exchangeRate";
 import { useCities } from "@/hooks/useCities";
 import { Currency } from "@/types/package";
 import { useAuth } from "@/hooks/useAuth";
+import { handleError } from "@/utils/forms/errorUtils";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -82,7 +83,6 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
 
   // Customer modal state
   const [customerModalVisible, setCustomerModalVisible] = useState(false);
-  const [customerModalLoading, setCustomerModalLoading] = useState(false);
   const { data: customers, isLoading: customersLoading } = useCustomers({});
   const { data: cities, isLoading: citiesLoading } = useCities();
 
@@ -90,7 +90,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
   const { data: packageData, isLoading: packageLoading } = useGetPackage(id);
 
   // Hook functions
-  const { mutateAsync: createCustomerMutation } = useCreateCustomer();
+  const createCustomerMutation = useCreateCustomer();
   const {
     updatePackage: updatePackageMutation,
     updatePackagePending,
@@ -105,50 +105,17 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
 
   // Handler for customer creation (backend)
   const handleCreateCustomer = async (values: any) => {
-    setCustomerModalLoading(true);
     try {
-      // Only handle create payloads (has firstName and lastName as required)
-      if (
-        "firstName" in values &&
-        "lastName" in values &&
-        values.firstName &&
-        values.lastName
-      ) {
-        const created = await createCustomerMutation(
-          values as CustomerCreatePayload
-        );
-        if (created?.id) {
-          form.setFieldsValue({ customerId: created.id });
-          toast.success("Customer added");
-        }
-      } else {
-        toast.error("Invalid customer payload");
+      const payload = values as CustomerCreatePayload;
+      const created = await createCustomerMutation.mutateAsync(payload);
+      if (created?.id) {
+        form.setFieldsValue({ customerId: created.id });
+        toast.success("Customer created successfully");
+        setCustomerModalVisible(false);
       }
-      setCustomerModalVisible(false);
     } catch (err) {
-      // Robust server validation error handling
-      interface ErrorResponse {
-        response?: {
-          data?: {
-            errors?: string[];
-            message?: string;
-          };
-        };
-      }
-      const response =
-        typeof err === "object" && err !== null && "response" in err
-          ? (err as ErrorResponse).response
-          : undefined;
-      if (response?.data?.errors && Array.isArray(response.data.errors)) {
-        response.data.errors.forEach((e: string) => toast.error(e));
-        // Keep modal open for correction
-      } else if (response?.data?.message) {
-        toast.error(response.data.message);
-      } else {
-        toast.error("Failed to add customer");
-      }
-    } finally {
-      setCustomerModalLoading(false);
+      handleError(err);
+      // Don't close modal on error - let user fix validation issues
     }
   };
 
@@ -228,6 +195,14 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
         shippingRate: values.shippingRate,
         shippingCost: values.shippingCost,
       };
+
+      // Allow updating customer if provided (we updated the payload type to accept customerId)
+      if (
+        (values as any).customerId &&
+        (values as any).customerId !== packageData?.customerId
+      ) {
+        (payload as any).customerId = (values as any).customerId;
+      }
 
       // Only add airShippingType if shippingMode is AIR and value exists
       if (values.shippingMode === "AIR" && values.airShippingType) {
@@ -355,7 +330,6 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                     rules={[{ required: true }]}
                   >
                     <Select
-                      disabled
                       showSearch
                       placeholder="Select customer"
                       loading={customersLoading}
@@ -616,7 +590,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
               setCustomerModalVisible(false);
             }}
             onSubmit={handleCreateCustomer}
-            loading={customerModalLoading}
+            loading={createCustomerMutation.isPending}
             mode="create"
           />
         </div>

@@ -57,6 +57,11 @@ export type UpdatePackagePayload = Partial<
   shippingCost?: number | null;
 };
 
+// Allow updating customer on package edit
+export type UpdatePackagePayloadWithCustomer = UpdatePackagePayload & {
+  customerId?: string;
+};
+
 export interface Receipt {
   id: string;
   packageId: string;
