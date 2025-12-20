@@ -753,135 +753,162 @@ export default function PackingListsPage() {
 
                 {packingListSummary && (
                   <>
-                    <Divider>Summary by Customer</Divider>
-                    <div className="space-y-4">
-                      {packingListSummary.customerSummaries.map(
-                        (summary: CustomerPackingSummary) => (
-                          <Card key={summary.customer.id} size="small">
-                            <div>
-                              <h4 className="font-medium mb-2">
-                                {summary.customer.firstName}{" "}
-                                {summary.customer.lastName || ""} ({" "}
-                                {summary.customer.customerCode})
-                              </h4>
-                              <p className="text-sm text-gray-600 mb-2">
-                                {summary.packageCount} packages •{" "}
-                                {summary.totalWeight}kg • {summary.totalCBM}m³
-                              </p>
-                              <div className="mt-2">
-                                <Text strong className="text-xs">
-                                  Packages:
-                                </Text>
-                                <Table
-                                  dataSource={summary.packages}
-                                  rowKey="id"
-                                  size="small"
-                                  pagination={false}
-                                  scroll={{ x: true }}
-                                  className="mt-1"
-                                  columns={[
-                                    {
-                                      title: "Tracking Code",
-                                      dataIndex: "trackingCode",
-                                      key: "trackingCode",
-                                      width: 140,
-                                    },
-                                    {
-                                      title: "Description",
-                                      dataIndex: "description",
-                                      key: "description",
-                                      ellipsis: true,
-                                    },
-                                    {
-                                      title: "Qty",
-                                      dataIndex: "quantity",
-                                      key: "quantity",
-                                      width: 60,
-                                      align: "center",
-                                    },
-                                    {
-                                      title: "Weight (kg)",
-                                      dataIndex: "weight",
-                                      key: "weight",
-                                      width: 100,
-                                      align: "right",
-                                      render: (val: number) =>
-                                        val?.toFixed(2) || "0.00",
-                                    },
-                                    {
-                                      title: "CBM",
-                                      dataIndex: "cbm",
-                                      key: "cbm",
-                                      width: 80,
-                                      align: "right",
-                                      render: (val: number) =>
-                                        val?.toFixed(2) || "0.00",
-                                    },
-                                  ]}
-                                />
-                              </div>
-                            </div>
-                          </Card>
-                        )
-                      )}
+                    <Divider>Packages by Customer</Divider>
 
-                      {/* Overall Totals */}
-                      <Divider>Overall Totals</Divider>
-                      <Card size="small">
-                        <Row gutter={16}>
-                          <Col span={6}>
-                            <Statistic
-                              title="Total Quantity"
-                              value={
-                                // Sum quantities across all customer summaries
-                                (
-                                  packingListSummary?.customerSummaries || []
-                                ).reduce(
-                                  (acc, cs) =>
-                                    acc +
-                                    (cs.packages?.reduce(
-                                      (s, pkg) => s + (pkg.quantity || 0),
-                                      0
-                                    ) || 0),
-                                  0
-                                ) || 0
-                              }
-                              valueStyle={{ color: "#722ed1" }}
-                            />
-                          </Col>
-                          <Col span={6}>
-                            <Statistic
-                              title="Total Weight (kg)"
-                              value={packingListSummary.packingList.totalWeight?.toFixed(
-                                2
-                              )}
-                              valueStyle={{ color: "#1890ff" }}
-                            />
-                          </Col>
-                          <Col span={6}>
-                            <Statistic
-                              title="Total CBM"
-                              value={packingListSummary.packingList.totalCBM?.toFixed(
-                                2
-                              )}
-                              valueStyle={{ color: "#52c41a" }}
-                            />
-                          </Col>
-                          <Col span={6}>
-                            <Statistic
-                              title="Total Shipping Cost (USD)"
-                              value={`$${
-                                packingListSummary.packingList.totalShippingCost?.toFixed(
-                                  2
-                                ) || "0.00"
-                              }`}
-                              valueStyle={{ color: "#faad14", fontSize: 14 }}
-                              className="text-small"
-                            />
-                          </Col>
-                        </Row>
-                      </Card>
+                    {/* Single unified table with all packages */}
+                    <Table
+                      dataSource={packingListSummary.customerSummaries.flatMap(
+                        (summary: CustomerPackingSummary) =>
+                          summary.packages.map((pkg) => ({
+                            ...pkg,
+                            customerName: `${summary.customer.firstName} ${
+                              summary.customer.lastName || ""
+                            }`,
+                            customerCode: summary.customer.customerCode,
+                          }))
+                      )}
+                      rowKey="id"
+                      size="small"
+                      pagination={{
+                        pageSize: 10,
+                        showSizeChanger: true,
+                        showTotal: (total, range) =>
+                          `${range[0]}-${range[1]} of ${total} packages`,
+                      }}
+                      scroll={{ x: true }}
+                      columns={[
+                        {
+                          title: "Customer",
+                          key: "customer",
+                          width: 180,
+                          fixed: "left",
+                          render: (_: any, record: any) =>
+                            `${record.customerName} (${record.customerCode})`,
+                        },
+                        {
+                          title: "Tracking Code",
+                          dataIndex: "trackingCode",
+                          key: "trackingCode",
+                          width: 140,
+                        },
+                        {
+                          title: "Description",
+                          dataIndex: "description",
+                          key: "description",
+                          ellipsis: true,
+                        },
+                        {
+                          title: "Qty",
+                          dataIndex: "quantity",
+                          key: "quantity",
+                          width: 70,
+                          align: "center",
+                        },
+                        {
+                          title: "Weight (kg)",
+                          dataIndex: "weight",
+                          key: "weight",
+                          width: 110,
+                          align: "right",
+                          render: (val: number) => val?.toFixed(2) || "0.00",
+                        },
+                        {
+                          title: "CBM",
+                          dataIndex: "cbm",
+                          key: "cbm",
+                          width: 90,
+                          align: "right",
+                          render: (val: number) => val?.toFixed(2) || "0.00",
+                        },
+                      ]}
+                    />
+
+                    {/* Customer Summary Cards */}
+                    <Divider>Customer Summaries</Divider>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {packingListSummary.customerSummaries.map(
+                        (summary: CustomerPackingSummary) => {
+                          const totalQty =
+                            summary.packages?.reduce(
+                              (sum, pkg) => sum + (pkg.quantity || 0),
+                              0
+                            ) || 0;
+                          return (
+                            <Card key={summary.customer.id} size="small">
+                              <div>
+                                <h4 className="font-medium mb-1">
+                                  {summary.customer.firstName}{" "}
+                                  {summary.customer.lastName || ""} (
+                                  {summary.customer.customerCode})
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {summary.packageCount} packages • {totalQty}{" "}
+                                  qty • {summary.totalWeight?.toFixed(2)}kg •{" "}
+                                  {summary.totalCBM?.toFixed(2)}m³
+                                </p>
+                              </div>
+                            </Card>
+                          );
+                        }
+                      )}
                     </div>
+
+                    {/* Overall Totals */}
+                    <Divider>Overall Totals</Divider>
+                    <Card size="small">
+                      <Row gutter={16}>
+                        <Col span={6}>
+                          <Statistic
+                            title="Total Quantity"
+                            value={
+                              // Sum quantities across all customer summaries
+                              (
+                                packingListSummary?.customerSummaries || []
+                              ).reduce(
+                                (acc, cs) =>
+                                  acc +
+                                  (cs.packages?.reduce(
+                                    (s, pkg) => s + (pkg.quantity || 0),
+                                    0
+                                  ) || 0),
+                                0
+                              ) || 0
+                            }
+                            valueStyle={{ color: "#722ed1" }}
+                          />
+                        </Col>
+                        <Col span={6}>
+                          <Statistic
+                            title="Total Weight (kg)"
+                            value={packingListSummary.packingList.totalWeight?.toFixed(
+                              2
+                            )}
+                            valueStyle={{ color: "#1890ff" }}
+                          />
+                        </Col>
+                        <Col span={6}>
+                          <Statistic
+                            title="Total CBM"
+                            value={packingListSummary.packingList.totalCBM?.toFixed(
+                              2
+                            )}
+                            valueStyle={{ color: "#52c41a" }}
+                          />
+                        </Col>
+                        <Col span={6}>
+                          <Statistic
+                            title="Total Shipping Cost (USD)"
+                            value={`$${
+                              packingListSummary.packingList.totalShippingCost?.toFixed(
+                                2
+                              ) || "0.00"
+                            }`}
+                            valueStyle={{ color: "#faad14", fontSize: 14 }}
+                            className="text-small"
+                          />
+                        </Col>
+                      </Row>
+                    </Card>
                   </>
                 )}
               </div>

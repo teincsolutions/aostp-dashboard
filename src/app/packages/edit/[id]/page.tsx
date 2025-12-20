@@ -452,24 +452,33 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
               {/* Measurements & Warehouse Card */}
               <Card className="shadow-sm rounded-2xl">
                 <div className="space-y-4">
-                  {form.getFieldValue("shippingMode") === ShippingMode.AIR && (
-                    <Form.Item
-                      label="Weight (kg) - Optional"
-                      name="weight"
-                      rules={[{ type: "number", min: 0.01 }]}
-                    >
-                      <InputNumber min={0.01} className="w-full" />
-                    </Form.Item>
-                  )}
-                  {form.getFieldValue("shippingMode") === ShippingMode.SEA && (
-                    <Form.Item
-                      label="CBM (m³) - Optional"
-                      name="cbm"
-                      rules={[{ type: "number", min: 0 }]}
-                    >
-                      <InputNumber min={0} className="w-full" />
-                    </Form.Item>
-                  )}
+                  <Form.Item
+                    shouldUpdate={(prevValues, currentValues) =>
+                      prevValues.shippingMode !== currentValues.shippingMode
+                    }
+                    noStyle
+                  >
+                    {({ getFieldValue }) => {
+                      const shippingMode = getFieldValue("shippingMode");
+                      return shippingMode === ShippingMode.AIR ? (
+                        <Form.Item
+                          label="Weight (kg) - Optional"
+                          name="weight"
+                          rules={[{ type: "number", min: 0.01 }]}
+                        >
+                          <InputNumber min={0.01} className="w-full" />
+                        </Form.Item>
+                      ) : shippingMode === ShippingMode.SEA ? (
+                        <Form.Item
+                          label="CBM (m³) - Optional"
+                          name="cbm"
+                          rules={[{ type: "number", min: 0 }]}
+                        >
+                          <InputNumber min={0} className="w-full" />
+                        </Form.Item>
+                      ) : null;
+                    }}
+                  </Form.Item>
                   <Form.Item
                     label="Quantity"
                     name="quantity"
