@@ -104,11 +104,11 @@ export const PackageAssignmentModal: React.FC<PackageAssignmentModalProps> = ({
           onClick={handleFinalize}
           loading={isFinalizing}
           disabled={
-            packingList?.totalPackages === 0 ||
+            packingList?.packages.length === 0 ||
             packingList?.status !== PackingListStatus.DRAFT
           }
         >
-          Finalize Selection ({packingList?.totalPackages})
+          Finalize Selection ({packingList?.packages.length || 0} packages)
         </Button>,
       ]}
     >
