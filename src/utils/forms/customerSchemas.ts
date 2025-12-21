@@ -24,10 +24,9 @@ export const customerUpdateSchema = Yup.object({
     100,
     "First name must be shorter than or equal to 100 characters"
   ),
-  lastName: Yup.string().max(
-    100,
-    "Last name must be shorter than or equal to 100 characters"
-  ),
+  lastName: Yup.string()
+    .max(100, "Last name must be shorter than or equal to 100 characters")
+    .notRequired(),
   email: Yup.string().email("Please enter a valid email").notRequired(),
   phoneNumber: Yup.string(),
   alternatePhone: Yup.string().notRequired(),
