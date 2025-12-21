@@ -66,6 +66,7 @@ import { Package } from "@/types/package";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { handleError } from "@/utils/forms/errorUtils";
 import { Payment } from "@/types/payment";
+import { useAuth } from "@/hooks/useAuth";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -117,6 +118,9 @@ export default function PaymentsPage() {
 
   // Forms
   const [paymentForm] = Form.useForm();
+
+  // Get current user for role-based actions
+  const { user } = useAuth();
 
   const { data: allPaymentsResponse, isLoading: isLoadingAllPayments } =
     useAllPayments({
@@ -1009,6 +1013,7 @@ export default function PaymentsPage() {
                   setCurrentPayment(payment);
                   setIsReceiptDrawerVisible(true);
                 },
+                userRole: user?.role,
               })}
               dataSource={allPaymentsData}
               loading={isLoadingAllPayments}

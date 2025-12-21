@@ -2,14 +2,18 @@
 import { ColumnsType } from "antd/es/table";
 import { Button, Popconfirm, Space, Tooltip } from "antd";
 import { Payment } from "@/types/payment";
+import { UserRole } from "@/types/common";
+import { DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 export const getPaymentColumns = ({
   handleDelete,
   handleView,
+  userRole,
 }: {
   handleDelete: (id: string) => void;
   handleView: (payment: Payment) => void;
+  userRole?: UserRole;
 }) => {
   const columns: ColumnsType<Payment> = [
     {
@@ -76,20 +80,41 @@ export const getPaymentColumns = ({
     {
       title: "Actions",
       key: "actions",
-      width: 120,
+      fixed: "right",
+      width: 150,
       render: (_, record) => (
-        <Space size="middle">
-          <Button type="link" onClick={() => handleView(record)}>
-            View
-          </Button>
-          <Popconfirm
-            title="Are you sure you want to delete this payment?"
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Button type="link" danger>
-              Delete
+        <Space size="small">
+          <Tooltip title="View Receipt">
+            <Button
+              type="link"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => handleView(record)}
+            >
+              View
             </Button>
-          </Popconfirm>
+          </Tooltip>
+          {userRole === "SUPER_ADMIN" && (
+            <Tooltip title="Delete Payment">
+              <Popconfirm
+                title="Delete Payment"
+                description="Are you sure you want to permanently delete this payment? This action cannot be undone."
+                onConfirm={() => handleDelete(record.id)}
+                okText="Yes, Delete"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true }}
+              >
+                <Button
+                  type="link"
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                >
+                  Delete
+                </Button>
+              </Popconfirm>
+            </Tooltip>
+          )}
         </Space>
       ),
     },

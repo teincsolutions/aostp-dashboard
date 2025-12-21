@@ -165,9 +165,10 @@ export const paymentService = {
     return response.data;
   },
 
-  // Delete a payment by ID
+  // Delete a payment by ID (Super Admin only)
+  // Returns 204 No Content on success
   async deletePayment(id: string): Promise<void> {
-    return await apiService.delete(`/payments/${id}`);
+    await apiService.delete(`/payments/${id}`);
   },
 
   // Upload payment reference document
