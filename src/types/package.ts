@@ -1,4 +1,5 @@
 // src/types/package.ts
+import { City } from "./exchangeRate";
 import { PackingList } from "./packingList";
 import { Warehouse } from "./warehouse";
 
@@ -166,6 +167,7 @@ export interface Package {
   };
   correlationId?: string;
   destinationCityId: string | null;
+  destinationCity?: City;
   shippingCurrency: Currency;
   shippingRate: number | null;
   shippingCost: number | null;

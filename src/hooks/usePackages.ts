@@ -6,6 +6,7 @@ import {
   uploadPackagePhoto,
   updatePackage,
   getPackageReceipt,
+  getPackage,
 } from "../services/packageService";
 import { CreatePackagePayload, Package } from "../types/package";
 import { packingListKeys } from "./usePackingLists";
@@ -57,6 +58,14 @@ export const usePackages = () => {
     uploadPhotoMutation,
     updateMutation,
   };
+};
+
+export const usePackage = (packageId?: string) => {
+  return useQuery({
+    queryKey: ["package", packageId],
+    queryFn: () => getPackage(packageId!),
+    enabled: !!packageId,
+  });
 };
 
 export const usePackageReceipt = (packageId?: string) => {

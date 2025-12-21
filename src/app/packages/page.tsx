@@ -49,6 +49,7 @@ import { usePackageManagement } from "@/hooks/usePackageManagement";
 import { useConsolidation } from "@/hooks/useConsolidation";
 import { useWarehouses } from "@/hooks/useWarehouse";
 import { useRegenerateInvoicePdf } from "@/hooks/useInvoices";
+import { usePackage } from "@/hooks/usePackages";
 
 import { Form } from "antd";
 import { ReceiptModal } from "@/components/ReceiptModal";
@@ -103,12 +104,19 @@ export default function PackagesPage() {
   const [isConsolidateModalVisible, setIsConsolidateModalVisible] =
     useState(false);
   const [isTransferModalVisible, setIsTransferModalVisible] = useState(false);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
+    null
+  );
   const [selectedPackage, setSelectedPackage] = useState<DisplayPackage | null>(
     null
   );
   const [packageToDelete, setPackageToDelete] = useState<DisplayPackage | null>(
     null
   );
+
+  // Fetch package details when viewing
+  const { data: packageDetails, isLoading: isLoadingPackageDetails } =
+    usePackage(selectedPackageId || undefined);
 
   // Consolidation states
   const [consCustomer, setConsCustomer] = useState<string>("");
@@ -182,7 +190,8 @@ export default function PackagesPage() {
 
   // Action handlers
   const handleView = (record: DisplayPackage) => {
-    setSelectedPackage(record);
+    setSelectedPackageId(record.id);
+    setSelectedPackage(record); // Keep for backward compatibility
     setViewModalVisible(true);
   };
 
@@ -826,6 +835,7 @@ export default function PackagesPage() {
             open={viewModalVisible}
             onCancel={() => {
               setViewModalVisible(false);
+              setSelectedPackageId(null);
               setSelectedPackage(null);
             }}
             footer={[
@@ -833,10 +843,12 @@ export default function PackagesPage() {
                 key="edit"
                 onClick={() => {
                   setViewModalVisible(false);
-                  handleEdit(selectedPackage!);
+                  if (packageDetails) {
+                    router.push(`/packages/edit/${packageDetails.id}`);
+                  }
                 }}
                 disabled={
-                  selectedPackage?.status !== PackageStatusPackages.RECEIVED
+                  packageDetails?.status !== PackageStatusPackages.RECEIVED
                 }
               >
                 Edit
@@ -846,29 +858,42 @@ export default function PackagesPage() {
                 danger
                 onClick={() => {
                   setViewModalVisible(false);
-                  handleDelete(selectedPackage!);
+                  if (packageDetails) {
+                    handleDelete(packageDetails as DisplayPackage);
+                  }
                 }}
                 disabled={
-                  selectedPackage?.status !== PackageStatusPackages.RECEIVED
+                  packageDetails?.status !== PackageStatusPackages.RECEIVED
                 }
               >
                 Delete
               </Button>,
               <Button
                 key="receipt"
-                onClick={() => setReceiptModalPackageId(selectedPackage!.id)}
+                onClick={() =>
+                  setReceiptModalPackageId(packageDetails?.id || null)
+                }
+                disabled={!packageDetails}
               >
                 View Receipt
               </Button>,
               <Button
                 key="excel"
-                onClick={() => handleExportExcel(selectedPackage!)}
+                onClick={() =>
+                  packageDetails &&
+                  handleExportExcel(packageDetails as DisplayPackage)
+                }
+                disabled={!packageDetails}
               >
                 Export Excel
               </Button>,
               <Button
                 key="pdf"
-                onClick={() => handleExportPdf(selectedPackage!)}
+                onClick={() =>
+                  packageDetails &&
+                  handleExportPdf(packageDetails as DisplayPackage)
+                }
+                disabled={!packageDetails}
               >
                 Export PDF
               </Button>,
@@ -878,87 +903,140 @@ export default function PackagesPage() {
             ]}
             width={800}
           >
-            {selectedPackage && (
+            {isLoadingPackageDetails ? (
+              <div className="flex justify-center items-center py-12">
+                <Spin size="large" tip="Loading package details..." />
+              </div>
+            ) : packageDetails ? (
               <div>
                 <Descriptions bordered column={2} size="small">
                   <Descriptions.Item label="Tracking Number">
-                    {selectedPackage.trackingCode}
+                    {packageDetails.trackingCode}
                   </Descriptions.Item>
                   <Descriptions.Item label="Customer">
-                    {selectedPackage.customerName}
+                    {packageDetails.customer
+                      ? `${packageDetails.customer.firstName} ${
+                          packageDetails.customer.lastName || ""
+                        } (${packageDetails.customer.customerCode})`
+                      : packageDetails.customerId}
                   </Descriptions.Item>
                   <Descriptions.Item label="Description">
-                    {selectedPackage.description || "N/A"}
+                    {packageDetails.description || "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Weight">
-                    {selectedPackage.weight} kg
+                    {packageDetails.weight
+                      ? `${packageDetails.weight} kg`
+                      : "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="CBM">
-                    {selectedPackage.cbm}
+                    {packageDetails.cbm || "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Quantity">
-                    {selectedPackage.quantity}
+                    {packageDetails.quantity}
                   </Descriptions.Item>
                   <Descriptions.Item label="Shipment Type">
                     <Tag
                       color={
-                        selectedPackage.shippingMode === "AIR"
-                          ? "blue"
-                          : "green"
+                        packageDetails.shippingMode === "AIR" ? "blue" : "green"
                       }
                     >
-                      {selectedPackage.shippingMode}
+                      {packageDetails.shippingMode}
                     </Tag>
+                  </Descriptions.Item>
+                  {packageDetails.airShippingType && (
+                    <Descriptions.Item label="Air Shipping Type">
+                      <Tag color="cyan">
+                        {packageDetails.airShippingType.replace("_", " ")}
+                      </Tag>
+                    </Descriptions.Item>
+                  )}
+                  <Descriptions.Item label="Warehouse">
+                    {packageDetails.warehouse?.name || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Destination City">
+                    {packageDetails.destinationCity
+                      ? `${packageDetails.destinationCity.name}, ${packageDetails.destinationCity.country}`
+                      : "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Shipping Currency">
+                    {packageDetails.shippingCurrency || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Shipping Rate">
+                    {packageDetails.shippingRate
+                      ? `${packageDetails.shippingRate}`
+                      : "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Shipping Cost">
+                    {packageDetails.shippingCost
+                      ? `${packageDetails.shippingCurrency || ""} ${
+                          packageDetails.shippingCost
+                        }`
+                      : "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Consolidated">
                     <Tag
-                      color={
-                        selectedPackage.isConsolidated ? "green" : "orange"
-                      }
+                      color={packageDetails.isConsolidated ? "green" : "orange"}
                     >
-                      {selectedPackage.isConsolidated ? "Yes" : "No"}
+                      {packageDetails.isConsolidated ? "Yes" : "No"}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Status">
                     <Tag
                       color={
-                        packageStatusColors[selectedPackage?.status] ||
-                        "default"
+                        packageStatusColors[packageDetails.status] || "default"
                       }
                     >
-                      {selectedPackage?.status.replace("_", " ")}
+                      {packageDetails.status.replace("_", " ")}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Payment Status">
                     <Tag
                       color={
-                        selectedPackage.paymentStatus === "PAID"
+                        packageDetails.paymentStatus === "PAID"
                           ? "green"
-                          : selectedPackage.paymentStatus === "PENDING"
+                          : packageDetails.paymentStatus === "PENDING"
                           ? "orange"
                           : "red"
                       }
                     >
-                      {selectedPackage.paymentStatus}
+                      {packageDetails.paymentStatus}
                     </Tag>
                   </Descriptions.Item>
+                  <Descriptions.Item label="Packing List">
+                    {packageDetails.packingList?.name || "Not Assigned"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Invoice Number">
+                    {packageDetails.invoice?.invoiceNumber || "Not Generated"}
+                  </Descriptions.Item>
                   <Descriptions.Item label="Pickup Code">
-                    {selectedPackage.pickupCode || "N/A"}
+                    {packageDetails.pickupCode || "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Days in Warehouse">
-                    {selectedPackage.daysInWarehouse} days
+                    {packageDetails.daysInWarehouse} days
                   </Descriptions.Item>
                   <Descriptions.Item label="Received Date">
-                    {new Date(selectedPackage.receivedDate).toLocaleString()}
+                    {new Date(packageDetails.receivedDate).toLocaleString()}
                   </Descriptions.Item>
                   <Descriptions.Item label="Created By">
-                    {selectedPackage.createdByName || "N/A"}
+                    {packageDetails.createdBy
+                      ? `${packageDetails.createdBy.firstName} ${packageDetails.createdBy.lastName}`
+                      : "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Created At">
-                    {new Date(selectedPackage.createdAt).toLocaleString()}
+                    {new Date(packageDetails.createdAt).toLocaleString()}
                   </Descriptions.Item>
+                  {packageDetails.updatedAt && (
+                    <Descriptions.Item label="Last Updated">
+                      {new Date(packageDetails.updatedAt).toLocaleString()}
+                    </Descriptions.Item>
+                  )}
+                  {packageDetails.correlationId && (
+                    <Descriptions.Item label="Correlation ID">
+                      {packageDetails.correlationId}
+                    </Descriptions.Item>
+                  )}
                 </Descriptions>
-                {selectedPackage.notes && (
+                {packageDetails.notes && (
                   <Descriptions
                     bordered
                     column={1}
@@ -966,15 +1044,15 @@ export default function PackagesPage() {
                     style={{ marginTop: 16 }}
                   >
                     <Descriptions.Item label="Notes">
-                      {selectedPackage.notes}
+                      {packageDetails.notes}
                     </Descriptions.Item>
                   </Descriptions>
                 )}
-                {selectedPackage.isConsolidated &&
-                  selectedPackage.items &&
-                  selectedPackage.items.length > 0 && (
+                {packageDetails.isConsolidated &&
+                  packageDetails.items &&
+                  packageDetails.items.length > 0 && (
                     <div style={{ marginTop: 16 }}>
-                      <h3>Sub Packages ({selectedPackage.items.length})</h3>
+                      <h3>Sub Packages ({packageDetails.items.length})</h3>
                       <Table
                         columns={[
                           {
@@ -983,35 +1061,34 @@ export default function PackagesPage() {
                             key: "intakeTrackingCode",
                           },
                         ]}
-                        dataSource={selectedPackage.items}
+                        dataSource={packageDetails.items}
                         rowKey="id"
                         size="small"
                         pagination={false}
                       />
                     </div>
                   )}
-                {selectedPackage.photos &&
-                  selectedPackage.photos.length > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                      <h3>Photos ({selectedPackage.photos.length})</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {selectedPackage.photos.map((photo, index) => (
-                          <Image
-                            key={index}
-                            src={photo.url}
-                            alt={`Photo ${index + 1}`}
-                            style={{
-                              width: "100%",
-                              height: 200,
-                              objectFit: "cover",
-                            }}
-                          />
-                        ))}
-                      </div>
+                {packageDetails.photos && packageDetails.photos.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <h3>Photos ({packageDetails.photos.length})</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {packageDetails.photos.map((photo, index) => (
+                        <Image
+                          key={index}
+                          src={photo.url}
+                          alt={`Photo ${index + 1}`}
+                          style={{
+                            width: "100%",
+                            height: 200,
+                            objectFit: "cover",
+                          }}
+                        />
+                      ))}
                     </div>
-                  )}
+                  </div>
+                )}
               </div>
-            )}
+            ) : null}
           </Modal>
 
           {/* Delete Confirmation Modal */}
