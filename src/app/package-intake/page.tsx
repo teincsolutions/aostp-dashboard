@@ -462,11 +462,11 @@ export default function PackageIntakePage() {
                     name="description"
                     rules={[
                       { required: true, message: "Description is required" },
-                      { max: 200 },
+                      { max: 550, message: "Max 550 characters allowed" },
                     ]}
                   >
                     <Input.TextArea
-                      maxLength={200}
+                      maxLength={550}
                       showCount
                       className="w-full"
                       placeholder="Describe the package contents"
