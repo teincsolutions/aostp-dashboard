@@ -25,6 +25,7 @@ import {
   ContainerOutlined,
   UserOutlined,
   ArrowRightOutlined,
+  FileExcelOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -175,6 +176,32 @@ export default function DashboardPage() {
                 </Card>
               </Link>
             </Col>
+            
+          </Row>
+
+          {/* Additional KPIs - Finance View */}
+          {dashboard.hasFinanceAccess && (
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} lg={8}>
+                <Link href="/containers" style={{ textDecoration: "none" }}>
+                  <Card
+                    hoverable
+                    style={{ height: "120px", cursor: "pointer" }}
+                  >
+                    <Statistic
+                      title={
+                        <Space>
+                          <span>Active Containers</span>
+                          <ArrowRightOutlined style={{ color: "#1890ff" }} />
+                        </Space>
+                      }
+                      value={dashboard.kpis?.activeContainers ?? 0}
+                      prefix={<ContainerOutlined />}
+                      loading={dashboard.isLoading.kpis}
+                    />
+                  </Card>
+                </Link>
+              </Col>
             <Col xs={24} sm={12} lg={6}>
               <Link href="/payments" style={{ textDecoration: "none" }}>
                 <Card hoverable style={{ height: "140px", cursor: "pointer" }}>
@@ -204,53 +231,6 @@ export default function DashboardPage() {
                 </Card>
               </Link>
             </Col>
-          </Row>
-
-          {/* Additional KPIs - Finance View */}
-          {dashboard.hasFinanceAccess && (
-            <Row gutter={[16, 16]}>
-              <Col xs={24} sm={12} lg={8}>
-                <Link href="/containers" style={{ textDecoration: "none" }}>
-                  <Card
-                    hoverable
-                    style={{ height: "120px", cursor: "pointer" }}
-                  >
-                    <Statistic
-                      title={
-                        <Space>
-                          <span>Active Containers</span>
-                          <ArrowRightOutlined style={{ color: "#1890ff" }} />
-                        </Space>
-                      }
-                      value={dashboard.kpis?.activeContainers ?? 0}
-                      prefix={<ContainerOutlined />}
-                      loading={dashboard.isLoading.kpis}
-                    />
-                  </Card>
-                </Link>
-              </Col>
-              <Col xs={24} sm={12} lg={8}>
-                <Link href="/invoices" style={{ textDecoration: "none" }}>
-                  <Card
-                    hoverable
-                    style={{ height: "120px", cursor: "pointer" }}
-                  >
-                    <Statistic
-                      title={
-                        <Space>
-                          <span>Paid Invoices Amount</span>
-                          <ArrowRightOutlined style={{ color: "#1890ff" }} />
-                        </Space>
-                      }
-                      value={dashboard.kpis?.paidInvoicesAmount ?? 0}
-                      prefix={<DollarOutlined />}
-                      precision={2}
-                      valueStyle={{ color: "#52c41a" }}
-                      loading={dashboard.isLoading.kpis}
-                    />
-                  </Card>
-                </Link>
-              </Col>
               <Col xs={24} sm={12} lg={8}>
                 <Link href="/invoices" style={{ textDecoration: "none" }}>
                   <Card
