@@ -97,7 +97,7 @@ export default function DashboardPage() {
             </Col>
           </Row>
 
-          {/* KPI Cards */}
+          {/* KPI Cards - Main Row */}
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} lg={6}>
               <Link href="/customers" style={{ textDecoration: "none" }}>
@@ -176,17 +176,50 @@ export default function DashboardPage() {
                 </Card>
               </Link>
             </Col>
-            
+            {dashboard.hasFinanceAccess && (
+              <Col xs={24} sm={12} lg={6}>
+                <Link href="/payments" style={{ textDecoration: "none" }}>
+                  <Card
+                    hoverable
+                    style={{ height: "140px", cursor: "pointer" }}
+                  >
+                    <Statistic
+                      title={
+                        <Space>
+                          <span>Payments Total</span>
+                          <ArrowRightOutlined style={{ color: "#1890ff" }} />
+                        </Space>
+                      }
+                      value={dashboard.kpis?.paymentsTotals?.amount ?? 0}
+                      prefix={<DollarOutlined />}
+                      precision={2}
+                      loading={dashboard.isLoading.kpis}
+                      suffix="USD"
+                    />
+                    <Space
+                      style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
+                    >
+                      <Text type="secondary">
+                        GHS:{" "}
+                        {dashboard.kpis?.paymentsTotals?.localAmount?.toFixed(
+                          2
+                        ) ?? "0.00"}
+                      </Text>
+                    </Space>
+                  </Card>
+                </Link>
+              </Col>
+            )}
           </Row>
 
           {/* Additional KPIs - Finance View */}
           {dashboard.hasFinanceAccess && (
             <Row gutter={[16, 16]}>
-              <Col xs={24} sm={12} lg={8}>
+              <Col xs={24} sm={12} lg={6}>
                 <Link href="/containers" style={{ textDecoration: "none" }}>
                   <Card
                     hoverable
-                    style={{ height: "120px", cursor: "pointer" }}
+                    style={{ height: "140px", cursor: "pointer" }}
                   >
                     <Statistic
                       title={
@@ -202,45 +235,16 @@ export default function DashboardPage() {
                   </Card>
                 </Link>
               </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Link href="/payments" style={{ textDecoration: "none" }}>
-                <Card hoverable style={{ height: "140px", cursor: "pointer" }}>
-                  <Statistic
-                    title={
-                      <Space>
-                        <span>Payments Total</span>
-                        <ArrowRightOutlined style={{ color: "#1890ff" }} />
-                      </Space>
-                    }
-                    value={dashboard.kpis?.paymentsTotals?.amount ?? 0}
-                    prefix={<DollarOutlined />}
-                    precision={2}
-                    loading={dashboard.isLoading.kpis}
-                    suffix="USD"
-                  />
-                  <Space
-                    style={{ marginTop: 8, fontSize: "12px", color: "#666" }}
-                  >
-                    <Text type="secondary">
-                      GHS:{" "}
-                      {dashboard.kpis?.paymentsTotals?.localAmount?.toFixed(
-                        2
-                      ) ?? "0.00"}
-                    </Text>
-                  </Space>
-                </Card>
-              </Link>
-            </Col>
-              <Col xs={24} sm={12} lg={8}>
+              <Col xs={24} sm={12} lg={6}>
                 <Link href="/invoices" style={{ textDecoration: "none" }}>
                   <Card
                     hoverable
-                    style={{ height: "120px", cursor: "pointer" }}
+                    style={{ height: "140px", cursor: "pointer" }}
                   >
                     <Statistic
                       title={
                         <Space>
-                          <span>Outstanding Invoices Amount</span>
+                          <span>Outstanding Amount</span>
                           <ArrowRightOutlined style={{ color: "#1890ff" }} />
                         </Space>
                       }
@@ -249,129 +253,124 @@ export default function DashboardPage() {
                       precision={2}
                       valueStyle={{ color: "#cf1322" }}
                       loading={dashboard.isLoading.topCustomersByAmount}
-                      // Note: Shows balance from top 10 customers only
-                      // For total outstanding balance, backend needs dedicated endpoint
                     />
                   </Card>
                 </Link>
               </Col>
-              {/* Chart: Invoices by Month */}
-              {dashboard.hasOperationsAccess && (
-                <Col xs={24} lg={12}>
-                  <Card
-                    title={`Invoices by Month ${
-                      dashboard.invoicesByMonth?.year
-                        ? `(${dashboard.invoicesByMonth.year})`
-                        : ""
-                    }`}
-                    loading={dashboard.isLoading.invoicesByMonth}
-                  >
-                    {dashboard.invoicesByMonth?.series &&
-                    dashboard.invoicesByMonth.series.some(
-                      (s) => s.count > 0
-                    ) ? (
-                      <Column
-                        data={dashboard.invoicesByMonth.series}
-                        xField="month"
-                        yField="count"
-                        label={{
-                          position: "top",
-                        }}
-                        xAxis={{
-                          label: {
-                            autoHide: false,
-                            autoRotate: false,
-                          },
-                        }}
-                        meta={{
-                          month: { alias: "Month" },
-                          count: { alias: "Invoices" },
-                        }}
-                      />
-                    ) : (
-                      <Empty description="No data available" />
-                    )}
-                  </Card>
-                </Col>
-              )}
-              {/* Chart: Payments AIR vs SEA */}
+            </Row>
+          )}
 
-              {dashboard.hasFinanceAccess && (
-                <Col xs={24} lg={12}>
-                  <Card
-                    title={`Payments: AIR vs SEA ${
-                      dashboard.paymentsByMonth?.year
-                        ? `(${dashboard.paymentsByMonth.year})`
-                        : ""
-                    }`}
-                    loading={dashboard.isLoading.paymentsByMonth}
-                  >
-                    {dashboard.paymentsByMonth?.series &&
-                    dashboard.paymentsByMonth.series.some(
-                      (s) => s.air > 0 || s.sea > 0
-                    ) ? (
-                      <Column
-                        data={dashboard.paymentsByMonth.series.flatMap(
-                          (item) => [
-                            {
-                              month: item.month,
-                              type: "AIR",
-                              amount: item.air,
-                            },
-                            {
-                              month: item.month,
-                              type: "SEA",
-                              amount: item.sea,
-                            },
-                          ]
-                        )}
-                        xField="month"
-                        yField="amount"
-                        seriesField="type"
-                        isGroup={true}
-                        dodgePadding={4}
-                        intervalPadding={20}
-                        color={["#5B8FF9", "#5AD8A6"]}
-                        columnStyle={{
-                          radius: [4, 4, 0, 0],
-                        }}
-                        xAxis={{
-                          label: {
-                            autoHide: false,
-                            autoRotate: false,
+          {/* Charts: Invoices by Month & Payments AIR vs SEA */}
+          {dashboard.hasFinanceAccess && dashboard.hasOperationsAccess && (
+            <Row gutter={[16, 16]}>
+              <Col xs={24} lg={12}>
+                <Card
+                  title={`Invoices by Month ${
+                    dashboard.invoicesByMonth?.year
+                      ? `(${dashboard.invoicesByMonth.year})`
+                      : ""
+                  }`}
+                  loading={dashboard.isLoading.invoicesByMonth}
+                >
+                  {dashboard.invoicesByMonth?.series &&
+                  dashboard.invoicesByMonth.series.some((s) => s.count > 0) ? (
+                    <Column
+                      data={dashboard.invoicesByMonth.series}
+                      xField="month"
+                      yField="count"
+                      label={{
+                        position: "top",
+                      }}
+                      xAxis={{
+                        label: {
+                          autoHide: false,
+                          autoRotate: false,
+                        },
+                      }}
+                      meta={{
+                        month: { alias: "Month" },
+                        count: { alias: "Invoices" },
+                      }}
+                    />
+                  ) : (
+                    <Empty description="No data available" />
+                  )}
+                </Card>
+              </Col>
+              <Col xs={24} lg={12}>
+                <Card
+                  title={`Payments: AIR vs SEA ${
+                    dashboard.paymentsByMonth?.year
+                      ? `(${dashboard.paymentsByMonth.year})`
+                      : ""
+                  }`}
+                  loading={dashboard.isLoading.paymentsByMonth}
+                >
+                  {dashboard.paymentsByMonth?.series &&
+                  dashboard.paymentsByMonth.series.some(
+                    (s) => s.air > 0 || s.sea > 0
+                  ) ? (
+                    <Column
+                      data={dashboard.paymentsByMonth.series.flatMap(
+                        (item) => [
+                          {
+                            month: item.month,
+                            type: "AIR",
+                            amount: item.air,
                           },
-                        }}
-                        yAxis={{
-                          label: {
-                            formatter: (v: string) => `$${v}`,
+                          {
+                            month: item.month,
+                            type: "SEA",
+                            amount: item.sea,
                           },
-                        }}
-                        tooltip={{
-                          formatter: (datum: any) => {
-                            return {
-                              name: datum.type,
-                              value: `$${datum.amount?.toFixed(2) ?? "0.00"}`,
-                            };
-                          },
-                        }}
-                        label={{
-                          position: "top",
-                          formatter: (datum: any) => {
-                            if (!datum || !datum.amount || datum.amount === 0)
-                              return "";
-                            return `$${datum.amount.toFixed(0)}`;
-                          },
-                        }}
-                        legend={{
-                          position: "top-right",
-                        }}
-                      />
-                    ) : (
-                      <Empty description="No data available" />
-                    )}
-                  </Card>
-                </Col>
-              )}
+                        ]
+                      )}
+                      xField="month"
+                      yField="amount"
+                      seriesField="type"
+                      isGroup={true}
+                      dodgePadding={4}
+                      intervalPadding={20}
+                      color={["#5B8FF9", "#5AD8A6"]}
+                      columnStyle={{
+                        radius: [4, 4, 0, 0],
+                      }}
+                      xAxis={{
+                        label: {
+                          autoHide: false,
+                          autoRotate: false,
+                        },
+                      }}
+                      yAxis={{
+                        label: {
+                          formatter: (v: string) => `$${v}`,
+                        },
+                      }}
+                      tooltip={{
+                        formatter: (datum: any) => {
+                          return {
+                            name: datum.type,
+                            value: `$${datum.amount?.toFixed(2) ?? "0.00"}`,
+                          };
+                        },
+                      }}
+                      label={{
+                        position: "top",
+                        formatter: (datum: any) => {
+                          if (!datum || !datum.amount || datum.amount === 0)
+                            return "";
+                          return `$${datum.amount.toFixed(0)}`;
+                        },
+                      }}
+                      legend={{
+                        position: "top-right",
+                      }}
+                    />
+                  ) : (
+                    <Empty description="No data available" />
+                  )}
+                </Card>
+              </Col>
             </Row>
           )}
 
