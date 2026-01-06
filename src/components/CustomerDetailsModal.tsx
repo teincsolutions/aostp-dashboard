@@ -253,7 +253,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       key: "displayAmount",
       render: (displayAmount: number, record: any) => {
         const sign = record.type === "invoice" ? "+" : "-";
-        return `${sign}$${displayAmount.toFixed(2)}`;
+        return `${sign}${record.currency}${displayAmount.toFixed(2)}`;
       },
     },
     {
