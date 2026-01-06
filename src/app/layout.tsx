@@ -10,8 +10,11 @@ export const metadata: Metadata = {
   title: "AOSTP Admin Dashboard",
   description: "AOSTP Logistics Management System Admin Dashboard",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/logo.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
     apple: "/logo.png",
   },
 };
