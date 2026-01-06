@@ -117,7 +117,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         }`;
 
         // Show amount in alternate currency
-        if (payment.currency === "USD") {
+        if (payment.currency === "GHS") {
           description += ` USD ${payment.amount.toFixed(2)}`;
         } else {
           description += ` GHS ${(payment.localAmount || 0).toFixed(2)}`;
@@ -253,7 +253,13 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
       key: "displayAmount",
       render: (displayAmount: number, record: any) => {
         const sign = record.type === "invoice" ? "+" : "-";
-        return `${sign}${record.currency}${displayAmount.toFixed(2)}`;
+        const currencySymbol =
+          record.currency === "USD"
+            ? "$"
+            : record.currency === "GHS"
+            ? "₵"
+            : "$";
+        return `${sign}${currencySymbol}${displayAmount.toFixed(2)}`;
       },
     },
     {
