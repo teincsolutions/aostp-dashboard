@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getInvoices,
+  getInvoice,
   getInvoicePdf,
   getInvoicesByCustomer,
   regenerateInvoicePdf,
@@ -37,6 +38,14 @@ export const useInvoices = (params?: {
   return useQuery({
     queryKey: ["invoices", params],
     queryFn: () => getInvoices(params),
+  });
+};
+
+export const useInvoice = (invoiceId: string) => {
+  return useQuery({
+    queryKey: ["invoice", invoiceId],
+    queryFn: () => getInvoice(invoiceId),
+    enabled: !!invoiceId,
   });
 };
 
