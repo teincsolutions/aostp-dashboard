@@ -96,11 +96,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         onSubmit={async (values, { setErrors, resetForm }) => {
           try {
             // remove empty strings for optional fields
-            Object.keys(values).forEach((key) => {
-              if (values[key as keyof CustomerFormikValues] === "") {
-                delete values[key as keyof CustomerFormikValues];
-              }
-            });
             await onSubmit(values);
             resetForm();
           } catch (error: any) {
