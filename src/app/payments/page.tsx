@@ -674,15 +674,21 @@ export default function PaymentsPage() {
                     title="Package"
                     dataIndex="package"
                     key="package"
-                    render={(_package: Package) => (
+                    render={(_package: Package, record: Invoice) => (
                       <div>
+                        {record.packingList?.name && (
+                          <Text strong style={{ fontSize: "12px", display: "block" }}>
+                            {record.packingList.name}
+                          </Text>
+                        )}
                         <Text type="secondary" style={{ fontSize: "12px" }}>
                           {_package?.trackingCode
                             ? _package.trackingCode
                             : "N/A"}
                         </Text>
-                        <Text type="secondary" style={{ fontSize: "12px" }}>
-                          {_package.pickupCode ? _package.pickupCode : "N/A"}
+                        <br />
+                        <Text type="secondary" style={{ fontSize: "11px" }}>
+                          {_package?.pickupCode ? _package.pickupCode : ""}
                         </Text>
                       </div>
                     )}
