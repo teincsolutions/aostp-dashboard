@@ -17,17 +17,71 @@ import {
   Col,
   Statistic,
   Tag,
+  Divider,
 } from "antd";
-import { apiService } from "@/services/api";
-import { Invoice } from "@/types/invoice";
+import {
+  DownloadOutlined,
+  PrinterOutlined,
+  FileTextOutlined,
+} from "@ant-design/icons";
+import { publicApiService } from "@/services/api";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 
 const { Title, Text } = Typography;
 
-interface PublicInvoice extends Invoice {
-  signedToken: string;
-  accessExpiresAt: string;
+// Types based on PUBLIC_INVOICE_API.md
+interface PublicCustomer {
+  customerCode: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  email: string;
+}
+
+interface PublicPackingList {
+  name: string;
+  eta: string;
+}
+
+interface PublicPackage {
+  trackingCode: string;
+  description: string;
+  weight: number;
+  cbm: number;
+  shippingMode: "AIR" | "SEA";
+  quantity: number;
+}
+
+interface PublicPayment {
+  id: string;
+  paymentCode: string;
+  amount: number;
+  currency: string;
+  localAmount: number;
+  paymentMethod: string;
+  processedAt: string;
+}
+
+type InvoiceStatus = "UNPAID" | "PARTIAL" | "PAID" | "OVERDUE" | "CANCELLED";
+
+interface PublicInvoice {
+  id: string;
+  invoiceNumber: string;
+  totalAmount: number;
+  currency: string;
+  exchangeRate: number;
+  localAmount: number;
+  status: InvoiceStatus;
+  dueDate: string;
+  paidAmount: number;
+  balance: number;
+  notes: string;
+  createdAt: string;
+  customer: PublicCustomer;
+  packingList: PublicPackingList | null;
+  package: PublicPackage | null;
+  payments: PublicPayment[];
 }
 
 export default function PublicInvoiceView() {
@@ -41,14 +95,18 @@ export default function PublicInvoiceView() {
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
-        const response = await apiService.get<PublicInvoice>(
+        const response = await publicApiService.get<PublicInvoice>(
           `/public/invoices/${token}`
         );
         setInvoice(response.data);
       } catch (err: any) {
         console.error("Failed to load invoice:", err);
-        setError(err.response?.data?.message || "Failed to load invoice");
-        toast.error(err.response?.data?.message || "Unable to load invoice");
+        const errorMessage =
+          err.response?.status === 404
+            ? "Invoice not found or the link has expired"
+            : err.response?.data?.message || "Failed to load invoice";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -63,23 +121,29 @@ export default function PublicInvoiceView() {
     window.print();
   };
 
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
   const handleDownloadPDF = async () => {
+    setDownloadingPdf(true);
     try {
-      const response = await apiService.get(`/public/invoices/${token}/pdf`, {
-        responseType: "blob",
-      });
+      // API returns a signed URL for the PDF
+      const response = await publicApiService.get<{ url: string }>(
+        `/public/invoices/${token}/pdf`
+      );
 
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Invoice-${invoice?.invoiceNumber}.pdf`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-
-      toast.success("PDF downloaded successfully");
-    } catch (err) {
-      toast.error("Failed to download PDF");
+      if (response.data?.url) {
+        // Open the signed URL in a new tab to download/view the PDF
+        window.open(response.data.url, "_blank");
+        toast.success("PDF opened in new tab");
+      } else {
+        throw new Error("No PDF URL returned");
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to download PDF";
+      toast.error(errorMessage);
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -108,12 +172,30 @@ export default function PublicInvoiceView() {
     );
   }
 
-  const invoiceColumns = [
+  const getStatusColor = (status: InvoiceStatus) => {
+    const colors: Record<InvoiceStatus, string> = {
+      UNPAID: "red",
+      PARTIAL: "orange",
+      PAID: "green",
+      OVERDUE: "volcano",
+      CANCELLED: "default",
+    };
+    return colors[status] || "default";
+  };
+
+  const formatCurrency = (amount: number, currency: string = "USD") => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+    }).format(amount);
+  };
+
+  const packageColumns = [
     {
       title: "Package Details",
       dataIndex: "description",
       key: "description",
-      render: (_: string, record: any) => (
+      render: (_: string, record: PublicPackage) => (
         <div>
           <div className="font-medium">{record.description || "Package"}</div>
           <Text type="secondary" className="text-sm">
@@ -123,31 +205,32 @@ export default function PublicInvoiceView() {
       ),
     },
     {
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
+      align: "center" as const,
+    },
+    {
       title: "Weight (kg)",
       dataIndex: "weight",
       key: "weight",
       align: "right" as const,
+      render: (weight: number) => weight?.toFixed(2),
     },
     {
       title: "CBM",
       dataIndex: "cbm",
       key: "cbm",
       align: "right" as const,
+      render: (cbm: number) => cbm?.toFixed(3),
     },
     {
       title: "Shipping Mode",
       dataIndex: "shippingMode",
       key: "shippingMode",
-      render: (mode: string) => (
-        <Tag color={mode === "AIR" ? "blue" : "green"}>{mode}</Tag>
+      render: (mode: "AIR" | "SEA") => (
+        <Tag color={mode === "AIR" ? "blue" : "cyan"}>{mode}</Tag>
       ),
-    },
-    {
-      title: "Amount",
-      dataIndex: "amount",
-      key: "amount",
-      align: "right" as const,
-      render: (amount: number) => `$${amount?.toLocaleString()}`,
     },
   ];
 
@@ -156,25 +239,38 @@ export default function PublicInvoiceView() {
       title: "Payment Code",
       dataIndex: "paymentCode",
       key: "paymentCode",
+      render: (code: string) => <Text strong>{code}</Text>,
     },
     {
-      title: "Amount Paid",
+      title: "Amount (USD)",
       dataIndex: "amount",
       key: "amount",
       align: "right" as const,
-      render: (amount: number) => `$${amount?.toLocaleString()}`,
+      render: (amount: number, record: PublicPayment) =>
+        formatCurrency(amount, record.currency),
+    },
+    {
+      title: "Local Amount",
+      dataIndex: "localAmount",
+      key: "localAmount",
+      align: "right" as const,
+      render: (amount: number) =>
+        amount ? `GHS ${amount.toLocaleString()}` : "-",
     },
     {
       title: "Payment Method",
       dataIndex: "paymentMethod",
       key: "paymentMethod",
-      render: (method: string) => method?.replace("_", " "),
+      render: (method: string) => (
+        <Tag color="blue">{method?.replace(/_/g, " ")}</Tag>
+      ),
     },
     {
-      title: "Payment Date",
+      title: "Date",
       dataIndex: "processedAt",
       key: "processedAt",
-      render: (date: string) => dayjs(date).format("YYYY-MM-DD HH:mm"),
+      render: (date: string) =>
+        date ? dayjs(date).format("MMM DD, YYYY HH:mm") : "-",
     },
   ];
 
@@ -183,90 +279,136 @@ export default function PublicInvoiceView() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <Card className="border-t-4 border-t-blue-500">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <Title level={2} className="!mb-2">
-                Invoice #{invoice.invoiceNumber}
-              </Title>
-              <Text type="secondary">
-                Invoice Date: {dayjs(invoice.createdAt).format("MMMM DD, YYYY")}
-              </Text>
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <FileTextOutlined className="text-3xl text-blue-500" />
+              <div>
+                <Title level={2} className="!mb-1">
+                  Invoice {invoice.invoiceNumber}
+                </Title>
+                <Text type="secondary">
+                  Issued on {dayjs(invoice.createdAt).format("MMMM DD, YYYY")}
+                </Text>
+              </div>
             </div>
-            <div className="text-right">
-              <Button type="primary" onClick={handlePrint} className="mb-2">
+            <div className="flex gap-2 print:hidden">
+              <Button icon={<PrinterOutlined />} onClick={handlePrint}>
                 Print
               </Button>
-              <br />
-              <Button onClick={handleDownloadPDF}>Download PDF</Button>
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={handleDownloadPDF}
+                loading={downloadingPdf}
+              >
+                Download PDF
+              </Button>
             </div>
           </div>
 
-          {/* Invoice Status */}
-          <Tag
-            color={
-              invoice.status === "PAID"
-                ? "green"
-                : invoice.status === "PARTIALLY_PAID"
-                ? "orange"
-                : "red"
-            }
-            className="mb-4 text-lg px-3 py-1"
-          >
-            {invoice.status?.replace("_", " ")}
-          </Tag>
+          {/* Invoice Status & Due Date */}
+          <div className="flex flex-wrap items-center gap-4">
+            <Tag
+              color={getStatusColor(invoice.status)}
+              className="text-base px-4 py-1"
+            >
+              {invoice.status?.replace(/_/g, " ")}
+            </Tag>
+            <Text>
+              Due Date:{" "}
+              <Text strong>{dayjs(invoice.dueDate).format("MMMM DD, YYYY")}</Text>
+            </Text>
+          </div>
         </Card>
 
         {/* Customer & Invoice Details */}
-        <Row gutter={24}>
+        <Row gutter={[24, 24]}>
           <Col xs={24} lg={12}>
-            <Card title="Ship To">
+            <Card title="Customer Information" className="h-full">
               <Descriptions column={1} size="small">
-                <Descriptions.Item label="Customer">
+                <Descriptions.Item label="Customer Code">
+                  <Text code>{invoice.customer.customerCode}</Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Name">
                   {invoice.customer.firstName} {invoice.customer.lastName || ""}
                 </Descriptions.Item>
                 <Descriptions.Item label="Email">
-                  {invoice.customer.email}
+                  {invoice.customer.email || "-"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Phone">
-                  {invoice.customer.phoneNumber}
+                  {invoice.customer.phoneNumber || "-"}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
           </Col>
           <Col xs={24} lg={12}>
-            <Card title="Invoice Details">
+            <Card title="Invoice Details" className="h-full">
               <Descriptions column={1} size="small">
                 <Descriptions.Item label="Invoice Number">
-                  <strong>{invoice.invoiceNumber}</strong>
+                  <Text strong>{invoice.invoiceNumber}</Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Invoice Date">
                   {dayjs(invoice.createdAt).format("MMMM DD, YYYY")}
                 </Descriptions.Item>
                 <Descriptions.Item label="Due Date">
-                  {dayjs(invoice.dueDate).format("MMMM DD, YYYY")}
+                  <Text
+                    type={
+                      dayjs(invoice.dueDate).isBefore(dayjs()) &&
+                      invoice.status !== "PAID"
+                        ? "danger"
+                        : undefined
+                    }
+                  >
+                    {dayjs(invoice.dueDate).format("MMMM DD, YYYY")}
+                  </Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Currency">
                   {invoice.currency}
                 </Descriptions.Item>
+                {invoice.exchangeRate && (
+                  <Descriptions.Item label="Exchange Rate">
+                    1 USD = {invoice.exchangeRate} GHS
+                  </Descriptions.Item>
+                )}
+                {invoice.packingList && (
+                  <Descriptions.Item label="Packing List">
+                    {invoice.packingList.name}
+                    {invoice.packingList.eta && (
+                      <Text type="secondary" className="ml-2">
+                        (ETA: {dayjs(invoice.packingList.eta).format("MMM DD, YYYY")})
+                      </Text>
+                    )}
+                  </Descriptions.Item>
+                )}
               </Descriptions>
             </Card>
           </Col>
         </Row>
 
         {/* Financial Summary */}
-        <Card title="Financial Summary">
-          <Row gutter={16}>
+        <Card title="Amount Summary">
+          <Row gutter={[16, 16]}>
             <Col xs={12} sm={6}>
               <Statistic
-                title="Total Amount"
+                title="Total Amount (USD)"
                 value={invoice.totalAmount}
                 prefix="$"
                 precision={2}
               />
             </Col>
+            {invoice.localAmount > 0 && (
+              <Col xs={12} sm={6}>
+                <Statistic
+                  title="Local Amount (GHS)"
+                  value={invoice.localAmount}
+                  prefix="GHS "
+                  precision={2}
+                />
+              </Col>
+            )}
             <Col xs={12} sm={6}>
               <Statistic
-                title="Total Paid"
+                title="Amount Paid"
                 value={invoice.paidAmount || 0}
                 prefix="$"
                 precision={2}
@@ -284,32 +426,37 @@ export default function PublicInvoiceView() {
                 }}
               />
             </Col>
-            <Col xs={12} sm={6}>
-              <Statistic
-                title="Package Status"
-                value={invoice.package ? "Linked" : "None"}
-              />
-            </Col>
           </Row>
+
+          {invoice.balance > 0 && (
+            <>
+              <Divider />
+              <div className="text-center">
+                <Text type="secondary">
+                  Please make payment to complete this invoice
+                </Text>
+              </div>
+            </>
+          )}
         </Card>
 
         {/* Package Details */}
         <Card title="Package Details">
           {invoice.package ? (
             <Table
-              columns={invoiceColumns}
+              columns={packageColumns}
               dataSource={[invoice.package]}
-              rowKey="id"
+              rowKey="trackingCode"
               pagination={false}
               size="small"
+              scroll={{ x: 600 }}
             />
           ) : (
             <Empty description="No package linked to this invoice" />
           )}
         </Card>
 
-        {/* Payment History - Comment out until backend provides payment data */}
-        {/*
+        {/* Payment History */}
         {invoice.payments && invoice.payments.length > 0 && (
           <Card title="Payment History">
             <Table
@@ -318,23 +465,31 @@ export default function PublicInvoiceView() {
               rowKey="id"
               pagination={false}
               size="small"
-              locale={{ emptyText: <Empty description="No payments found" /> }}
+              scroll={{ x: 600 }}
             />
           </Card>
         )}
-        */}
 
         {/* Footer */}
-        <Card className="bg-gray-50">
-          <div className="text-center">
+        <Card className="bg-gray-50 print:bg-white">
+          <div className="text-center space-y-2">
             <Text type="secondary">
-              This invoice was generated on behalf of AOSTP Logistics Management
-              System
+              This invoice was generated by AOSTP Logistics Management System
             </Text>
             <br />
             <Text type="secondary">
-              If you have any questions, please contact our support team.
+              For questions or support, please contact our customer service team.
             </Text>
+            <div className="mt-4 print:hidden">
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={handleDownloadPDF}
+                loading={downloadingPdf}
+              >
+                Download Invoice PDF
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
