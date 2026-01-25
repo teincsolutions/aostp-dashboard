@@ -87,6 +87,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     "trackingCode",
     "customer",
     "description",
+    "quantity",
     "weightOrCbm",
     "destinationCity",
     "shippingRate",
@@ -230,6 +231,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     { label: "Tracking Code", value: "trackingCode" },
     { label: "Customer", value: "customer" },
     { label: "Description", value: "description" },
+    { label: "Quantity", value: "quantity" },
     {
       label: shippingMode === ShippingMode.AIR ? "Weight (kg)" : "CBM",
       value: "weightOrCbm",
@@ -274,6 +276,9 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
             break;
           case "description":
             row["Description"] = pkg.description || "N/A";
+            break;
+          case "quantity":
+            row["Quantity"] = pkg.quantity || 1;
             break;
           case "weightOrCbm":
             const isWeight = shippingMode === ShippingMode.AIR;
