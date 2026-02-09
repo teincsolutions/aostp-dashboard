@@ -52,19 +52,47 @@ export const handleError = (err: any) => {
     typeof err === "object" && err !== null && "response" in err
       ? (err as ErrorResponse).response
       : undefined;
+
+  const errors = response?.data?.errors;
+  const message = response?.data?.message;
+
+  // Translate known server errors into user-friendly messages
+  const userMessage = getUserFriendlyMessage(message);
+
   if (
-    response?.data?.errors &&
-    Array.isArray(response.data.errors) &&
-    !response.data.errors[0].includes("Bad Request")
+    Array.isArray(errors) &&
+    errors.length > 0 &&
+    !errors[0]?.includes("Bad Request")
   ) {
-    response.data.errors.forEach((e: string) => toast.error(e));
-    if (response?.data?.message) {
-      toast.error(response.data.message);
+    errors.forEach((e: string) => toast.error(e));
+    if (userMessage) {
+      toast.error(userMessage);
     }
-    // Keep modal open for correction
-  } else if (response?.data?.message) {
-    toast.error(response.data.message);
+  } else if (userMessage) {
+    toast.error(userMessage);
   } else {
     toast.error("Failed to process the request. Please try again.");
   }
 };
+
+/**
+ * Maps raw server error messages to user-friendly descriptions.
+ */
+function getUserFriendlyMessage(message?: string): string | undefined {
+  if (!message) return undefined;
+
+  // Prisma unique constraint errors
+  if (message.includes("Unique constraint failed")) {
+    if (message.includes("paymentCode")) {
+      return "A payment with this code already exists. Please try again.";
+    }
+    return "A record with this value already exists. Please try again.";
+  }
+
+  // Strip raw Prisma invocation details from messages shown to users
+  if (message.includes("prisma.") && message.includes("invocation")) {
+    return "A database error occurred. Please try again or contact support.";
+  }
+
+  return message;
+}
