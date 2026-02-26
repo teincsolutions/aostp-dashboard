@@ -779,3 +779,90 @@ All error responses follow the NestJS standard format with `statusCode`, `messag
 - If any package fails validation, the entire transaction is rolled back (all-or-nothing)
 - Each package gets its own unique pickup ID and notification
 - **Tracking codes are optional** - if omitted, all packages from the specified invoices will be picked up
+
+---
+
+## Pickup Report Endpoint
+
+### Get Pickup Report (Paginated)
+
+Retrieve a paginated pickup report with delivery records including customer, invoice, and package details.
+
+**Endpoint:** `GET /reports/pickups`
+
+**Authorization:** `SUPER_ADMIN`, `FINANCE_MANAGER`, or `OPERATIONS_CLERK` role required
+
+#### Query Parameters
+
+All parameters are optional and can be combined for advanced filtering.
+
+| Parameter       | Type   | Required | Description                                       |
+| --------------- | ------ | -------- | ------------------------------------------------- |
+| `page`          | number | No       | Page number (default: 1)                          |
+| `limit`         | number | No       | Items per page (default: 20, max: 100)            |
+| `sortBy`        | string | No       | Field to sort by (default: releaseDate)           |
+| `sortOrder`     | string | No       | Sort order: `asc` or `desc` (default: desc)       |
+| `fromDate`      | string | No       | Filter by start date (ISO 8601 format)            |
+| `toDate`        | string | No       | Filter by end date (ISO 8601 format)              |
+| `customerId`    | string | No       | Filter by customer ID (UUID)                      |
+| `warehouseId`   | string | No       | Filter by warehouse ID (UUID)                     |
+| `invoiceId`     | string | No       | Filter by invoice ID (UUID)                       |
+| `packingListId` | string | No       | Filter by packing list ID (UUID)                  |
+| `trackingCode`  | string | No       | Filter by tracking code (partial match)           |
+| `deliveryId`    | string | No       | Filter by delivery ID (partial match)             |
+| `receiverName`  | string | No       | Filter by receiver name (partial match)           |
+
+#### Example Requests
+
+```bash
+# Get first page of pickups
+GET /api/reports/pickups?page=1&limit=20
+
+# Filter by customer
+GET /api/reports/pickups?customerId=uuid-customer-123
+
+# Filter by date range
+GET /api/reports/pickups?fromDate=2025-01-01T00:00:00Z&toDate=2025-12-31T23:59:59Z
+
+# Filter by warehouse
+GET /api/reports/pickups?warehouseId=uuid-warehouse-456
+
+# Filter by tracking code (partial match)
+GET /api/reports/pickups?trackingCode=TR-2025
+
+# Multiple filters combined
+GET /api/reports/pickups?customerId=uuid-customer-123&fromDate=2025-12-01T00:00:00Z&warehouseId=uuid-warehouse-456&page=1&limit=50
+```
+
+#### Success Response (200)
+
+```json
+{
+  "pickups": [
+    {
+      "customerCode": "JOH12567",
+      "customerName": "John Doe",
+      "invoiceNumber": "INV-2025-001",
+      "pickupCode": "PKP-2025-001",
+      "pickupDate": "2025-12-04T10:30:00.000Z",
+      "quantity": 5,
+      "warehouse": "China Main Warehouse",
+      "status": "RELEASED",
+      "trackingCode": "TR-2025-001",
+      "description": "Electronics",
+      "deliveryId": "DEL001-2025001",
+      "receiverName": "Jane Doe",
+      "notes": "Picked up at front gate"
+    }
+  ],
+  "totalCount": 156,
+  "meta": {
+    "total": 156,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 8,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  }
+}
+```

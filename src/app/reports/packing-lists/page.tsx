@@ -138,7 +138,7 @@ export default function PackingListsReportPage() {
           <Progress
             percent={record.invoiceStats.paidPercentage}
             success={{ percent: record.invoiceStats.paidPercentage }}
-            format={(percent) => `${percent}% Paid`}
+            format={(percent) => `${percent?.toFixed(0)}% Paid`}
           />
           <div style={{ fontSize: "12px", marginTop: 4 }}>
             {record.invoiceStats.paid}/{record.invoiceStats.total} invoices
