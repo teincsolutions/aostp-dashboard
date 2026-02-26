@@ -673,8 +673,20 @@ function RecentActivitySection({ dashboard }: { dashboard: any }) {
     {
       title: "Description",
       dataIndex: "description",
-      width: 200,
+      width: 300,
       key: "description",
+      render: (text) => (
+        <Text
+          style={{
+            maxWidth: "100%",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {text}
+        </Text>
+      ),
     },
     {
       title: "Quantity",
