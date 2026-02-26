@@ -108,7 +108,6 @@ export default function PaymentsPage() {
     "paymentCode",
     "customerName",
     "amount",
-    "currency",
     "processedAt",
     "paymentMethod",
   ]);
@@ -352,7 +351,6 @@ export default function PaymentsPage() {
     { label: "Payment Code", value: "paymentCode" },
     { label: "Customer Name", value: "customerName" },
     { label: "Amount", value: "amount" },
-    { label: "Currency", value: "currency" },
     { label: "Payment Method", value: "paymentMethod" },
     { label: "Processed At", value: "processedAt" },
     { label: "Reference Number", value: "referenceNumber" },
@@ -385,10 +383,7 @@ export default function PaymentsPage() {
             }`;
             break;
           case "amount":
-            row["Amount"] = payment.amount.toFixed(2);
-            break;
-          case "currency":
-            row["Currency"] = payment.currency;
+            row["Amount"] = `${payment.currency} ${Number(payment.amount).toFixed(2)}`;
             break;
           case "paymentMethod":
             row["Payment Method"] = payment.paymentMethod;
