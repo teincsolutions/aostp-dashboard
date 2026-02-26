@@ -81,16 +81,16 @@ export default function TrackingDetailsPage() {
     const fetchPackage = async () => {
       try {
         const response = await publicApiService.get<Package>(
-          `/packages/tracking/${trackingCode}`
+          `/packages/tracking/${trackingCode}`,
         );
         setPackageData(response.data);
       } catch (err: any) {
         console.error("Failed to load package:", err);
         setError(
-          err.response?.data?.message || "Failed to load package details"
+          err.response?.data?.message || "Failed to load package details",
         );
         toast.error(
-          err.response?.data?.message || "Unable to load package details"
+          err.response?.data?.message || "Unable to load package details",
         );
       } finally {
         setLoading(false);
@@ -223,7 +223,9 @@ export default function TrackingDetailsPage() {
                   copyable={{ text: packageData.pickupCode }}
                   className="!mb-0"
                 >
-                  <Text strong>Pickup Code: {packageData.pickupCode}</Text>
+                  <Text strong>
+                    Pickup / Shipping Mark: {packageData.pickupCode}
+                  </Text>
                 </Paragraph>
                 <Badge
                   color={statusColors[packageData.status] || "default"}
@@ -290,7 +292,7 @@ export default function TrackingDetailsPage() {
                   {maskPhone(
                     packageData.customer?.phoneNumber ||
                       packageData.customer?.alternatePhone ||
-                      ""
+                      "",
                   )}
                 </Descriptions.Item>
               </Descriptions>
@@ -346,7 +348,7 @@ export default function TrackingDetailsPage() {
             <Text type="secondary">
               Package data last updated:{" "}
               {dayjs(packageData.updatedAt || packageData.createdAt).format(
-                "MMMM DD, YYYY HH:mm"
+                "MMMM DD, YYYY HH:mm",
               )}
             </Text>
             <br />

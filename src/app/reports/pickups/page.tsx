@@ -79,7 +79,7 @@ export default function PickupsReportPage() {
       width: 130,
     },
     {
-      title: "Pickup Code",
+      title: "Pickup / Shipping Mark",
       dataIndex: "pickupCode",
       key: "pickupCode",
       width: 130,

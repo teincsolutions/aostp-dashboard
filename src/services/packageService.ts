@@ -13,7 +13,7 @@ import {
 } from "@/types/package";
 
 export const createPackage = async (
-  payload: CreatePackagePayload
+  payload: CreatePackagePayload,
 ): Promise<Package> => {
   const res = await apiService.post<Package>("/packages", payload);
   return res.data;
@@ -21,7 +21,7 @@ export const createPackage = async (
 
 export const uploadPackagePhoto = async (
   packageId: string,
-  file: File
+  file: File,
 ): Promise<PackagePhoto> => {
   const formData = new FormData();
   formData.append("file", file);
@@ -34,7 +34,7 @@ export const uploadPackagePhoto = async (
 export const uploadPackageFiles = async (
   files: File[],
   folder?: "pictures" | "videos",
-  bucketType?: "packages" | "users" | "logs"
+  bucketType?: "packages" | "users" | "logs",
 ): Promise<{ key: string; url: string; bucket: string; size: number }[]> => {
   const formData = new FormData();
   files.forEach((file, index) => {
@@ -55,6 +55,7 @@ export const getRecentIntakes = async (params: {
   limit?: number;
   sortBy?: string;
   sortOrder?: string;
+  customerId?: string;
 }): Promise<{ data: Package[]; total: number }> => {
   const res = await apiService.get("/packages", {
     params: {
@@ -72,7 +73,7 @@ export const getPackage = async (id: string): Promise<Package> => {
 
 export const updatePackageIntake = async (
   id: string,
-  payload: UpdatePackagePayload
+  payload: UpdatePackagePayload,
 ): Promise<Package> => {
   const res = await apiService.patch(`/packages/${id}`, payload);
   return res.data;
@@ -88,7 +89,7 @@ export const generateReceipt = async (packageId: string): Promise<Receipt> => {
 };
 
 export const getPackageReceipt = async (
-  packageId: string
+  packageId: string,
 ): Promise<{ url: string }> => {
   const res = await apiService.get(`/packages/${packageId}/receipt`);
   return res.data;
@@ -117,7 +118,7 @@ export const getPackages = async (params?: {
 };
 
 export const getPackageDetails = async (
-  packageId: string
+  packageId: string,
 ): Promise<Package> => {
   const res = await apiService.get(`/packages/${packageId}`);
   return res.data;
@@ -125,7 +126,7 @@ export const getPackageDetails = async (
 
 export const updatePackage = async (
   packageId: string,
-  payload: Partial<Package>
+  payload: Partial<Package>,
 ): Promise<Package> => {
   const res = await apiService.patch(`/packages/${packageId}`, payload);
   return res.data;
@@ -173,7 +174,7 @@ export const getPackageItem = async (itemId: string): Promise<PackageItem> => {
 
 export const updatePackageItem = async (
   itemId: string,
-  payload: Partial<PackageItem>
+  payload: Partial<PackageItem>,
 ): Promise<PackageItem> => {
   const res = await apiService.patch(`/package-items/${itemId}`, payload);
   return res.data;
@@ -183,7 +184,7 @@ export const updatePackageItem = async (
 
 export const updatePackageStatus = async (
   id: string,
-  status: string
+  status: string,
 ): Promise<Package> => {
   const res = await apiService.patch(`/packages/${id}/status`, null, {
     params: { status },

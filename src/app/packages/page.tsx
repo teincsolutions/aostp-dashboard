@@ -105,13 +105,13 @@ export default function PackagesPage() {
     useState(false);
   const [isTransferModalVisible, setIsTransferModalVisible] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
-    null
+    null,
   );
   const [selectedPackage, setSelectedPackage] = useState<DisplayPackage | null>(
-    null
+    null,
   );
   const [packageToDelete, setPackageToDelete] = useState<DisplayPackage | null>(
-    null
+    null,
   );
 
   // Fetch package details when viewing
@@ -305,7 +305,7 @@ export default function PackagesPage() {
     const csvContent = [
       headers.join(","),
       ...data.map((row) =>
-        headers.map((header) => `"${row[header] || ""}"`).join(",")
+        headers.map((header) => `"${row[header] || ""}"`).join(","),
       ),
     ].join("\n");
 
@@ -326,7 +326,7 @@ export default function PackagesPage() {
     const csvContent = [
       headers.join(","),
       ...data.map((row) =>
-        headers.map((header) => `"${row[header] || ""}"`).join(",")
+        headers.map((header) => `"${row[header] || ""}"`).join(","),
       ),
     ].join("\n");
 
@@ -370,7 +370,7 @@ export default function PackagesPage() {
                   (row) =>
                     `<tr>${headers
                       .map((h) => `<td>${row[h] || ""}</td>`)
-                      .join("")}</tr>`
+                      .join("")}</tr>`,
                 )
                 .join("")}
             </tbody>
@@ -599,7 +599,7 @@ export default function PackagesPage() {
       },
     },
     {
-      title: "Pickup Code",
+      title: "Pickup / Shipping Mark",
       dataIndex: "pickupCode",
       key: "pickupCode",
       width: 120,
@@ -711,7 +711,7 @@ export default function PackagesPage() {
                   icon={<FileExcelOutlined />}
                   onClick={() =>
                     handleExportExcelAll(
-                      selectedRowKeys.length > 0 ? selectedRowKeys : null
+                      selectedRowKeys.length > 0 ? selectedRowKeys : null,
                     )
                   }
                 >
@@ -724,7 +724,7 @@ export default function PackagesPage() {
                   icon={<FilePdfOutlined />}
                   onClick={() =>
                     handleExportPdfAll(
-                      selectedRowKeys.length > 0 ? selectedRowKeys : null
+                      selectedRowKeys.length > 0 ? selectedRowKeys : null,
                     )
                   }
                 >
@@ -740,7 +740,7 @@ export default function PackagesPage() {
             <div className="flex flex-col">
               <label className="text-sm font-medium mb-1">Search</label>
               <Search
-                placeholder="Search Customer Name, Tracking Number, Pickup Code..."
+                placeholder="Search Customer Name, Tracking Number, Pickup / Shipping Mark..."
                 allowClear
                 onSearch={setSearch}
                 className="w-full"
@@ -995,8 +995,8 @@ export default function PackagesPage() {
                         packageDetails.paymentStatus === "PAID"
                           ? "green"
                           : packageDetails.paymentStatus === "PENDING"
-                          ? "orange"
-                          : "red"
+                            ? "orange"
+                            : "red"
                       }
                     >
                       {packageDetails.paymentStatus}
@@ -1008,7 +1008,7 @@ export default function PackagesPage() {
                   <Descriptions.Item label="Invoice Number">
                     {packageDetails.invoice?.invoiceNumber || "Not Generated"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Pickup Code">
+                  <Descriptions.Item label="Pickup / Shipping Mark">
                     {packageDetails.pickupCode || "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Days in Warehouse">
@@ -1185,7 +1185,7 @@ export default function PackagesPage() {
                   (pkg) =>
                     pkg.customer?.id === consCustomer &&
                     pkg.shippingMode === consMode &&
-                    pkg.status === PackageStatusPackages.RECEIVED
+                    pkg.status === PackageStatusPackages.RECEIVED,
                 )}
                 rowKey="id"
                 columns={[

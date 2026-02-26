@@ -147,7 +147,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
           url: photo.url,
           customKey: photo.key,
           status: "done",
-        })) as UploadFile[]
+        })) as UploadFile[],
       );
 
       const formValues = {
@@ -537,7 +537,10 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                       ))}
                     </Select>
                   </Form.Item>
-                  <Form.Item label="Pickup Code (Optional)" name="pickupCode">
+                  <Form.Item
+                    label="Pickup / Shipping Mark (Optional)"
+                    name="pickupCode"
+                  >
                     <Input placeholder="Enter pickup code" maxLength={20} />
                   </Form.Item>
                   <Form.Item label="Notes" name="notes">
@@ -560,7 +563,7 @@ export default function PackageEditPage({ params }: PackageEditPageProps) {
                     }}
                     onRemove={(file) => {
                       setPhotoList((prev) =>
-                        prev.filter((f) => f.uid !== file.uid)
+                        prev.filter((f) => f.uid !== file.uid),
                       );
                     }}
                   ></Upload>

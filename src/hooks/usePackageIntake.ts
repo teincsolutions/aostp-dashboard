@@ -21,7 +21,7 @@ export function useGetPackage(id: string) {
   });
 }
 
-export function usePackageIntake() {
+export function usePackageIntake(customerId?: string) {
   const queryClient = useQueryClient();
 
   // Recent intakes query
@@ -31,13 +31,14 @@ export function usePackageIntake() {
     error: recentIntakesError,
     refetch: refetchRecentIntakes,
   } = useQuery({
-    queryKey: ["recentIntakes"],
+    queryKey: ["recentIntakes", customerId],
     queryFn: () =>
       getRecentIntakes({
         page: 1,
         limit: 10,
         sortBy: "createdAt",
         sortOrder: "desc",
+        customerId: customerId || undefined,
       }),
     placeholderData: { data: [], total: 0 },
   });

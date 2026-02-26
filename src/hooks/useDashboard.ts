@@ -49,7 +49,7 @@ const ALLOWED_ROLES = {
 
 const hasAccess = (
   userRole: UserRole | undefined,
-  allowedRoles: string[]
+  allowedRoles: string[],
 ): boolean => {
   if (!userRole) return false;
   return allowedRoles.includes(userRole);
@@ -65,7 +65,7 @@ const hasAccess = (
  */
 export function useDashboardKPIs(
   params?: DashboardKPIsParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<DashboardKPIsResponse>({
     queryKey: ["dashboard-kpis", params],
@@ -84,7 +84,7 @@ export function useDashboardKPIs(
  */
 export function useInvoicesByMonth(
   params?: DashboardGraphParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<InvoicesByMonthResponse>({
     queryKey: ["dashboard-invoices-by-month", params],
@@ -99,7 +99,7 @@ export function useInvoicesByMonth(
  */
 export function usePaymentsByMonth(
   params?: DashboardGraphParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<PaymentsByMonthResponse>({
     queryKey: ["dashboard-payments-by-month", params],
@@ -114,7 +114,7 @@ export function usePaymentsByMonth(
  */
 export function useIntakesByMonth(
   params?: DashboardGraphParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<IntakesByMonthResponse>({
     queryKey: ["dashboard-intakes-by-month", params],
@@ -129,7 +129,7 @@ export function useIntakesByMonth(
  */
 export function usePickupsByMonth(
   params?: DashboardGraphParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<PickupsByMonthResponse>({
     queryKey: ["dashboard-pickups-by-month", params],
@@ -144,7 +144,7 @@ export function usePickupsByMonth(
  */
 export function usePaymentMethods(
   params?: DashboardGraphParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<PaymentMethodsResponse>({
     queryKey: ["dashboard-payment-methods", params],
@@ -159,7 +159,7 @@ export function usePaymentMethods(
  */
 export function useShippingModes(
   params?: DashboardGraphParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<ShippingModesResponse>({
     queryKey: ["dashboard-shipping-modes", params],
@@ -174,7 +174,7 @@ export function useShippingModes(
  */
 export function useTopCustomersByAmount(
   params?: DashboardGraphParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<TopCustomersByAmountResponse>({
     queryKey: ["dashboard-top-customers-by-amount", params],
@@ -189,7 +189,7 @@ export function useTopCustomersByAmount(
  */
 export function useTopCustomersShipping(
   params?: DashboardGraphParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<TopCustomersShippingResponse>({
     queryKey: ["dashboard-top-customers-shipping", params],
@@ -208,7 +208,7 @@ export function useTopCustomersShipping(
  */
 export function useRecentIntakes(
   params?: RecentItemsParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<RecentIntakesResponse>({
     queryKey: ["dashboard-recent-intakes", params],
@@ -223,7 +223,7 @@ export function useRecentIntakes(
  */
 export function useRecentInvoicesPayments(
   params?: RecentItemsParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<RecentInvoicesPaymentsResponse>({
     queryKey: ["dashboard-recent-invoices-payments", params],
@@ -238,7 +238,7 @@ export function useRecentInvoicesPayments(
  */
 export function useRecentAgedPackages(
   params?: RecentItemsParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<RecentAgedPackagesResponse>({
     queryKey: ["dashboard-recent-aged-packages", params],
@@ -253,7 +253,7 @@ export function useRecentAgedPackages(
  */
 export function useRecentPackingLists(
   params?: RecentItemsParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<RecentPackingListsResponse>({
     queryKey: ["dashboard-recent-packing-lists", params],
@@ -268,7 +268,7 @@ export function useRecentPackingLists(
  */
 export function useRecentPickups(
   params?: RecentItemsParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   return useQuery<RecentPickupsResponse>({
     queryKey: ["dashboard-recent-pickups", params],
@@ -287,7 +287,7 @@ export function useRecentPickups(
  */
 export function useDashboard(
   params?: DashboardGraphParams,
-  userRole?: UserRole
+  userRole?: UserRole,
 ) {
   // KPIs params - convert from DashboardGraphParams to DashboardKPIsParams
   const kpisParams: DashboardKPIsParams = useMemo(
@@ -295,7 +295,7 @@ export function useDashboard(
       dateFrom: params?.fromDate,
       dateTo: params?.toDate,
     }),
-    [params?.fromDate, params?.toDate]
+    [params?.fromDate, params?.toDate],
   );
 
   const kpis = useDashboardKPIs(kpisParams, userRole);
@@ -310,7 +310,7 @@ export function useDashboard(
 
   const recentIntakesParams: RecentItemsParams = useMemo(
     () => ({ limit: 20, warehouseId: params?.warehouseId }),
-    [params?.warehouseId]
+    [params?.warehouseId],
   );
 
   const recentAgedPackagesParams: RecentItemsParams = useMemo(
@@ -318,24 +318,22 @@ export function useDashboard(
       limit: 20,
       warehouseId: params?.warehouseId,
       minDays: 45, // Default to packages aged 45+ days
-      fromDate: params?.fromDate,
-      toDate: params?.toDate,
     }),
-    [params?.warehouseId, params?.fromDate, params?.toDate]
+    [params?.warehouseId],
   );
 
   const recentIntakes = useRecentIntakes(recentIntakesParams, userRole);
   const recentInvoicesPayments = useRecentInvoicesPayments(
     recentIntakesParams,
-    userRole
+    userRole,
   );
   const recentAgedPackages = useRecentAgedPackages(
     recentAgedPackagesParams,
-    userRole
+    userRole,
   );
   const recentPackingLists = useRecentPackingLists(
     recentIntakesParams,
-    userRole
+    userRole,
   );
   const recentPickups = useRecentPickups(recentIntakesParams, userRole);
 

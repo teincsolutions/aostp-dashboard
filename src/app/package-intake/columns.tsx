@@ -34,11 +34,18 @@ export const packageIntakeColumns: ColumnsType<
         : "N/A",
   },
   {
+    title: "Packlist",
+    key: "packingList",
+    width: 150,
+    ellipsis: true,
+    render: (_, record) => record.packingList?.name || "N/A",
+  },
+  {
     title: "Description",
     dataIndex: "description",
     key: "description",
     ellipsis: true,
-    width: 200,
+    width: 300,
   },
   {
     title: "Quantity",
@@ -78,7 +85,7 @@ export const packageIntakeColumns: ColumnsType<
     },
   },
   {
-    title: "Pickup Code",
+    title: "Pickup / Shipping Mark",
     dataIndex: "pickupCode",
     key: "pickupCode",
     width: 120,

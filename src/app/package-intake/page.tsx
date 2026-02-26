@@ -611,7 +611,10 @@ export default function PackageIntakePage() {
                     </div>
                   )}
 
-                  <Form.Item label="Pickup Code (Optional)" name="pickupCode">
+                  <Form.Item
+                    label="Pickup / Shipping Mark (Optional)"
+                    name="pickupCode"
+                  >
                     <Input placeholder="Enter pickup code" maxLength={20} />
                   </Form.Item>
 

@@ -115,7 +115,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
   const selectedPackages = useMemo(() => {
     return (
       paginatedUnassignedPackages?.filter((pkg) =>
-        selectedPackageIds.includes(pkg.id)
+        selectedPackageIds.includes(pkg.id),
       ) || []
     );
   }, [paginatedUnassignedPackages, selectedPackageIds]);
@@ -217,11 +217,11 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     try {
       await unfinalizePackingList.mutateAsync(packingListId);
       toast.success(
-        "Packing list unfinalized successfully. You can now add more packages."
+        "Packing list unfinalized successfully. You can now add more packages.",
       );
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || "Failed to unfinalize packing list"
+        error.response?.data?.message || "Failed to unfinalize packing list",
       );
     }
   };
@@ -243,7 +243,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     { label: "Mode", value: "shippingMode" },
     { label: "Status", value: "status" },
     { label: "Payment Status", value: "paymentStatus" },
-    { label: "Pickup Code", value: "pickupCode" },
+    { label: "Pickup / Shipping Mark", value: "pickupCode" },
   ];
 
   // Export functions
@@ -287,12 +287,12 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                 ? pkg.weight.toFixed(2)
                 : "0.00"
               : pkg.cbm
-              ? pkg.cbm.toFixed(3)
-              : "0.000";
+                ? pkg.cbm.toFixed(3)
+                : "0.000";
             break;
           case "destinationCity":
             const city = cities?.data?.find(
-              (c) => c.id === pkg.destinationCityId
+              (c) => c.id === pkg.destinationCityId,
             );
             row["Destination City"] = city ? city.name : "N/A";
             break;
@@ -319,7 +319,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
             row["Payment Status"] = pkg.paymentStatus || "N/A";
             break;
           case "pickupCode":
-            row["Pickup Code"] = pkg.pickupCode || "N/A";
+            row["Pickup / Shipping Mark"] = pkg.pickupCode || "N/A";
             break;
         }
       });
@@ -338,7 +338,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
 
     setIsExportModalVisible(false);
     toast.success(
-      `Assigned packages exported as ${format.toUpperCase()} successfully`
+      `Assigned packages exported as ${format.toUpperCase()} successfully`,
     );
   };
 
@@ -349,7 +349,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     const csvContent = [
       headers.join(","),
       ...data.map((row) =>
-        headers.map((header) => `"${row[header] || ""}"`).join(",")
+        headers.map((header) => `"${row[header] || ""}"`).join(","),
       ),
     ].join("\n");
 
@@ -369,7 +369,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     const csvContent = [
       headers.join(","),
       ...data.map((row) =>
-        headers.map((header) => `"${row[header] || ""}"`).join(",")
+        headers.map((header) => `"${row[header] || ""}"`).join(","),
       ),
     ].join("\n");
 
@@ -419,7 +419,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                   (row) =>
                     `<tr>${headers
                       .map((h) => `<td>${row[h] || ""}</td>`)
-                      .join("")}</tr>`
+                      .join("")}</tr>`,
                 )
                 .join("")}
             </tbody>
@@ -484,7 +484,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               value={tempPackage?.quantity ?? quantity ?? 1}
               onChange={(v) =>
                 setTempPackage((prev) =>
-                  prev ? { ...prev, quantity: v ?? 1 } : null
+                  prev ? { ...prev, quantity: v ?? 1 } : null,
                 )
               }
               min={1}
@@ -508,8 +508,8 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
             ? value.toFixed(2)
             : "0.00"
           : value
-          ? value.toFixed(3)
-          : "0.000";
+            ? value.toFixed(3)
+            : "0.000";
         const tempValue = isWeight ? tempPackage?.weight : tempPackage?.cbm;
 
         if (editingKey === record.id) {
@@ -518,7 +518,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               value={tempValue ?? value ?? 0}
               onChange={(v) =>
                 setTempPackage((prev) =>
-                  prev ? { ...prev, [isWeight ? "weight" : "cbm"]: v } : null
+                  prev ? { ...prev, [isWeight ? "weight" : "cbm"]: v } : null,
                 )
               }
               min={0}
@@ -547,7 +547,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               }
               onChange={(value) =>
                 setTempPackage((prev) =>
-                  prev ? { ...prev, destinationCityId: value } : null
+                  prev ? { ...prev, destinationCityId: value } : null,
                 )
               }
               allowClear
@@ -577,7 +577,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               value={tempPackage?.shippingRate ?? shippingRate ?? 0}
               onChange={(v) =>
                 setTempPackage((prev) =>
-                  prev ? { ...prev, shippingRate: v } : null
+                  prev ? { ...prev, shippingRate: v } : null,
                 )
               }
               min={0}
@@ -615,7 +615,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               }
               onChange={(value) =>
                 setTempPackage((prev) =>
-                  prev ? { ...prev, shippingCurrency: value } : null
+                  prev ? { ...prev, shippingCurrency: value } : null,
                 )
               }
               style={{ width: "100%" }}
@@ -672,7 +672,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       },
     },
     {
-      title: "Pickup Code",
+      title: "Pickup / Shipping Mark",
       dataIndex: "pickupCode",
       key: "pickupCode",
       width: 120,
@@ -683,11 +683,11 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               value={tempPackage?.pickupCode ?? pickupCode ?? ""}
               onChange={(e) =>
                 setTempPackage((prev) =>
-                  prev ? { ...prev, pickupCode: e.target.value } : null
+                  prev ? { ...prev, pickupCode: e.target.value } : null,
                 )
               }
               style={{ width: "100%" }}
-              placeholder="Pickup Code"
+              placeholder="Pickup / Shipping Mark"
             />
           );
         } else {
@@ -720,7 +720,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                         onError: () => {
                           // handle error if needed
                         },
-                      }
+                      },
                     );
                   }
                 }}
@@ -845,8 +845,8 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
             ? value.toFixed(2)
             : "0.00"
           : value
-          ? value.toFixed(3)
-          : "0.000";
+            ? value.toFixed(3)
+            : "0.000";
       },
     },
     {
@@ -942,8 +942,8 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
             ? value.toFixed(2)
             : "N/A"
           : value
-          ? value.toFixed(3)
-          : "N/A";
+            ? value.toFixed(3)
+            : "N/A";
       },
     },
     {
@@ -1051,7 +1051,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               allowClear
             />
             <Input
-              placeholder="Search by Pickup Code"
+              placeholder="Search by Pickup / Shipping Mark"
               value={assignedSearch.pickupCode}
               onChange={(e) =>
                 setAssignedSearch((prev) => ({
@@ -1164,7 +1164,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                 allowClear
               />
               <Input
-                placeholder="Search by Pickup Code"
+                placeholder="Search by Pickup / Shipping Mark"
                 value={availableSearch.pickupCode}
                 onChange={(e) =>
                   setAvailableSearch((prev) => ({
