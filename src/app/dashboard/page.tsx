@@ -202,7 +202,7 @@ export default function DashboardPage() {
                       <Text type="secondary">
                         GHS:{" "}
                         {dashboard.kpis?.paymentsTotals?.localAmount?.toFixed(
-                          2
+                          2,
                         ) ?? "0.00"}
                       </Text>
                     </Space>
@@ -308,23 +308,21 @@ export default function DashboardPage() {
                 >
                   {dashboard.paymentsByMonth?.series &&
                   dashboard.paymentsByMonth.series.some(
-                    (s) => s.air > 0 || s.sea > 0
+                    (s) => s.air > 0 || s.sea > 0,
                   ) ? (
                     <Column
-                      data={dashboard.paymentsByMonth.series.flatMap(
-                        (item) => [
-                          {
-                            month: item.month,
-                            type: "AIR",
-                            amount: item.air,
-                          },
-                          {
-                            month: item.month,
-                            type: "SEA",
-                            amount: item.sea,
-                          },
-                        ]
-                      )}
+                      data={dashboard.paymentsByMonth.series.flatMap((item) => [
+                        {
+                          month: item.month,
+                          type: "AIR",
+                          amount: item.air,
+                        },
+                        {
+                          month: item.month,
+                          type: "SEA",
+                          amount: item.sea,
+                        },
+                      ])}
                       xField="month"
                       yField="amount"
                       seriesField="type"
@@ -675,6 +673,7 @@ function RecentActivitySection({ dashboard }: { dashboard: any }) {
     {
       title: "Description",
       dataIndex: "description",
+      width: 200,
       key: "description",
     },
     {
@@ -764,8 +763,8 @@ function RecentActivitySection({ dashboard }: { dashboard: any }) {
           status === "PAID"
             ? "success"
             : status === "PARTIALLY_PAID"
-            ? "warning"
-            : "error";
+              ? "warning"
+              : "error";
         return <Tag color={color}>{status}</Tag>;
       },
     },
