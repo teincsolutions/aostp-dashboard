@@ -8,6 +8,7 @@ export interface ReportFilters {
   warehouseId?: string; // UUID
   shippingMode?: "SEA" | "AIR";
   customerId?: string; // UUID
+  processedById?: string; // UUID - filter by user who processed
 }
 
 // ===================================

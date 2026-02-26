@@ -228,7 +228,6 @@ export default function PackingListsPage() {
     { label: "Destination City", value: "destinationCity" },
     { label: "Container", value: "container" },
     { label: "Total Packages", value: "totalPackages" },
-    { label: "Quantity", value: "quantity" },
     { label: "Status", value: "status" },
     { label: "Created At", value: "createdAt" },
   ];
