@@ -37,7 +37,7 @@ export const getInvoicesByCustomer = async (
     limit?: number;
     sortBy?: string;
     sortOrder?: string;
-  }
+  },
 ): Promise<PaginatedResponse<Invoice>> => {
   const res = await apiService.get(`/invoices/customer/${customerId}`, {
     params,
@@ -46,14 +46,14 @@ export const getInvoicesByCustomer = async (
 };
 
 export const getInvoicePdf = async (
-  invoiceId: string
+  invoiceId: string,
 ): Promise<{ url: string }> => {
   const res = await apiService.get(`/invoices/${invoiceId}/download-pdf`);
   return res.data;
 };
 
 export const regenerateInvoicePdf = async (
-  invoiceId: string
+  invoiceId: string,
 ): Promise<{ message: string }> => {
   const res = await apiService.post(`/invoices/${invoiceId}/regenerate-pdf`);
   return res.data;
@@ -66,8 +66,12 @@ export const updateInvoice = async (
     paidAmount?: number;
     notes?: string;
     dueDate?: string;
-  }
+  },
 ): Promise<Invoice> => {
   const res = await apiService.patch(`/invoices/${invoiceId}`, data);
   return res.data;
+};
+
+export const deleteInvoice = async (invoiceId: string): Promise<void> => {
+  await apiService.delete(`/invoices/${invoiceId}`);
 };

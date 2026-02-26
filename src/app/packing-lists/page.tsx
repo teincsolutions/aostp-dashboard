@@ -89,6 +89,7 @@ export default function PackingListsPage() {
     "destinationCity",
     "container",
     "totalPackages",
+    "quantity",
     "status",
     "createdAt",
   ]);
@@ -214,7 +215,7 @@ export default function PackingListsPage() {
     } catch (error: any) {
       toast.error(
         `Failed to export packing list as ${format}`,
-        error.response.data.message
+        error.response.data.message,
       );
     }
   };
@@ -227,6 +228,7 @@ export default function PackingListsPage() {
     { label: "Destination City", value: "destinationCity" },
     { label: "Container", value: "container" },
     { label: "Total Packages", value: "totalPackages" },
+    { label: "Quantity", value: "quantity" },
     { label: "Status", value: "status" },
     { label: "Created At", value: "createdAt" },
   ];
@@ -266,6 +268,11 @@ export default function PackingListsPage() {
           case "totalPackages":
             row["Total Packages"] = pl.totalPackages || 0;
             break;
+          case "quantity":
+            row["Quantity"] =
+              pl.packages?.reduce((sum, pkg) => sum + (pkg.quantity || 0), 0) ||
+              0;
+            break;
           case "status":
             row["Status"] = pl.status.replace("_", " ");
             break;
@@ -297,7 +304,7 @@ export default function PackingListsPage() {
     const csvContent = [
       headers.join(","),
       ...data.map((row) =>
-        headers.map((header) => `"${row[header] || ""}"`).join(",")
+        headers.map((header) => `"${row[header] || ""}"`).join(","),
       ),
     ].join("\n");
 
@@ -317,7 +324,7 @@ export default function PackingListsPage() {
     const csvContent = [
       headers.join(","),
       ...data.map((row) =>
-        headers.map((header) => `"${row[header] || ""}"`).join(",")
+        headers.map((header) => `"${row[header] || ""}"`).join(","),
       ),
     ].join("\n");
 
@@ -359,7 +366,7 @@ export default function PackingListsPage() {
                   (row) =>
                     `<tr>${headers
                       .map((h) => `<td>${row[h] || ""}</td>`)
-                      .join("")}</tr>`
+                      .join("")}</tr>`,
                 )
                 .join("")}
             </tbody>
@@ -404,11 +411,11 @@ export default function PackingListsPage() {
         PackingListStatus.DRAFT,
         PackingListStatus.FINALIZED,
         PackingListStatus.POSTED,
-      ].includes(pl.status)
+      ].includes(pl.status),
     ).length || 0;
   const completedPackingLists =
     packingLists?.data?.filter(
-      (pl: PackingList) => pl.status === PackingListStatus.FINALIZED
+      (pl: PackingList) => pl.status === PackingListStatus.FINALIZED,
     ).length || 0;
   // Total packages = sum of all package quantities across all packing lists
   const totalPackages =
@@ -425,7 +432,7 @@ export default function PackingListsPage() {
     handleDeletePackingList,
     handleViewDetails,
     isDeleting,
-    handleManagePackages
+    handleManagePackages,
   );
 
   return (
@@ -719,7 +726,7 @@ export default function PackingListsPage() {
                   <Descriptions.Item label="Loading Date">
                     {packingListDetails.loadingDate
                       ? dayjs(packingListDetails.loadingDate).format(
-                          "DD MMM, YYYY"
+                          "DD MMM, YYYY",
                         )
                       : "N/A"}
                   </Descriptions.Item>
@@ -741,7 +748,7 @@ export default function PackingListsPage() {
                       const totalQty =
                         packingListDetails?.packages?.reduce(
                           (sum, p) => sum + (p.quantity || 0),
-                          0
+                          0,
                         ) || 0;
                       return totalQty;
                     })()}
@@ -765,7 +772,7 @@ export default function PackingListsPage() {
                               summary.customer.lastName || ""
                             }`,
                             customerCode: summary.customer.customerCode,
-                          }))
+                          })),
                       )}
                       rowKey="id"
                       size="small"
@@ -831,7 +838,7 @@ export default function PackingListsPage() {
                           const totalQty =
                             summary.packages?.reduce(
                               (sum, pkg) => sum + (pkg.quantity || 0),
-                              0
+                              0,
                             ) || 0;
                           return (
                             <Card key={summary.customer.id} size="small">
@@ -849,7 +856,7 @@ export default function PackingListsPage() {
                               </div>
                             </Card>
                           );
-                        }
+                        },
                       )}
                     </div>
 
@@ -869,9 +876,9 @@ export default function PackingListsPage() {
                                   acc +
                                   (cs.packages?.reduce(
                                     (s, pkg) => s + (pkg.quantity || 0),
-                                    0
+                                    0,
                                   ) || 0),
-                                0
+                                0,
                               ) || 0
                             }
                             valueStyle={{ color: "#722ed1" }}
@@ -881,7 +888,7 @@ export default function PackingListsPage() {
                           <Statistic
                             title="Total Weight (kg)"
                             value={packingListSummary.packingList.totalWeight?.toFixed(
-                              2
+                              2,
                             )}
                             valueStyle={{ color: "#1890ff" }}
                           />
@@ -890,7 +897,7 @@ export default function PackingListsPage() {
                           <Statistic
                             title="Total CBM"
                             value={packingListSummary.packingList.totalCBM?.toFixed(
-                              2
+                              2,
                             )}
                             valueStyle={{ color: "#52c41a" }}
                           />
@@ -900,7 +907,7 @@ export default function PackingListsPage() {
                             title="Total Shipping Cost (USD)"
                             value={`$${
                               packingListSummary.packingList.totalShippingCost?.toFixed(
-                                2
+                                2,
                               ) || "0.00"
                             }`}
                             valueStyle={{ color: "#faad14", fontSize: 14 }}

@@ -15,6 +15,7 @@ import {
   DatePicker,
   Tag,
   Dropdown,
+  Modal,
   MenuProps,
 } from "antd";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ import {
   CloseCircleOutlined,
   MinusCircleOutlined,
   MoreOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -39,7 +41,9 @@ import {
   useInvoices,
   useRegenerateInvoicePdf,
   useUpdateInvoice,
+  useDeleteInvoice,
 } from "@/hooks/useInvoices";
+import { useAuth } from "@/hooks/useAuth";
 import { Invoice, InvoiceStatus } from "@/types/invoice";
 import dayjs, { Dayjs } from "dayjs";
 
@@ -81,6 +85,8 @@ export default function InvoicesPage() {
   const { mutateAsync: regenerateInvoicePdfMutation } =
     useRegenerateInvoicePdf();
   const { mutateAsync: updateInvoiceMutation } = useUpdateInvoice();
+  const { mutateAsync: deleteInvoiceMutation } = useDeleteInvoice();
+  const { user } = useAuth();
 
   // Handlers
   const handleSearch = (value: string) => {
@@ -99,7 +105,7 @@ export default function InvoicesPage() {
   };
 
   const handleDateRangeChange = (
-    dates: null | [Dayjs | null, Dayjs | null]
+    dates: null | [Dayjs | null, Dayjs | null],
   ) => {
     setDateRange(dates || [null, null]);
     setCurrentPage(1);
@@ -139,7 +145,7 @@ export default function InvoicesPage() {
 
   const handleMarkInvoiceStatus = async (
     invoice: Invoice,
-    status: InvoiceStatus
+    status: InvoiceStatus,
   ) => {
     try {
       let paidAmount = invoice.paidAmount;
@@ -158,7 +164,7 @@ export default function InvoicesPage() {
           status,
           paidAmount,
           notes: `Invoice marked as ${status} by admin on ${dayjs().format(
-            "DD MMM, YYYY HH:mm"
+            "DD MMM, YYYY HH:mm",
           )}`,
         },
       });
@@ -167,6 +173,18 @@ export default function InvoicesPage() {
     } catch (error) {
       console.error("Update invoice status failed:", error);
       toast.error("Failed to update invoice status");
+    }
+  };
+
+  const handleDeleteInvoice = async (invoice: Invoice) => {
+    try {
+      await deleteInvoiceMutation(invoice.id);
+      toast.success(`Invoice ${invoice.invoiceNumber} deleted successfully`);
+      refetch();
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message || "Failed to delete invoice";
+      toast.error(errorMessage);
     }
   };
 
@@ -336,6 +354,30 @@ export default function InvoicesPage() {
             onClick: () =>
               handleMarkInvoiceStatus(record, InvoiceStatus.UNPAID),
           },
+          ...(user?.role === "SUPER_ADMIN"
+            ? [
+                {
+                  type: "divider" as const,
+                },
+                {
+                  key: "delete",
+                  icon: <DeleteOutlined />,
+                  label: "Delete Invoice",
+                  danger: true,
+                  disabled: record.status !== InvoiceStatus.UNPAID,
+                  onClick: () => {
+                    Modal.confirm({
+                      title: "Delete Invoice",
+                      content: `Are you sure you want to delete invoice ${record.invoiceNumber}? This action cannot be undone. Only invoices with no associated payments can be deleted.`,
+                      okText: "Yes, Delete",
+                      okButtonProps: { danger: true },
+                      cancelText: "Cancel",
+                      onOk: () => handleDeleteInvoice(record),
+                    });
+                  },
+                },
+              ]
+            : []),
         ];
 
         return (
@@ -368,11 +410,11 @@ export default function InvoicesPage() {
       .length || 0;
   const unpaidInvoices =
     invoices?.data?.filter(
-      (inv: Invoice) => inv.status === InvoiceStatus.UNPAID
+      (inv: Invoice) => inv.status === InvoiceStatus.UNPAID,
     ).length || 0;
   const partialInvoices =
     invoices?.data?.filter(
-      (inv: Invoice) => inv.status === InvoiceStatus.PARTIALLY_PAID
+      (inv: Invoice) => inv.status === InvoiceStatus.PARTIALLY_PAID,
     ).length || 0;
 
   const totalUSD =

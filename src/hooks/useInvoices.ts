@@ -7,6 +7,7 @@ import {
   regenerateInvoicePdf,
   updateInvoice,
   getPendingInvoices,
+  deleteInvoice,
 } from "@/services/invoiceService";
 
 export const useCustomerInvoices = (
@@ -16,7 +17,7 @@ export const useCustomerInvoices = (
     limit?: number;
     sortBy?: string;
     sortOrder?: string;
-  }
+  },
 ) => {
   return useQuery({
     queryKey: ["customer-invoices", customerId, params],
@@ -94,6 +95,19 @@ export const useUpdateInvoice = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["invoice-pdf"] });
+    },
+  });
+};
+
+export const useDeleteInvoice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (invoiceId: string) => deleteInvoice(invoiceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["customer-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-invoices"] });
     },
   });
 };

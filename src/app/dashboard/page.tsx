@@ -44,6 +44,8 @@ export default function DashboardPage() {
 
   const [filters, setFilters] = useState<DashboardGraphParams>({
     year: currentYear,
+    fromDate: dayjs().startOf("day").toISOString(),
+    toDate: dayjs().endOf("day").toISOString(),
   });
 
   const dashboard = useDashboard(filters, user?.role);
@@ -92,7 +94,14 @@ export default function DashboardPage() {
                   options={yearOptions}
                   style={{ width: 120 }}
                 />
-                <RangePicker onChange={handleDateRangeChange} />
+                <RangePicker
+                  value={
+                    filters.fromDate && filters.toDate
+                      ? [dayjs(filters.fromDate), dayjs(filters.toDate)]
+                      : null
+                  }
+                  onChange={handleDateRangeChange}
+                />
               </Space>
             </Col>
           </Row>

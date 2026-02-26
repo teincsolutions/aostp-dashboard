@@ -183,7 +183,7 @@ export default function PackageIntakePage() {
   };
 
   const handlePhotoUpload = async (
-    options: Parameters<NonNullable<UploadProps["customRequest"]>>[0]
+    options: Parameters<NonNullable<UploadProps["customRequest"]>>[0],
   ) => {
     try {
       if (typeof options.file === "string") {
@@ -301,7 +301,7 @@ export default function PackageIntakePage() {
         scanner = new Html5QrcodeScanner(
           "reader",
           { fps: 10, qrbox: { width: 250, height: 250 } },
-          /* verbose= */ false
+          /* verbose= */ false,
         );
         scanner.render(
           (decodedText) => {
@@ -316,7 +316,7 @@ export default function PackageIntakePage() {
           },
           (error) => {
             // Ignore error logs during scanning
-          }
+          },
         );
       }
 
@@ -421,11 +421,16 @@ export default function PackageIntakePage() {
                               >
                                 <div>
                                   <div className="font-medium">
+                                    {invoice.packingList?.name && (
+                                      <div className="text-xs text-blue-600 font-semibold">
+                                        {invoice.packingList.name}
+                                      </div>
+                                    )}
                                     {invoice.invoiceNumber}
                                   </div>
                                   <div className="text-sm text-gray-600">
                                     {dayjs(invoice.createdAt).format(
-                                      "DD MMM, YYYY"
+                                      "DD MMM, YYYY",
                                     )}
                                   </div>
                                 </div>
@@ -438,9 +443,9 @@ export default function PackageIntakePage() {
                                       invoice.status === InvoiceStatus.PAID
                                         ? "bg-green-100 text-green-800"
                                         : invoice.status ===
-                                          InvoiceStatus.UNPAID
-                                        ? "bg-red-100 text-red-800"
-                                        : "bg-yellow-100 text-yellow-800"
+                                            InvoiceStatus.UNPAID
+                                          ? "bg-red-100 text-red-800"
+                                          : "bg-yellow-100 text-yellow-800"
                                     }`}
                                   >
                                     {invoice.status}
@@ -641,7 +646,7 @@ export default function PackageIntakePage() {
                       }}
                       onRemove={(file) => {
                         setPhotoList((prev) =>
-                          prev.filter((f) => f.uid !== file.uid)
+                          prev.filter((f) => f.uid !== file.uid),
                         );
                       }}
                     >
