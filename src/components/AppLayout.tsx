@@ -53,6 +53,12 @@ export const menuItems: Array<MenuItem> = [
     label: "Package Pickup",
     roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
   },
+  {
+    key: "/pickups",
+    icon: <BoxPlotOutlined />,
+    label: "Pickups List",
+    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK", "FINANCE_MANAGER"],
+  },
 
   // Group: Packages, Packing Lists, Warehouse, Containers
   {
