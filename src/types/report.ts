@@ -8,7 +8,6 @@ export interface ReportFilters {
   warehouseId?: string; // UUID
   shippingMode?: "SEA" | "AIR";
   customerId?: string; // UUID
-  processedById?: string; // UUID - filter by user who processed
 }
 
 // ===================================
@@ -23,13 +22,9 @@ export interface PaymentReportItem {
   localAmount: number;
   currency: string;
   paymentMethod: string;
-  paymentSource?: "PAID_IN_GHANA" | "PAID_IN_CHINA";
   processedAt: string;
   warehouse: string;
-  processedBy:
-    | string
-    | { firstName: string; lastName: string }
-    | { firstName: string; lastName: string; email: string };
+  processedBy: string;
 }
 
 export interface PaymentReportTotals {
@@ -168,7 +163,7 @@ export interface PickupReportItem {
   trackingCode: string;
   description: string;
   deliveryId: string;
-  receiverName?: string | { firstName: string; lastName: string };
+  receiverName?: string;
   notes?: string;
 }
 
@@ -187,6 +182,15 @@ export interface WarehousePackingList {
   totalPackages: number;
 }
 
+export interface DestinationCityTotal {
+  cityId: string;
+  cityName: string;
+  totalWeight: number;
+  totalCBM: number;
+  totalAmount: number;
+  totalPackages: number;
+}
+
 export interface WarehouseReportItem {
   id: string;
   name: string;
@@ -197,6 +201,7 @@ export interface WarehouseReportItem {
   outstandingInvoices: number;
   outstandingAmount: number;
   packingLists: WarehousePackingList[];
+  destinationCities: DestinationCityTotal[];
 }
 
 export interface WarehouseReportResponse {
@@ -205,4 +210,5 @@ export interface WarehouseReportResponse {
   totalCustomers: number;
   totalWeight: number;
   totalCBM: number;
+  destinationCityTotals: DestinationCityTotal[];
 }

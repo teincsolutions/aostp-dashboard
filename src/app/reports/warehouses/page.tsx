@@ -12,22 +12,65 @@ import {
   Alert,
   Statistic,
   List,
+  Table,
 } from "antd";
 import {
   ShopOutlined,
   UserOutlined,
   InboxOutlined,
   DollarOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useWarehouseReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useWarehouses } from "@/hooks/useWarehouse";
-import { ReportFilters } from "@/types/report";
+import { ReportFilters, DestinationCityTotal } from "@/types/report";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
+
+const destinationCityColumns = [
+  {
+    title: "Destination City",
+    dataIndex: "cityName",
+    key: "cityName",
+    render: (name: string) => (
+      <Space>
+        <EnvironmentOutlined />
+        <span>{name}</span>
+      </Space>
+    ),
+  },
+  {
+    title: "Packages",
+    dataIndex: "totalPackages",
+    key: "totalPackages",
+    align: "right" as const,
+  },
+  {
+    title: "Weight (kg)",
+    dataIndex: "totalWeight",
+    key: "totalWeight",
+    align: "right" as const,
+    render: (v: number) => v.toFixed(2),
+  },
+  {
+    title: "CBM",
+    dataIndex: "totalCBM",
+    key: "totalCBM",
+    align: "right" as const,
+    render: (v: number) => v.toFixed(2),
+  },
+  {
+    title: "Amount",
+    dataIndex: "totalAmount",
+    key: "totalAmount",
+    align: "right" as const,
+    render: (v: number) => `$${v.toFixed(2)}`,
+  },
+];
 
 export default function WarehouseReportPage() {
   const { user } = useAuth();
@@ -214,8 +257,45 @@ export default function WarehouseReportPage() {
                   />
                 </div>
               )}
+
+              {warehouse.destinationCities &&
+                warehouse.destinationCities.length > 0 && (
+                  <div style={{ marginTop: 24 }}>
+                    <Title level={5}>Destination Cities</Title>
+                    <Table<DestinationCityTotal>
+                      size="small"
+                      bordered
+                      rowKey="cityId"
+                      dataSource={warehouse.destinationCities}
+                      columns={destinationCityColumns}
+                      pagination={false}
+                    />
+                  </div>
+                )}
             </Card>
           ))}
+
+          {/* Overall Destination City Totals */}
+          {data?.destinationCityTotals &&
+            data.destinationCityTotals.length > 0 && (
+              <Card
+                title={
+                  <Space>
+                    <EnvironmentOutlined />
+                    <span>Destination City Totals (All Warehouses)</span>
+                  </Space>
+                }
+              >
+                <Table<DestinationCityTotal>
+                  size="small"
+                  bordered
+                  rowKey="cityId"
+                  dataSource={data.destinationCityTotals}
+                  columns={destinationCityColumns}
+                  pagination={false}
+                />
+              </Card>
+            )}
         </Space>
       </AppLayout>
     </AuthGuard>

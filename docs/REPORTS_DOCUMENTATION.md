@@ -39,7 +39,7 @@ All report endpoints support these optional filters:
 
 **Description:** Returns a comprehensive list of all payments across warehouses with currency-based aggregations and conversion to local currency.
 
-**Permissions:** SUPER_ADMIN, FINANCE_MANAGER
+**Permissions:** SUPER_ADMIN, FINANCE_MANAGER, OPERATIONS_CLERK
 
 **Filters Supported:**
 
@@ -172,7 +172,7 @@ All report endpoints support these optional filters:
 
 **Description:** Ranks top customers across multiple dimensions: invoice totals, payment totals, CBM, and weight.
 
-**Permissions:** SUPER_ADMIN, OPERATIONS_CLERK, FINANCE_MANAGER
+**Permissions:** SUPER_ADMIN, FINANCE_MANAGER
 
 **Filters Supported:**
 
@@ -436,9 +436,9 @@ pickupRate = (packages with status RELEASED) / (total packages)
 
 **Endpoint:** `GET /reports/warehouses`
 
-**Description:** Aggregates statistics by warehouse including packages, customers, volume/weight metrics, and financial data.
+**Description:** Aggregates statistics by warehouse including packages, customers, volume/weight metrics, financial data, and destination city breakdowns with grouped totals for weight, CBM, and amount.
 
-**Permissions:** SUPER_ADMIN, OPERATIONS_CLERK
+**Permissions:** SUPER_ADMIN, FINANCE_MANAGER
 
 **Filters Supported:**
 
@@ -466,13 +466,49 @@ pickupRate = (packages with status RELEASED) / (total packages)
           "name": "PL-2025-001",
           "totalPackages": 50
         }
+      ],
+      "destinationCities": [
+        {
+          "cityId": "abc12345-e89b-12d3-a456-426614174000",
+          "cityName": "Accra",
+          "totalWeight": 3000.0,
+          "totalCBM": 90.5,
+          "totalAmount": 15000.0,
+          "totalPackages": 150
+        },
+        {
+          "cityId": "def67890-e89b-12d3-a456-426614174000",
+          "cityName": "Kumasi",
+          "totalWeight": 2000.0,
+          "totalCBM": 60.0,
+          "totalAmount": 10000.0,
+          "totalPackages": 100
+        }
       ]
     }
   ],
   "totalPackages": 1000,
   "totalCustomers": 300,
   "totalWeight": 20000.0,
-  "totalCBM": 600.5
+  "totalCBM": 600.5,
+  "destinationCityTotals": [
+    {
+      "cityId": "abc12345-e89b-12d3-a456-426614174000",
+      "cityName": "Accra",
+      "totalWeight": 12000.0,
+      "totalCBM": 360.5,
+      "totalAmount": 60000.0,
+      "totalPackages": 600
+    },
+    {
+      "cityId": "def67890-e89b-12d3-a456-426614174000",
+      "cityName": "Kumasi",
+      "totalWeight": 8000.0,
+      "totalCBM": 240.0,
+      "totalAmount": 40000.0,
+      "totalPackages": 400
+    }
+  ]
 }
 ```
 
@@ -486,7 +522,9 @@ pickupRate = (packages with status RELEASED) / (total packages)
   - Counts outstanding invoices (UNPAID + PARTIALLY_PAID)
   - Sums outstanding balance amounts
   - Lists associated packing lists with package counts
+  - **Groups packages by destination city** with totals for weight, CBM, and amount
 - Computes overall totals across all warehouses
+- **Computes overall destination city totals** aggregated across all warehouses
 
 **Key Metrics:**
 
@@ -495,6 +533,8 @@ pickupRate = (packages with status RELEASED) / (total packages)
 - **Total Weight/CBM:** Volume metrics
 - **Outstanding Invoices:** Count and amount
 - **Packing Lists:** Associated packing list summary
+- **Destination Cities:** Per-warehouse breakdown by destination city with weight, CBM, and amount totals
+- **Destination City Totals:** Overall totals across all warehouses grouped by destination city
 
 **Use Cases:**
 
@@ -502,6 +542,8 @@ pickupRate = (packages with status RELEASED) / (total packages)
 - Performance comparison
 - Financial tracking per location
 - Operational efficiency analysis
+- **Destination-based logistics planning**
+- **Regional shipping cost analysis**
 
 ---
 
@@ -546,17 +588,14 @@ All endpoints may return these standard error responses:
 ### Optimization Techniques
 
 1. **Prisma Aggregations:**
-
    - All reports use `groupBy` and `aggregate` at database level
    - Minimizes data transfer and processing in application layer
 
 2. **Selective Field Projection:**
-
    - Only required fields are selected using `select` clauses
    - Reduces payload size and query execution time
 
 3. **Indexed Queries:**
-
    - Filters use indexed columns (`customerId`, `warehouseId`, `createdAt`, `status`)
    - Ensures fast query execution even with large datasets
 
@@ -585,14 +624,14 @@ For extremely large reports, offload to background processing:
 
 ```typescript
 // Enqueue report generation
-const job = await this.reportsQueue.add("generate-report", {
-  reportType: "payments",
+const job = await this.reportsQueue.add('generate-report', {
+  reportType: 'payments',
   filters: query,
   userId: user.id,
 });
 
 // Return job ID for status tracking
-return { jobId: job.id, status: "PROCESSING" };
+return { jobId: job.id, status: 'PROCESSING' };
 ```
 
 ---
@@ -736,23 +775,19 @@ PackageDelivery
 ### Planned Features
 
 1. **Export Functionality:**
-
    - CSV/Excel export for all reports
    - PDF generation for printable reports
 
 2. **Scheduled Reports:**
-
    - Daily/weekly/monthly automated reports
    - Email delivery to stakeholders
 
 3. **Advanced Analytics:**
-
    - Trend analysis over time
    - Predictive analytics for revenue forecasting
    - Customer churn prediction
 
 4. **Custom Report Builder:**
-
    - User-defined metrics
    - Custom aggregations
    - Saved report configurations
