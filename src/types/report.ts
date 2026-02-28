@@ -22,6 +22,7 @@ export interface PaymentReportItem {
   localAmount: number;
   currency: string;
   paymentMethod: string;
+  paymentSource?: string;
   processedAt: string;
   warehouse: string;
   processedBy: string;

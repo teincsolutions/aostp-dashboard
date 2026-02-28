@@ -109,15 +109,8 @@ export default function PaymentsReportPage() {
   };
 
   // Export helpers
-  const getProcessedByName = (
-    processedBy: PaymentReportItem["processedBy"]
-  ): string => {
-    if (typeof processedBy === "string") return processedBy;
-    if (processedBy && typeof processedBy === "object") {
-      return `${processedBy.firstName} ${processedBy.lastName}`;
-    }
-    return "N/A";
-  };
+  const getProcessedByName = (processedBy: string): string =>
+    processedBy || "N/A";
 
   const exportColumnOptions = [
     { label: "Payment Code", value: "paymentCode" },
