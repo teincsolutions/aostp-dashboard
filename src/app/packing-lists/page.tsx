@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   Button,
@@ -34,7 +35,6 @@ import {
   DownloadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
-import { PackageAssignmentModal } from "@/components/PackageAssignmentModal";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import {
@@ -64,6 +64,8 @@ const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
 
 export default function PackingListsPage() {
+  const router = useRouter();
+
   // State for UI
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -73,8 +75,6 @@ export default function PackingListsPage() {
   const [shipmentModeFilter, setShipmentModeFilter] = useState<string>("");
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isDetailsDrawerVisible, setIsDetailsDrawerVisible] = useState(false);
-  const [isPackageAssignmentModalVisible, setIsPackageAssignmentModalVisible] =
-    useState(false);
   const [editingPackingList, setEditingPackingList] =
     useState<PackingList | null>(null);
   const [detailsPackingList, setDetailsPackingList] =
@@ -382,12 +382,8 @@ export default function PackingListsPage() {
     }
   };
 
-  const [currentAssignmentsPackingListId, setCurrentAssignmentsPackingListId] =
-    useState<string>("");
-
   const handleManagePackages = (packingList: PackingList) => {
-    setCurrentAssignmentsPackingListId(packingList.id);
-    setIsPackageAssignmentModalVisible(true);
+    router.push(`/packing-lists/${packingList.id}/manage`);
   };
 
   // Filter options
@@ -670,30 +666,6 @@ export default function PackingListsPage() {
               </Form.Item>
             </Form>
           </Modal>
-
-          {/* Package Assignment Modal */}
-          <PackageAssignmentModal
-            visible={isPackageAssignmentModalVisible}
-            onCancel={() => {
-              setIsPackageAssignmentModalVisible(false);
-              setCurrentAssignmentsPackingListId("");
-              // Refetch details and summary when modal closes
-              if (detailsPackingList?.id) {
-                refetchPackingListDetails();
-                refetchPackingListSummary();
-              }
-            }}
-            onConfirm={() => {
-              setIsPackageAssignmentModalVisible(false);
-              setCurrentAssignmentsPackingListId("");
-              // Refetch details and summary when modal closes
-              if (detailsPackingList?.id) {
-                refetchPackingListDetails();
-                refetchPackingListSummary();
-              }
-            }}
-            packingListId={currentAssignmentsPackingListId}
-          />
 
           {/* Packing List Details Drawer */}
           <Drawer

@@ -15,6 +15,7 @@ import {
   Modal,
   Checkbox,
   Divider,
+  Form,
 } from "antd";
 import {
   PlusOutlined,
@@ -80,8 +81,10 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     useRegenerateInvoicePdf();
   const { unfinalizePackingList, isUnfinalizing } = usePackingListMutations();
 
-  const [editingKey, setEditingKey] = useState<string | null>(null);
-  const [tempPackage, setTempPackage] = useState<Partial<Package> | null>(null);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editModalPackage, setEditModalPackage] = useState<Package | null>(null);
+  const [editModalType, setEditModalType] = useState<"assigned" | "available">("assigned");
+  const [editForm] = Form.useForm();
   const [isExportModalVisible, setIsExportModalVisible] = useState(false);
   const [selectedExportColumns, setSelectedExportColumns] = useState<string[]>([
     "trackingCode",
@@ -477,58 +480,18 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       dataIndex: "quantity",
       key: "quantity",
       width: 70,
-      render: (quantity: number, record: Package) => {
-        if (editingKey === record.id) {
-          return (
-            <InputNumber
-              value={tempPackage?.quantity ?? quantity ?? 1}
-              onChange={(v) =>
-                setTempPackage((prev) =>
-                  prev ? { ...prev, quantity: v ?? 1 } : null,
-                )
-              }
-              min={1}
-              style={{ width: "100%" }}
-            />
-          );
-        } else {
-          return quantity || 1;
-        }
-      },
+      render: (quantity: number) => quantity || 1,
     },
     {
       title: shippingMode === ShippingMode.AIR ? "Weight (kg)" : "CBM",
       dataIndex: shippingMode === ShippingMode.AIR ? "weight" : "cbm",
       key: "weightOrCbm",
       width: 80,
-      render: (value: number | null, record: Package) => {
+      render: (value: number | null) => {
         const isWeight = shippingMode === ShippingMode.AIR;
-        const displayValue = isWeight
-          ? value
-            ? value.toFixed(2)
-            : "0.00"
-          : value
-            ? value.toFixed(3)
-            : "0.000";
-        const tempValue = isWeight ? tempPackage?.weight : tempPackage?.cbm;
-
-        if (editingKey === record.id) {
-          return (
-            <InputNumber
-              value={tempValue ?? value ?? 0}
-              onChange={(v) =>
-                setTempPackage((prev) =>
-                  prev ? { ...prev, [isWeight ? "weight" : "cbm"]: v } : null,
-                )
-              }
-              min={0}
-              step={0.01}
-              style={{ width: "100%" }}
-            />
-          );
-        } else {
-          return displayValue;
-        }
+        return isWeight
+          ? value ? value.toFixed(2) : "0.00"
+          : value ? value.toFixed(3) : "0.000";
       },
     },
     {
@@ -536,33 +499,9 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       dataIndex: "destinationCityId",
       key: "destinationCityId",
       width: 150,
-      render: (destinationCityId: string, record: Package) => {
-        if (editingKey === record.id) {
-          return (
-            <Select
-              placeholder="Select city"
-              style={{ width: "100%" }}
-              value={
-                tempPackage?.destinationCityId ?? destinationCityId ?? undefined
-              }
-              onChange={(value) =>
-                setTempPackage((prev) =>
-                  prev ? { ...prev, destinationCityId: value } : null,
-                )
-              }
-              allowClear
-            >
-              {cities?.data?.map((city) => (
-                <Select.Option key={city.id} value={city.id}>
-                  {city.name}
-                </Select.Option>
-              ))}
-            </Select>
-          );
-        } else {
-          const city = cities?.data?.find((c) => c.id === destinationCityId);
-          return city ? city.name : "N/A";
-        }
+      render: (destinationCityId: string) => {
+        const city = cities?.data?.find((c) => c.id === destinationCityId);
+        return city ? city.name : "N/A";
       },
     },
     {
@@ -570,26 +509,8 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       dataIndex: "shippingRate",
       key: "shippingRate",
       width: 120,
-      render: (shippingRate: number, record: Package) => {
-        if (editingKey === record.id) {
-          return (
-            <InputNumber
-              value={tempPackage?.shippingRate ?? shippingRate ?? 0}
-              onChange={(v) =>
-                setTempPackage((prev) =>
-                  prev ? { ...prev, shippingRate: v } : null,
-                )
-              }
-              min={0}
-              step={0.01}
-              style={{ width: "100%" }}
-              placeholder="0.00"
-            />
-          );
-        } else {
-          return shippingRate ? shippingRate.toFixed(2) : "0.00";
-        }
-      },
+      render: (shippingRate: number) =>
+        shippingRate ? shippingRate.toFixed(2) : "0.00",
     },
     {
       title: "Shipping Cost",
@@ -604,30 +525,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       dataIndex: "shippingCurrency",
       key: "shippingCurrency",
       width: 80,
-      render: (shippingCurrency: Currency, record: Package) => {
-        if (editingKey === record.id) {
-          return (
-            <Select
-              value={
-                tempPackage?.shippingCurrency ??
-                shippingCurrency ??
-                Currency.USD
-              }
-              onChange={(value) =>
-                setTempPackage((prev) =>
-                  prev ? { ...prev, shippingCurrency: value } : null,
-                )
-              }
-              style={{ width: "100%" }}
-            >
-              <Select.Option value={Currency.USD}>USD</Select.Option>
-              <Select.Option value={Currency.GHS}>GHS</Select.Option>
-            </Select>
-          );
-        } else {
-          return shippingCurrency || Currency.USD;
-        }
-      },
+      render: (shippingCurrency: Currency) => shippingCurrency || Currency.USD,
     },
     {
       title: "Mode",
@@ -645,13 +543,11 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
         value: status,
       })),
       width: 100,
-      render: (status: PackageStatusPackages) => {
-        return (
-          <Tag color={packageStatusColors[status] || "default"}>
-            {status.replace("_", " ")}
-          </Tag>
-        );
-      },
+      render: (status: PackageStatusPackages) => (
+        <Tag color={packageStatusColors[status] || "default"}>
+          {status.replace("_", " ")}
+        </Tag>
+      ),
     },
     {
       title: "Payment Status",
@@ -676,118 +572,59 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
       dataIndex: "pickupCode",
       key: "pickupCode",
       width: 120,
-      render: (pickupCode: string, record: Package) => {
-        if (editingKey === record.id) {
-          return (
-            <Input
-              value={tempPackage?.pickupCode ?? pickupCode ?? ""}
-              onChange={(e) =>
-                setTempPackage((prev) =>
-                  prev ? { ...prev, pickupCode: e.target.value } : null,
-                )
-              }
-              style={{ width: "100%" }}
-              placeholder="Pickup / Shipping Mark"
-            />
-          );
-        } else {
-          return pickupCode || "N/A";
-        }
-      },
+      render: (pickupCode: string) => pickupCode || "N/A",
     },
     {
       title: "Actions",
       key: "actions",
-      width: 150,
-      render: (_: any, record: Package) => {
-        if (editingKey === record.id) {
-          const isLoading = updateMutation.isPending;
-          return (
-            <Space>
-              <Button
-                type="primary"
-                size="small"
-                loading={isLoading}
-                onClick={() => {
-                  if (editingKey && tempPackage) {
-                    updateMutation.mutate(
-                      { id: editingKey, payload: tempPackage, packingListId },
-                      {
-                        onSuccess: () => {
-                          setEditingKey(null);
-                          setTempPackage(null);
-                        },
-                        onError: () => {
-                          // handle error if needed
-                        },
-                      },
-                    );
-                  }
-                }}
-              >
-                Save
-              </Button>
-              <Button
-                size="small"
-                onClick={() => {
-                  setEditingKey(null);
-                  setTempPackage(null);
-                }}
-              >
-                Cancel
-              </Button>
-            </Space>
-          );
-        } else {
-          return (
-            <Space>
-              <Button
-                type="link"
-                icon={<EditOutlined />}
-                onClick={() => {
-                  setEditingKey(record.id);
-                  setTempPackage({
-                    quantity: record.quantity,
-                    weight: record.weight,
-                    cbm: record.cbm,
-                    destinationCityId: record.destinationCityId,
-                    shippingCurrency: record.shippingCurrency || Currency.USD,
-                    shippingRate: record.shippingRate,
-                    pickupCode: record.pickupCode,
-                  });
-                }}
-                size="small"
-              >
-                Edit
-              </Button>
-              <Button
-                type="link"
-                danger
-                icon={<MinusOutlined />}
-                loading={isRemovingPackages}
-                onClick={() => handleRemovePackage(record.id)}
-                disabled={
-                  packingListData?.status === PackingListStatus.FINALIZED
-                }
-                size="small"
-              >
-                Remove
-              </Button>
-              {record.invoiceId && (
-                <Popconfirm
-                  title="Regenerate Invoice PDF"
-                  description="Are you sure you want to regenerate the invoice PDF?"
-                  onConfirm={() => handleRegenerateInvoice(record)}
-                  okText="Yes"
-                  cancelText="No"
-                >
-                  <Button type="link" icon={<ReloadOutlined />} size="small" />
-                </Popconfirm>
-              )}
-            </Space>
-          );
-        }
-      },
+      width: 160,
+      render: (_: any, record: Package) => (
+        <Space>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setEditModalPackage(record);
+              setEditModalType("assigned");
+              editForm.setFieldsValue({
+                quantity: record.quantity ?? 1,
+                weight: record.weight ?? 0,
+                cbm: record.cbm ?? 0,
+                destinationCityId: record.destinationCityId ?? undefined,
+                shippingCurrency: record.shippingCurrency || Currency.USD,
+                shippingRate: record.shippingRate ?? 0,
+                pickupCode: record.pickupCode ?? "",
+              });
+              setIsEditModalVisible(true);
+            }}
+            size="small"
+          >
+            Edit
+          </Button>
+          <Button
+            type="link"
+            danger
+            icon={<MinusOutlined />}
+            loading={isRemovingPackages}
+            onClick={() => handleRemovePackage(record.id)}
+            disabled={packingListData?.status === PackingListStatus.FINALIZED}
+            size="small"
+          >
+            Remove
+          </Button>
+          {record.invoiceId && (
+            <Popconfirm
+              title="Regenerate Invoice PDF"
+              description="Are you sure you want to regenerate the invoice PDF?"
+              onConfirm={() => handleRegenerateInvoice(record)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button type="link" icon={<ReloadOutlined />} size="small" />
+            </Popconfirm>
+          )}
+        </Space>
+      ),
     },
   ];
 
@@ -887,17 +724,40 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     {
       title: "Actions",
       key: "actions",
-      width: 100,
+      width: 150,
       render: (_: any, record: Package) => (
-        <Button
-          type="link"
-          icon={<PlusOutlined />}
-          onClick={() => handleAddPackage(record.id)}
-          size="small"
-          disabled={selectedPackageIds.includes(record.id)}
-        >
-          Add
-        </Button>
+        <Space>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setEditModalPackage(record);
+              setEditModalType("available");
+              editForm.setFieldsValue({
+                quantity: record.quantity ?? 1,
+                weight: record.weight ?? 0,
+                cbm: record.cbm ?? 0,
+                destinationCityId: record.destinationCityId ?? undefined,
+                shippingCurrency: record.shippingCurrency || Currency.USD,
+                shippingRate: record.shippingRate ?? 0,
+                pickupCode: record.pickupCode ?? "",
+              });
+              setIsEditModalVisible(true);
+            }}
+            size="small"
+          >
+            Edit
+          </Button>
+          <Button
+            type="link"
+            icon={<PlusOutlined />}
+            onClick={() => handleAddPackage(record.id)}
+            size="small"
+            disabled={selectedPackageIds.includes(record.id)}
+          >
+            Add
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -1222,6 +1082,102 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
           </div>
         )}
       </div>
+
+      {/* Edit Package Modal */}
+      <Modal
+        title={
+          editModalPackage
+            ? `Edit Package — ${editModalPackage.trackingCode}`
+            : "Edit Package"
+        }
+        open={isEditModalVisible}
+        onCancel={() => {
+          setIsEditModalVisible(false);
+          setEditModalPackage(null);
+          editForm.resetFields();
+        }}
+        onOk={() => editForm.submit()}
+        okText="Save Changes"
+        confirmLoading={updateMutation.isPending}
+        width={640}
+        destroyOnClose
+      >
+        {editModalPackage && (
+          <Form
+            form={editForm}
+            layout="vertical"
+            onFinish={(values: Partial<Package>) => {
+              updateMutation.mutate(
+                {
+                  id: editModalPackage.id,
+                  payload: values,
+                  packingListId,
+                },
+                {
+                  onSuccess: () => {
+                    setIsEditModalVisible(false);
+                    setEditModalPackage(null);
+                    editForm.resetFields();
+                    toast.success("Package updated successfully");
+                  },
+                },
+              );
+            }}
+          >
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="quantity" label="Quantity">
+                  <InputNumber min={1} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                {shippingMode === ShippingMode.AIR ? (
+                  <Form.Item name="weight" label="Weight (kg)">
+                    <InputNumber min={0} step={0.01} style={{ width: "100%" }} />
+                  </Form.Item>
+                ) : (
+                  <Form.Item name="cbm" label="CBM">
+                    <InputNumber min={0} step={0.001} style={{ width: "100%" }} />
+                  </Form.Item>
+                )}
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="destinationCityId" label="Destination City">
+                  <Select placeholder="Select city" allowClear>
+                    {cities?.data?.map((city) => (
+                      <Select.Option key={city.id} value={city.id}>
+                        {city.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="shippingCurrency" label="Currency">
+                  <Select>
+                    <Select.Option value={Currency.USD}>USD</Select.Option>
+                    <Select.Option value={Currency.GHS}>GHS</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="shippingRate" label="Shipping Rate">
+                  <InputNumber min={0} step={0.01} style={{ width: "100%" }} placeholder="0.00" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="pickupCode" label="Pickup / Shipping Mark">
+                  <Input placeholder="Pickup / Shipping Mark" />
+                </Form.Item>
+              </Col>
+            </Row>
+          </Form>
+        )}
+      </Modal>
 
       {/* Export Modal */}
       <Modal
