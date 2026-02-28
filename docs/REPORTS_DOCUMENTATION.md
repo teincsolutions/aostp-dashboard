@@ -21,13 +21,14 @@ All endpoints require:
 
 All report endpoints support these optional filters:
 
-| Parameter      | Type              | Description                              | Example                                |
-| -------------- | ----------------- | ---------------------------------------- | -------------------------------------- |
-| `fromDate`     | string (ISO 8601) | Filter by start date                     | `2025-01-01T00:00:00Z`                 |
-| `toDate`       | string (ISO 8601) | Filter by end date                       | `2025-12-31T23:59:59Z`                 |
-| `warehouseId`  | UUID              | Filter by warehouse                      | `123e4567-e89b-12d3-a456-426614174000` |
-| `shippingMode` | enum              | Filter by shipping mode (`SEA` or `AIR`) | `SEA`                                  |
-| `customerId`   | UUID              | Filter by customer                       | `123e4567-e89b-12d3-a456-426614174000` |
+| Parameter       | Type              | Description                                              | Example                                |
+| --------------- | ----------------- | -------------------------------------------------------- | -------------------------------------- |
+| `fromDate`      | string (ISO 8601) | Filter by start date                                     | `2025-01-01T00:00:00Z`                 |
+| `toDate`        | string (ISO 8601) | Filter by end date                                       | `2025-12-31T23:59:59Z`                 |
+| `warehouseId`   | UUID              | Filter by warehouse                                      | `123e4567-e89b-12d3-a456-426614174000` |
+| `shippingMode`  | enum              | Filter by shipping mode (`SEA` or `AIR`)                 | `SEA`                                  |
+| `customerId`    | UUID              | Filter by customer                                       | `123e4567-e89b-12d3-a456-426614174000` |
+| `processedById` | UUID              | Filter payments by the staff user who processed them     | `7f858ae2-8757-42bb-9cd8-282400a86ff5` |
 
 ---
 
@@ -547,6 +548,254 @@ pickupRate = (packages with status RELEASED) / (total packages)
 
 ---
 
+### 8. Debtors List Report
+
+**Endpoint:** `GET /reports/debtors`
+
+**Description:** Returns all customers who have outstanding invoice balances (UNPAID or PARTIALLY_PAID invoices with `balance > 0`), ranked by highest outstanding amount. Each debtor entry includes a full breakdown of their outstanding invoices and a per-packing-list summary.
+
+**Permissions:** SUPER_ADMIN, FINANCE_MANAGER
+
+**Filters Supported:**
+
+- fromDate (applied to invoice `createdAt`)
+- toDate (applied to invoice `createdAt`)
+- warehouseId
+- customerId
+
+**Query Parameters:**
+
+| Parameter    | Type              | Description                              | Example                                |
+| ------------ | ----------------- | ---------------------------------------- | -------------------------------------- |
+| `fromDate`   | string (ISO 8601) | Filter by invoice creation start date    | `2025-01-01T00:00:00Z`                 |
+| `toDate`     | string (ISO 8601) | Filter by invoice creation end date      | `2025-12-31T23:59:59Z`                 |
+| `warehouseId`| UUID              | Filter by warehouse                      | `123e4567-e89b-12d3-a456-426614174000` |
+| `customerId` | UUID              | Filter to a specific customer            | `123e4567-e89b-12d3-a456-426614174000` |
+
+**Response Schema:**
+
+```json
+{
+  "debtors": [
+    {
+      "rank": 1,
+      "customerCode": "CUST-001",
+      "customerName": "John Doe",
+      "phoneNumber": "+233244000001",
+      "email": "john.doe@example.com",
+      "warehouse": "China Main",
+      "totalInvoiceAmount": 1500.0,
+      "totalPaidAmount": 500.0,
+      "outstandingBalance": 1000.0,
+      "invoiceCount": 3,
+      "packingListCount": 2,
+      "lastInvoiceDate": "2025-01-20T00:00:00Z",
+      "packingLists": [
+        {
+          "id": "123e4567-e89b-12d3-a456-426614174000",
+          "name": "PL-2025-001",
+          "invoiceCount": 2,
+          "outstandingBalance": 700.0
+        }
+      ],
+      "invoices": [
+        {
+          "invoiceNumber": "INV-2025-001",
+          "status": "PARTIALLY_PAID",
+          "totalAmount": 500.0,
+          "paidAmount": 200.0,
+          "balance": 300.0,
+          "currency": "USD",
+          "dueDate": "2025-03-01T00:00:00Z",
+          "createdAt": "2025-01-15T10:30:00Z",
+          "packingListName": "PL-2025-001",
+          "packingListId": "123e4567-e89b-12d3-a456-426614174000"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalDebtors": 42,
+    "totalOutstanding": 85000.0,
+    "totalInvoiceAmount": 120000.0,
+    "totalPaidAmount": 35000.0,
+    "collectionRate": 29.17
+  },
+  "totalCount": 42
+}
+```
+
+**Aggregation Logic:**
+
+- Queries all invoices with `status IN (UNPAID, PARTIALLY_PAID)` and `balance > 0`
+- Groups invoices by `customerId` in application memory
+- For each debtor:
+  - Sums `totalAmount`, `paidAmount`, and `balance` across all their outstanding invoices
+  - Groups outstanding invoices by packing list to build `packingLists[]` breakdown
+  - Records the most recent outstanding invoice date as `lastInvoiceDate`
+- Sorts by `outstandingBalance` descending and assigns `rank`
+- Computes summary totals and collection rate across all debtors
+
+**Collection Rate Formula:**
+
+```
+collectionRate = (totalPaidAmount / totalInvoiceAmount) * 100
+```
+
+**Key Metrics:**
+
+- **outstandingBalance:** Sum of all unpaid/partial invoice balances per customer
+- **invoiceCount:** Number of invoices still requiring payment
+- **packingListCount:** Distinct packing lists with outstanding invoices
+- **collectionRate:** Percentage of total invoiced amount that has been collected
+- **rank:** Customers with highest debt ranked first
+
+**Use Cases:**
+
+- Debt collection prioritisation
+- Customer follow-up workflows
+- Finance reconciliation
+- Outstanding balance reporting per packing list
+
+---
+
+### 9. End of Day Report
+
+**Endpoint:** `GET /reports/end-of-day`
+
+**Description:** Produces a full summary of a single day's operations: total payments received per warehouse broken down by currency (GHS/USD) and payment method, total pickups per warehouse with item quantities, package intakes per warehouse, and an activity summary per staff member. Defaults to the current UTC date when no date filter is provided.
+
+**Permissions:** SUPER_ADMIN, FINANCE_MANAGER, OPERATIONS_CLERK
+
+**Query Parameters:**
+
+| Parameter     | Type              | Description                                                                     | Example                                |
+| ------------- | ----------------- | ------------------------------------------------------------------------------- | -------------------------------------- |
+| `date`        | string (YYYY-MM-DD)| Report date. Defaults to today (UTC). Ignored when `fromDate`/`toDate` are set.| `2026-02-27`                           |
+| `fromDate`    | string (ISO 8601) | Override range start. Takes precedence over `date`.                             | `2026-02-27T00:00:00Z`                 |
+| `toDate`      | string (ISO 8601) | Override range end. Takes precedence over `date`.                               | `2026-02-27T23:59:59Z`                 |
+| `warehouseId` | UUID              | Restrict all figures to a single warehouse.                                     | `123e4567-e89b-12d3-a456-426614174000` |
+| `userId`      | UUID              | Restrict all activities to a single staff member.                               | `7f858ae2-8757-42bb-9cd8-282400a86ff5` |
+
+**Response Schema:**
+
+```json
+{
+  "reportDate": "2026-02-27",
+  "fromDate": "2026-02-27T00:00:00.000Z",
+  "toDate": "2026-02-27T23:59:59.999Z",
+  "warehouses": [
+    {
+      "warehouseId": "123e4567-e89b-12d3-a456-426614174000",
+      "warehouseName": "China Main",
+      "payments": {
+        "count": 12,
+        "totalUsd": 1200.0,
+        "totalGhs": 18000.0,
+        "byMethod": [
+          {
+            "method": "MOBILE_MONEY",
+            "count": 8,
+            "totalGhs": 12000.0,
+            "totalUsd": 800.0
+          },
+          {
+            "method": "CASH",
+            "count": 4,
+            "totalGhs": 6000.0,
+            "totalUsd": 400.0
+          }
+        ]
+      },
+      "pickups": {
+        "count": 8,
+        "totalQuantity": 20,
+        "byUser": [
+          {
+            "userId": "abc-123",
+            "userName": "Jane Staff",
+            "count": 5,
+            "totalQuantity": 12
+          }
+        ]
+      },
+      "intakes": {
+        "count": 15,
+        "totalQuantity": 35,
+        "byUser": [
+          {
+            "userId": "def-456",
+            "userName": "John Staff",
+            "count": 15,
+            "totalQuantity": 35
+          }
+        ]
+      }
+    }
+  ],
+  "overall": {
+    "totalPayments": 30,
+    "totalRevenueUsd": 3000.0,
+    "totalRevenueGhs": 45000.0,
+    "totalPickups": 20,
+    "totalPickupQuantity": 50,
+    "totalIntakes": 40,
+    "totalIntakeQuantity": 80,
+    "totalInvoicesCreated": 35,
+    "totalInvoiceAmount": 15000.0
+  },
+  "activityByUser": [
+    {
+      "userId": "abc-123",
+      "userName": "Jane Staff",
+      "role": "OPERATIONS_CLERK",
+      "warehouse": "China Main",
+      "paymentsProcessed": 5,
+      "paymentsTotalGhs": 7500.0,
+      "paymentsTotalUsd": 500.0,
+      "packagesReceived": 8,
+      "intakeQuantity": 20,
+      "pickupsReleased": 4,
+      "pickupQuantity": 10
+    }
+  ],
+  "generatedAt": "2026-02-27T17:00:00.000Z"
+}
+```
+
+**Aggregation Logic:**
+
+All three data sets are fetched in parallel:
+
+1. **Payments** — filtered by `processedAt` in range; grouped by the customer's warehouse then by `paymentMethod`. Both `amount` (USD) and `localAmount` (GHS) are summed independently.
+2. **Pickups (PackageDelivery)** — filtered by `releaseDate` in range; grouped by `warehouseId` then by `createdById` (staff user).
+3. **Intakes (Package)** — filtered by `receivedDate` in range; grouped by `warehouseId` then by `createdById`.
+4. **Invoices** — aggregated count and sum of `totalAmount` for invoices created in range (overall total only).
+
+An additional warehouse name lookup is performed for any warehouse IDs not already resolved from the payments data.
+
+**Key Metrics:**
+
+| Metric | Description |
+| --- | --- |
+| `payments.totalUsd` | Sum of USD payments collected at that warehouse |
+| `payments.totalGhs` | Sum of `localAmount` (GHS) collected at that warehouse |
+| `payments.byMethod` | Per-method breakdown (CASH, MOBILE_MONEY, BANK_TRANSFER, etc.) |
+| `pickups.totalQuantity` | Total item quantity released across all pickup transactions |
+| `intakes.totalQuantity` | Total item quantity received across all intake records |
+| `overall.collectionRate` | Not included — see Debtors Report for collection rate |
+| `activityByUser` | Cross-entity summary per staff member for the day |
+
+**Use Cases:**
+
+- Daily shift handover reports
+- Finance reconciliation — cash and MoMo totals per warehouse
+- Operations manager review of staff productivity
+- Audit trail of who processed what on a given day
+- Head-office visibility across all warehouse branches
+
+---
+
 ## Error Responses
 
 All endpoints may return these standard error responses:
@@ -810,6 +1059,19 @@ For issues or questions regarding the Reports API:
 ---
 
 ## Changelog
+
+### Version 1.2.0 (2026-02-28)
+
+New reports:
+
+- **Debtors List Report** (`GET /reports/debtors`) — outstanding balances ranked by amount with per-packing-list breakdown and collection rate summary
+- **End of Day Report** (`GET /reports/end-of-day`) — daily payments (GHS/USD/by method), pickups, intakes per warehouse, and per-staff activity summary
+
+Enhancements:
+
+- Added `processedById` filter to Payments Report (`GET /reports/payments`)
+
+---
 
 ### Version 1.0.0 (2025-12-11)
 

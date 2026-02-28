@@ -173,6 +173,18 @@ export const menuItems: Array<MenuItem> = [
         label: "Warehouse Report",
         roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
       },
+      {
+        key: "/reports/debtors",
+        icon: <FileTextOutlined />,
+        label: "Debtors Report",
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+      },
+      {
+        key: "/reports/end-of-day",
+        icon: <FileTextOutlined />,
+        label: "End of Day Report",
+        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+      },
     ],
   },
   {

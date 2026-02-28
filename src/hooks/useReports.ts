@@ -7,6 +7,8 @@ import {
   getGeneralReport,
   getPickupsReport,
   getWarehouseReport,
+  getDebtorsReport,
+  getEndOfDayReport,
 } from "@/services/reportService";
 import {
   ReportFilters,
@@ -17,6 +19,8 @@ import {
   GeneralReportResponse,
   PickupsReportResponse,
   WarehouseReportResponse,
+  DebtorsReportResponse,
+  EndOfDayReportResponse,
 } from "@/types/report";
 import { UserRole } from "@/types/common";
 
@@ -248,5 +252,67 @@ export const useWarehouseReport = (
     queryFn: () => getWarehouseReport(filters),
     enabled: enabled && canAccess,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// ===================================
+// 8. Debtors Report Hook
+// ===================================
+
+/**
+ * Hook to fetch Debtors Report
+ *
+ * Permissions: SUPER_ADMIN, FINANCE_MANAGER
+ *
+ * @param filters - Optional filters (fromDate, toDate, warehouseId, customerId)
+ * @param userRole - Current user role for access control
+ * @param enabled - Whether query should be enabled
+ */
+export const useDebtorsReport = (
+  filters?: ReportFilters,
+  userRole?: UserRole,
+  enabled: boolean = true
+): UseQueryResult<DebtorsReportResponse, Error> => {
+  const canAccess = hasAccess(
+    userRole,
+    ALLOWED_ROLES.FINANCE_MANAGER as UserRole[]
+  );
+
+  return useQuery<DebtorsReportResponse, Error>({
+    queryKey: ["reports", "debtors", filters],
+    queryFn: () => getDebtorsReport(filters),
+    enabled: enabled && canAccess,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+// ===================================
+// 9. End of Day Report Hook
+// ===================================
+
+/**
+ * Hook to fetch End of Day Report
+ *
+ * Permissions: SUPER_ADMIN, FINANCE_MANAGER, OPERATIONS_CLERK
+ *
+ * @param filters - Optional filters (date, fromDate, toDate, warehouseId, userId)
+ * @param userRole - Current user role for access control
+ * @param enabled - Whether query should be enabled
+ */
+export const useEndOfDayReport = (
+  filters?: ReportFilters,
+  userRole?: UserRole,
+  enabled: boolean = true
+): UseQueryResult<EndOfDayReportResponse, Error> => {
+  const canAccess = hasAccess(
+    userRole,
+    ALLOWED_ROLES.OPERATIONS_CLERK as UserRole[]
+  );
+
+  return useQuery<EndOfDayReportResponse, Error>({
+    queryKey: ["reports", "end-of-day", filters],
+    queryFn: () => getEndOfDayReport(filters),
+    enabled: enabled && canAccess,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };

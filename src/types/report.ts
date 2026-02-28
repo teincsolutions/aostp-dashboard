@@ -8,6 +8,9 @@ export interface ReportFilters {
   warehouseId?: string; // UUID
   shippingMode?: "SEA" | "AIR";
   customerId?: string; // UUID
+  processedById?: string; // UUID
+  date?: string; // YYYY-MM-DD for End of Day report
+  userId?: string; // UUID for filtering by staff user
 }
 
 // ===================================
@@ -212,4 +215,140 @@ export interface WarehouseReportResponse {
   totalWeight: number;
   totalCBM: number;
   destinationCityTotals: DestinationCityTotal[];
+}
+
+// ===================================
+// 8. Debtors Report
+// ===================================
+
+export interface DebtorInvoice {
+  invoiceNumber: string;
+  status: string;
+  totalAmount: number;
+  paidAmount: number;
+  balance: number;
+  currency: string;
+  dueDate: string;
+  createdAt: string;
+  packingListName: string;
+  packingListId: string;
+}
+
+export interface DebtorPackingList {
+  id: string;
+  name: string;
+  invoiceCount: number;
+  outstandingBalance: number;
+}
+
+export interface DebtorItem {
+  rank: number;
+  customerCode: string;
+  customerName: string;
+  phoneNumber: string;
+  email: string;
+  warehouse: string;
+  totalInvoiceAmount: number;
+  totalPaidAmount: number;
+  outstandingBalance: number;
+  invoiceCount: number;
+  packingListCount: number;
+  lastInvoiceDate: string;
+  packingLists: DebtorPackingList[];
+  invoices: DebtorInvoice[];
+}
+
+export interface DebtorsSummary {
+  totalDebtors: number;
+  totalOutstanding: number;
+  totalInvoiceAmount: number;
+  totalPaidAmount: number;
+  collectionRate: number;
+}
+
+export interface DebtorsReportResponse {
+  debtors: DebtorItem[];
+  summary: DebtorsSummary;
+  totalCount: number;
+}
+
+// ===================================
+// 9. End of Day Report
+// ===================================
+
+export interface EndOfDayPaymentByMethod {
+  method: string;
+  count: number;
+  totalGhs: number;
+  totalUsd: number;
+}
+
+export interface EndOfDayPickupsByUser {
+  userId: string;
+  userName: string;
+  count: number;
+  totalQuantity: number;
+}
+
+export interface EndOfDayWarehousePayments {
+  count: number;
+  totalUsd: number;
+  totalGhs: number;
+  byMethod: EndOfDayPaymentByMethod[];
+}
+
+export interface EndOfDayWarehousePickups {
+  count: number;
+  totalQuantity: number;
+  byUser: EndOfDayPickupsByUser[];
+}
+
+export interface EndOfDayWarehouseIntakes {
+  count: number;
+  totalQuantity: number;
+  byUser: EndOfDayPickupsByUser[];
+}
+
+export interface EndOfDayWarehouse {
+  warehouseId: string;
+  warehouseName: string;
+  payments: EndOfDayWarehousePayments;
+  pickups: EndOfDayWarehousePickups;
+  intakes: EndOfDayWarehouseIntakes;
+}
+
+export interface EndOfDayOverall {
+  totalPayments: number;
+  totalRevenueUsd: number;
+  totalRevenueGhs: number;
+  totalPickups: number;
+  totalPickupQuantity: number;
+  totalIntakes: number;
+  totalIntakeQuantity: number;
+  totalInvoicesCreated: number;
+  totalInvoiceAmount: number;
+}
+
+export interface EndOfDayActivityUser {
+  userId: string;
+  userName: string;
+  role: string;
+  warehouse: string;
+  paymentsProcessed: number;
+  paymentsTotalGhs: number;
+  paymentsTotalUsd: number;
+  packagesReceived: number;
+  intakeQuantity: number;
+  pickupsReleased: number;
+  pickupQuantity: number;
+}
+
+export interface EndOfDayReportResponse {
+  reportDate: string;
+  fromDate: string;
+  toDate: string;
+  warehouses: EndOfDayWarehouse[];
+  overall: EndOfDayOverall;
+  activityByUser: EndOfDayActivityUser[];
+  generatedAt: string;
 }

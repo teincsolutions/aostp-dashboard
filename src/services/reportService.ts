@@ -8,6 +8,8 @@ import {
   GeneralReportResponse,
   PickupsReportResponse,
   WarehouseReportResponse,
+  DebtorsReportResponse,
+  EndOfDayReportResponse,
 } from "@/types/report";
 
 const BASE_URL = "/reports";
@@ -176,6 +178,52 @@ export const getWarehouseReport = async (
 ): Promise<WarehouseReportResponse> => {
   const response = await apiService.get<WarehouseReportResponse>(
     `${BASE_URL}/warehouses`,
+    { params: filters }
+  );
+  return response.data;
+};
+
+// ===================================
+// 8. Debtors Report
+// ===================================
+
+/**
+ * Get Debtors Report
+ * GET /reports/debtors
+ *
+ * Returns all customers with outstanding invoice balances,
+ * ranked by highest outstanding amount.
+ *
+ * Filters: fromDate, toDate, warehouseId, customerId
+ */
+export const getDebtorsReport = async (
+  filters?: ReportFilters
+): Promise<DebtorsReportResponse> => {
+  const response = await apiService.get<DebtorsReportResponse>(
+    `${BASE_URL}/debtors`,
+    { params: filters }
+  );
+  return response.data;
+};
+
+// ===================================
+// 9. End of Day Report
+// ===================================
+
+/**
+ * Get End of Day Report
+ * GET /reports/end-of-day
+ *
+ * Produces a full summary of a single day's operations:
+ * payments, pickups, intakes, and per-staff activity.
+ *
+ * Filters: date, fromDate, toDate, warehouseId, userId
+ */
+export const getEndOfDayReport = async (
+  filters?: ReportFilters
+): Promise<EndOfDayReportResponse> => {
+  const response = await apiService.get<EndOfDayReportResponse>(
+    `${BASE_URL}/end-of-day`,
     { params: filters }
   );
   return response.data;
