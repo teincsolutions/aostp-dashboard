@@ -15,6 +15,9 @@ import {
   Tag,
   Tabs,
   Divider,
+  Button,
+  Modal,
+  Checkbox,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -24,6 +27,7 @@ import {
   UserOutlined,
   CalendarOutlined,
   ShopOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -39,6 +43,7 @@ import {
   EndOfDayActivityUser,
 } from "@/types/report";
 import dayjs from "dayjs";
+import { toast } from "sonner";
 
 const { Title, Text } = Typography;
 
@@ -167,11 +172,95 @@ export default function EndOfDayReportPage() {
   const [filters, setFilters] = useState<ReportFilters>({
     date: dayjs().format("YYYY-MM-DD"),
   });
+  const [isExportModalVisible, setIsExportModalVisible] = useState(false);
+  const [selectedExportColumns, setSelectedExportColumns] = useState<string[]>([
+    "userName", "role", "warehouse",
+    "paymentsProcessed", "paymentsTotalGhs", "paymentsTotalUsd",
+    "packagesReceived", "intakeQuantity",
+    "pickupsReleased", "pickupQuantity",
+  ]);
 
   const { data, isLoading, error } = useEndOfDayReport(filters, user?.role);
-
   const { data: warehousesData } = useWarehouses({ page: 1, limit: 100 });
   const { data: usersData } = useUsers({ page: 1, limit: 100, isActive: true });
+
+  const exportColumnOptions = [
+    { label: "Staff Member", value: "userName" },
+    { label: "Role", value: "role" },
+    { label: "Warehouse", value: "warehouse" },
+    { label: "Payments Processed", value: "paymentsProcessed" },
+    { label: "GHS Received", value: "paymentsTotalGhs" },
+    { label: "USD Received", value: "paymentsTotalUsd" },
+    { label: "Packages Received", value: "packagesReceived" },
+    { label: "Intake Qty", value: "intakeQuantity" },
+    { label: "Pickups Released", value: "pickupsReleased" },
+    { label: "Pickup Qty", value: "pickupQuantity" },
+  ];
+
+  const buildExportData = () =>
+    (data?.activityByUser || []).map((u) => {
+      const row: Record<string, string> = {};
+      selectedExportColumns.forEach((col) => {
+        switch (col) {
+          case "userName": row["Staff Member"] = u.userName; break;
+          case "role": row["Role"] = u.role.replace(/_/g, " "); break;
+          case "warehouse": row["Warehouse"] = u.warehouse || "—"; break;
+          case "paymentsProcessed": row["Payments Processed"] = String(u.paymentsProcessed); break;
+          case "paymentsTotalGhs": row["GHS Received"] = u.paymentsTotalGhs.toFixed(2); break;
+          case "paymentsTotalUsd": row["USD Received"] = u.paymentsTotalUsd.toFixed(2); break;
+          case "packagesReceived": row["Packages Received"] = String(u.packagesReceived); break;
+          case "intakeQuantity": row["Intake Qty"] = String(u.intakeQuantity); break;
+          case "pickupsReleased": row["Pickups Released"] = String(u.pickupsReleased); break;
+          case "pickupQuantity": row["Pickup Qty"] = String(u.pickupQuantity); break;
+        }
+      });
+      return row;
+    });
+
+  const exportToCSV = (rows: Record<string, string>[], ext = "csv") => {
+    if (!rows.length) { toast.error("No data to export"); return; }
+    const headers = Object.keys(rows[0]);
+    const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => `"${r[h] || ""}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `end-of-day-report-${data?.reportDate || dayjs().format("YYYY-MM-DD")}.${ext}`;
+    link.click();
+  };
+
+  const exportToPDF = (rows: Record<string, string>[]) => {
+    if (!rows.length) { toast.error("No data to export"); return; }
+    const headers = Object.keys(rows[0]);
+    const overall = data?.overall;
+    const html = `<!DOCTYPE html><html><head><title>End of Day Report</title>
+      <style>body{font-family:Arial,sans-serif;margin:20px}h1{text-align:center}
+      table{width:100%;border-collapse:collapse;margin-top:20px;font-size:11px}
+      th,td{border:1px solid #ddd;padding:6px;text-align:left}
+      th{background:#1677ff;color:#fff}tr:nth-child(even){background:#f9f9f9}
+      .summary{margin:10px 0;font-size:13px}</style></head><body>
+      <h1>End of Day Report — ${data?.reportDate || dayjs().format("DD MMM YYYY")}</h1>
+      <div class="summary">
+        <p><strong>Total Payments:</strong> ${overall?.totalPayments || 0} &nbsp; <strong>Revenue GHS:</strong> ${(overall?.totalRevenueGhs || 0).toFixed(2)} &nbsp; <strong>Revenue USD:</strong> $${(overall?.totalRevenueUsd || 0).toFixed(2)}</p>
+        <p><strong>Total Pickups:</strong> ${overall?.totalPickups || 0} (qty ${overall?.totalPickupQuantity || 0}) &nbsp; <strong>Total Intakes:</strong> ${overall?.totalIntakes || 0} (qty ${overall?.totalIntakeQuantity || 0})</p>
+      </div>
+      <h3>Staff Activity</h3>
+      <table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map((r) => `<tr>${headers.map((h) => `<td>${r[h] || ""}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table></body></html>`;
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); w.print(); }
+  };
+
+  const handleExport = (format: "csv" | "excel" | "pdf") => {
+    if (!selectedExportColumns.length) { toast.error("Select at least one column"); return; }
+    const rows = buildExportData();
+    if (!rows.length) { toast.error("No staff activity data to export"); return; }
+    if (format === "csv") exportToCSV(rows, "csv");
+    else if (format === "excel") exportToCSV(rows, "xlsx");
+    else exportToPDF(rows);
+    setIsExportModalVisible(false);
+    toast.success(`Exported as ${format.toUpperCase()}`);
+  };
 
   const handleDateChange = (date: any) => {
     if (date) {
@@ -333,6 +422,13 @@ export default function EndOfDayReportPage() {
                     value: u.id,
                   }))}
                 />
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={() => setIsExportModalVisible(true)}
+                  disabled={!data?.activityByUser?.length}
+                >
+                  Export
+                </Button>
               </Space>
             </Col>
           </Row>
@@ -499,6 +595,32 @@ export default function EndOfDayReportPage() {
               }}
             />
           </Card>
+          {/* Export Modal */}
+          <Modal
+            title="Export End of Day Report"
+            open={isExportModalVisible}
+            onCancel={() => setIsExportModalVisible(false)}
+            footer={null}
+            width={560}
+          >
+            <div>
+              <h4 style={{ fontWeight: 600, marginBottom: 12 }}>Select columns to export (staff activity):</h4>
+              <Checkbox.Group
+                options={exportColumnOptions}
+                value={selectedExportColumns}
+                onChange={(vals) => setSelectedExportColumns(vals as string[])}
+                style={{ display: "flex", flexDirection: "column", gap: 6 }}
+              />
+              <Divider />
+              <h4 style={{ fontWeight: 600, marginBottom: 12 }}>Select format:</h4>
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <Button block icon={<DownloadOutlined />} onClick={() => handleExport("csv")} disabled={!selectedExportColumns.length}>Export as CSV</Button>
+                <Button block icon={<DownloadOutlined />} onClick={() => handleExport("excel")} disabled={!selectedExportColumns.length}>Export as Excel</Button>
+                <Button block icon={<DownloadOutlined />} onClick={() => handleExport("pdf")} disabled={!selectedExportColumns.length}>Export as PDF (Print) — includes overall summary</Button>
+              </Space>
+              <div style={{ marginTop: 12, fontSize: 12, color: "#888" }}>* {data?.activityByUser?.length || 0} staff rows will be exported</div>
+            </div>
+          </Modal>
         </Space>
       </AppLayout>
     </AuthGuard>

@@ -15,6 +15,10 @@ import {
   Tag,
   Progress,
   Descriptions,
+  Button,
+  Modal,
+  Checkbox,
+  Divider,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -22,6 +26,7 @@ import {
   TeamOutlined,
   ExclamationCircleOutlined,
   FileTextOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -36,6 +41,7 @@ import {
   DebtorPackingList,
 } from "@/types/report";
 import dayjs from "dayjs";
+import { toast } from "sonner";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -249,13 +255,99 @@ const debtorColumns: ColumnsType<DebtorItem> = [
   },
 ];
 
+const exportColumnOptions = [
+  { label: "Rank", value: "rank" },
+  { label: "Customer Code", value: "customerCode" },
+  { label: "Customer Name", value: "customerName" },
+  { label: "Phone", value: "phoneNumber" },
+  { label: "Email", value: "email" },
+  { label: "Warehouse", value: "warehouse" },
+  { label: "Invoice Count", value: "invoiceCount" },
+  { label: "Packing List Count", value: "packingListCount" },
+  { label: "Invoice Amount", value: "totalInvoiceAmount" },
+  { label: "Paid Amount", value: "totalPaidAmount" },
+  { label: "Outstanding Balance", value: "outstandingBalance" },
+  { label: "Last Invoice Date", value: "lastInvoiceDate" },
+];
+
 export default function DebtorsReportPage() {
   const { user } = useAuth();
   const [filters, setFilters] = useState<ReportFilters>({});
+  const [isExportModalVisible, setIsExportModalVisible] = useState(false);
+  const [selectedExportColumns, setSelectedExportColumns] = useState<string[]>(
+    exportColumnOptions.map((c) => c.value)
+  );
 
   const { data, isLoading, error } = useDebtorsReport(filters, user?.role);
   const { data: warehousesData } = useWarehouses({ page: 1, limit: 100 });
   const { data: customersData } = useCustomers({ page: 1, limit: 100 });
+
+  const buildExportData = () =>
+    (data?.debtors || []).map((d) => {
+      const row: Record<string, string> = {};
+      selectedExportColumns.forEach((col) => {
+        switch (col) {
+          case "rank": row["Rank"] = String(d.rank); break;
+          case "customerCode": row["Customer Code"] = d.customerCode; break;
+          case "customerName": row["Customer Name"] = d.customerName; break;
+          case "phoneNumber": row["Phone"] = d.phoneNumber || "—"; break;
+          case "email": row["Email"] = d.email || "—"; break;
+          case "warehouse": row["Warehouse"] = d.warehouse || "—"; break;
+          case "invoiceCount": row["Invoice Count"] = String(d.invoiceCount); break;
+          case "packingListCount": row["Packing List Count"] = String(d.packingListCount); break;
+          case "totalInvoiceAmount": row["Invoice Amount ($)"] = d.totalInvoiceAmount.toFixed(2); break;
+          case "totalPaidAmount": row["Paid Amount ($)"] = d.totalPaidAmount.toFixed(2); break;
+          case "outstandingBalance": row["Outstanding Balance ($)"] = d.outstandingBalance.toFixed(2); break;
+          case "lastInvoiceDate": row["Last Invoice Date"] = d.lastInvoiceDate ? dayjs(d.lastInvoiceDate).format("DD MMM YYYY") : "—"; break;
+        }
+      });
+      return row;
+    });
+
+  const exportToCSV = (rows: Record<string, string>[], ext = "csv") => {
+    if (!rows.length) { toast.error("No data to export"); return; }
+    const headers = Object.keys(rows[0]);
+    const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => `"${r[h] || ""}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `debtors-report-${dayjs().format("YYYY-MM-DD")}.${ext}`;
+    link.click();
+  };
+
+  const exportToPDF = (rows: Record<string, string>[]) => {
+    if (!rows.length) { toast.error("No data to export"); return; }
+    const headers = Object.keys(rows[0]);
+    const summary = data?.summary;
+    const html = `<!DOCTYPE html><html><head><title>Debtors Report</title>
+      <style>body{font-family:Arial,sans-serif;margin:20px}h1{text-align:center}
+      table{width:100%;border-collapse:collapse;margin-top:20px;font-size:11px}
+      th,td{border:1px solid #ddd;padding:6px;text-align:left}
+      th{background:#cf1322;color:#fff}tr:nth-child(even){background:#f9f9f9}
+      .summary{margin:10px 0;font-size:13px}</style></head><body>
+      <h1>Debtors Report — ${dayjs().format("DD MMM YYYY")}</h1>
+      <div class="summary">
+        <p><strong>Total Debtors:</strong> ${summary?.totalDebtors || 0}</p>
+        <p><strong>Total Outstanding:</strong> $${(summary?.totalOutstanding || 0).toFixed(2)}</p>
+        <p><strong>Collection Rate:</strong> ${(summary?.collectionRate || 0).toFixed(2)}%</p>
+      </div>
+      <table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map((r) => `<tr>${headers.map((h) => `<td>${r[h] || ""}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table></body></html>`;
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); w.print(); }
+  };
+
+  const handleExport = (format: "csv" | "excel" | "pdf") => {
+    if (!selectedExportColumns.length) { toast.error("Select at least one column"); return; }
+    const rows = buildExportData();
+    if (!rows.length) { toast.error("No data to export"); return; }
+    if (format === "csv") exportToCSV(rows, "csv");
+    else if (format === "excel") exportToCSV(rows, "xlsx");
+    else exportToPDF(rows);
+    setIsExportModalVisible(false);
+    toast.success(`Exported as ${format.toUpperCase()}`);
+  };
 
   const handleDateRangeChange = (dates: any) => {
     if (dates && dates[0] && dates[1]) {
@@ -329,6 +421,13 @@ export default function DebtorsReportPage() {
                   }))}
                 />
                 <RangePicker onChange={handleDateRangeChange} />
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={() => setIsExportModalVisible(true)}
+                  disabled={!data?.debtors?.length}
+                >
+                  Export
+                </Button>
               </Space>
             </Col>
           </Row>
@@ -423,6 +522,32 @@ export default function DebtorsReportPage() {
               }}
             />
           </Card>
+          {/* Export Modal */}
+          <Modal
+            title="Export Debtors Report"
+            open={isExportModalVisible}
+            onCancel={() => setIsExportModalVisible(false)}
+            footer={null}
+            width={560}
+          >
+            <div>
+              <h4 style={{ fontWeight: 600, marginBottom: 12 }}>Select columns to export:</h4>
+              <Checkbox.Group
+                options={exportColumnOptions}
+                value={selectedExportColumns}
+                onChange={(vals) => setSelectedExportColumns(vals as string[])}
+                style={{ display: "flex", flexDirection: "column", gap: 6 }}
+              />
+              <Divider />
+              <h4 style={{ fontWeight: 600, marginBottom: 12 }}>Select format:</h4>
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <Button block icon={<DownloadOutlined />} onClick={() => handleExport("csv")} disabled={!selectedExportColumns.length}>Export as CSV</Button>
+                <Button block icon={<DownloadOutlined />} onClick={() => handleExport("excel")} disabled={!selectedExportColumns.length}>Export as Excel</Button>
+                <Button block icon={<DownloadOutlined />} onClick={() => handleExport("pdf")} disabled={!selectedExportColumns.length}>Export as PDF (Print)</Button>
+              </Space>
+              <div style={{ marginTop: 12, fontSize: 12, color: "#888" }}>* {data?.debtors?.length || 0} rows will be exported</div>
+            </div>
+          </Modal>
         </Space>
       </AppLayout>
     </AuthGuard>
