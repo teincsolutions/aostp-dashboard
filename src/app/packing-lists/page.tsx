@@ -498,61 +498,48 @@ export default function PackingListsPage() {
             <Col xs={24} sm={12} md={8} lg={6}>
               <Card>
                 <Statistic
-                  {canManagePackingLists && (
-                    <Modal
-                      title="Export Packing Lists"
-                      open={isExportModalVisible}
-                      onCancel={() => setIsExportModalVisible(false)}
-                      footer={null}
-                      width={600}
-                    >
-                      <div className="space-y-6">
-                        <div>
-                          <h4 className="font-medium mb-3">Select Columns to Export:</h4>
-                          <Checkbox.Group
-                            options={exportColumnOptions}
-                            value={selectedColumns}
-                            onChange={(checkedValues) =>
-                              setSelectedColumns(checkedValues as string[])
-                            }
-                            className="grid grid-cols-2 gap-2"
-                          />
-                        </div>
+                  title="Total Packages"
+                  value={totalPackages}
+                  prefix={<PackageIcon />}
+                  valueStyle={{ color: "#722ed1" }}
+                />
+              </Card>
+            </Col>
+          </Row>
 
-                        <div>
-                          <h4 className="font-medium mb-3">Select Export Format:</h4>
-                          <div className="flex gap-3">
-                            <Button
-                              type="primary"
-                              onClick={() => handleBulkExport("csv")}
-                              className="flex-1"
-                            >
-                              Export as CSV
-                            </Button>
-                            <Button
-                              type="primary"
-                              onClick={() => handleBulkExport("excel")}
-                              className="flex-1"
-                            >
-                              Export as Excel
-                            </Button>
-                            <Button
-                              type="primary"
-                              onClick={() => handleBulkExport("pdf")}
-                              className="flex-1"
-                            >
-                              Export as PDF (Print)
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="text-sm text-gray-500">
-                          * {packingLists?.data?.length || 0} rows will be exported based
-                          on current filters
-                        </div>
-                      </div>
-                    </Modal>
-                  )}
+          {/* Filters */}
+          <Card className="mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <Input
+                placeholder="Search packing lists..."
+                prefix={<SearchOutlined />}
+                value={searchText}
+                onChange={(e) => handleSearch(e.target.value)}
+                allowClear
+              />
+              <Select
+                placeholder="Filter by status"
+                value={statusFilter || undefined}
+                onChange={handleStatusFilter}
+                options={statusOptions}
+                allowClear
+              />
+              <Select
+                placeholder="Filter by shipment mode"
+                value={shipmentModeFilter || undefined}
+                onChange={handleShipmentModeFilter}
+                options={shipmentModeOptions}
+                allowClear
+              />
+              <RangePicker
+                className="w-full"
+                value={dateRange}
+                onChange={handleDateRangeChange}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                icon={<FilterOutlined />}
                 onClick={() => {
                   setSearchText("");
                   setStatusFilter("");
