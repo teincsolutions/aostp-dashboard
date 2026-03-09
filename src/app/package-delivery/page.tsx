@@ -32,14 +32,13 @@ import type { RcFile, UploadFile } from "antd/es/upload/interface";
 import { UploadProps } from "antd/lib";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { PACKAGE_PICKUP_ACCESS_ROLES } from "@/lib/access-control";
 import dayjs from "dayjs";
 import { CreatePackageDeliveryPayload, PackageDelivery } from "@/types/package";
 import { handleError } from "@/utils/forms/errorUtils";
 
 const { Option } = Select;
 const { Title } = Typography;
-
-const rolesAllowed = ["SUPER_ADMIN", "OPERATIONS_CLERK"];
 
 const validateMessages = {
   required: "${label} is required",
@@ -332,7 +331,7 @@ export default function PackageDeliveryPage() {
   };
 
   return (
-    <AuthGuard requiredRoles={rolesAllowed}>
+    <AuthGuard requiredRoles={PACKAGE_PICKUP_ACCESS_ROLES}>
       <AppLayout>
         <Space
           direction="vertical"

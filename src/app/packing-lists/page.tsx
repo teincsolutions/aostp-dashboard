@@ -55,9 +55,13 @@ import { getPackingListColumns, packingListStatusColors } from "./columns";
 import { ShippingMode } from "@/types/package";
 import type { Dayjs } from "dayjs";
 import type { RangePickerProps } from "antd/es/date-picker";
-import { Role } from "@/types/user";
 import dayjs from "dayjs";
 import { useCities } from "@/hooks/useCities";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  PACKING_LIST_ACCESS_ROLES,
+  PACKING_LIST_MANAGEMENT_ROLES,
+} from "@/lib/access-control";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -65,6 +69,9 @@ const { Title, Text } = Typography;
 
 export default function PackingListsPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const canManagePackingLists =
+    !!user && PACKING_LIST_MANAGEMENT_ROLES.includes(user.role);
 
   // State for UI
   const [searchText, setSearchText] = useState("");
@@ -423,39 +430,37 @@ export default function PackingListsPage() {
 
   // Table columns
   const columns = getPackingListColumns(
-    handleEditPackingList,
-    handleDeletePackingList,
+    canManagePackingLists ? handleEditPackingList : undefined,
+    canManagePackingLists ? handleDeletePackingList : undefined,
     handleViewDetails,
     isDeleting,
-    handleManagePackages,
+    canManagePackingLists ? handleManagePackages : undefined,
   );
 
   return (
-    <AuthGuard
-      requiredRoles={[
-        Role.SUPER_ADMIN,
-        Role.OPERATIONS_CLERK,
-        Role.FINANCE_MANAGER,
-      ]}
-    >
+    <AuthGuard requiredRoles={PACKING_LIST_ACCESS_ROLES}>
       <AppLayout>
         <div className="p-6">
           <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
             <Title level={2}>Packing List Management</Title>
             <Space>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={() => setIsExportModalVisible(true)}
-              >
-                Export Data
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                href="/packing-lists/create"
-              >
-                Create Packing List
-              </Button>
+              {canManagePackingLists && (
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={() => setIsExportModalVisible(true)}
+                >
+                  Export Data
+                </Button>
+              )}
+              {canManagePackingLists && (
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  href="/packing-lists/create"
+                >
+                  Create Packing List
+                </Button>
+              )}
             </Space>
           </div>
 
@@ -493,59 +498,61 @@ export default function PackingListsPage() {
             <Col xs={24} sm={12} md={8} lg={6}>
               <Card>
                 <Statistic
-                  title="Total Packages"
-                  value={totalPackages}
-                  prefix={<PackageIcon />}
-                  valueStyle={{ color: "#722ed1" }}
-                />
-              </Card>
-            </Col>
-          </Row>
+                  {canManagePackingLists && (
+                    <Modal
+                      title="Export Packing Lists"
+                      open={isExportModalVisible}
+                      onCancel={() => setIsExportModalVisible(false)}
+                      footer={null}
+                      width={600}
+                    >
+                      <div className="space-y-6">
+                        <div>
+                          <h4 className="font-medium mb-3">Select Columns to Export:</h4>
+                          <Checkbox.Group
+                            options={exportColumnOptions}
+                            value={selectedColumns}
+                            onChange={(checkedValues) =>
+                              setSelectedColumns(checkedValues as string[])
+                            }
+                            className="grid grid-cols-2 gap-2"
+                          />
+                        </div>
 
-          {/* Filters */}
-          <Card className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <Input
-                placeholder="Search packing lists..."
-                prefix={<SearchOutlined />}
-                value={searchText}
-                onChange={(e) => handleSearch(e.target.value)}
-                allowClear
-              />
-              <Select
-                placeholder="Filter by status"
-                value={statusFilter}
-                onChange={handleStatusFilter}
-                allowClear
-              >
-                {statusOptions.map((option) => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Shipment Mode"
-                value={shipmentModeFilter}
-                onChange={handleShipmentModeFilter}
-                allowClear
-              >
-                {shipmentModeOptions.map((option) => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-              <RangePicker
-                placeholder={["From date", "To date"]}
-                value={dateRange}
-                onChange={handleDateRangeChange}
-                allowClear
-              />
-            </div>
-            <div className="flex justify-start">
-              <Button
-                icon={<FilterOutlined />}
+                        <div>
+                          <h4 className="font-medium mb-3">Select Export Format:</h4>
+                          <div className="flex gap-3">
+                            <Button
+                              type="primary"
+                              onClick={() => handleBulkExport("csv")}
+                              className="flex-1"
+                            >
+                              Export as CSV
+                            </Button>
+                            <Button
+                              type="primary"
+                              onClick={() => handleBulkExport("excel")}
+                              className="flex-1"
+                            >
+                              Export as Excel
+                            </Button>
+                            <Button
+                              type="primary"
+                              onClick={() => handleBulkExport("pdf")}
+                              className="flex-1"
+                            >
+                              Export as PDF (Print)
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="text-sm text-gray-500">
+                          * {packingLists?.data?.length || 0} rows will be exported based
+                          on current filters
+                        </div>
+                      </div>
+                    </Modal>
+                  )}
                 onClick={() => {
                   setSearchText("");
                   setStatusFilter("");

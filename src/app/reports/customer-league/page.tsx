@@ -21,6 +21,7 @@ import { useCustomerLeagueReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useWarehouses } from "@/hooks/useWarehouse";
 import { useCustomers } from "@/hooks/useCustomers";
+import { CUSTOMER_LEAGUE_REPORT_ACCESS_ROLES } from "@/lib/access-control";
 import { ReportFilters, CustomerLeagueItem } from "@/types/report";
 
 const { Title } = Typography;
@@ -165,7 +166,7 @@ export default function CustomerLeagueReportPage() {
   ];
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={CUSTOMER_LEAGUE_REPORT_ACCESS_ROLES}>
       <AppLayout>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Row justify="space-between" align="middle">

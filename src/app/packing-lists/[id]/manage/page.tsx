@@ -25,6 +25,7 @@ import {
   usePackingList,
   usePackingListMutations,
 } from "@/hooks/usePackingLists";
+import { PACKING_LIST_MANAGEMENT_ROLES } from "@/lib/access-control";
 import { PackingListStatus } from "@/types/packingList";
 import { PackageAssignmentPanel } from "@/components/PackageAssignmentPanel";
 import { handleError } from "@/utils/forms/errorUtils";
@@ -100,13 +101,7 @@ export default function ManagePackingListPage() {
   };
 
   return (
-    <AuthGuard
-      requiredRoles={[
-        Role.SUPER_ADMIN,
-        Role.OPERATIONS_CLERK,
-        Role.FINANCE_MANAGER,
-      ]}
-    >
+    <AuthGuard requiredRoles={PACKING_LIST_MANAGEMENT_ROLES}>
       <AppLayout>
         <div className="p-6">
           {/* Breadcrumb */}

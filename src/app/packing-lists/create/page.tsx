@@ -43,6 +43,7 @@ import { handleError } from "@/utils/forms/errorUtils";
 import { PackageAssignmentPanel } from "@/components/PackageAssignmentPanel";
 import { getPacklistTotals } from "@/utils/forms/getPacklistTotals";
 import { useAuth } from "@/hooks/useAuth";
+import { PACKING_LIST_MANAGEMENT_ROLES } from "@/lib/access-control";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -216,13 +217,7 @@ const PackingListCreatePage: React.FC = () => {
   };
 
   return (
-    <AuthGuard
-      requiredRoles={[
-        Role.SUPER_ADMIN,
-        Role.OPERATIONS_CLERK,
-        Role.FINANCE_MANAGER,
-      ]}
-    >
+    <AuthGuard requiredRoles={PACKING_LIST_MANAGEMENT_ROLES}>
       <AppLayout>
         <div className="p-4 md:p-6 max-w-full md:max-w-7xl mx-auto">
           <div className="mb-6">

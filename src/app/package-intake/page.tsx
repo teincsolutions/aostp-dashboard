@@ -39,13 +39,12 @@ import { toast } from "sonner";
 import { InvoiceStatus } from "@/types/invoice";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useAuth } from "@/hooks/useAuth";
+import { PACKAGE_INTAKE_ACCESS_ROLES } from "@/lib/access-control";
 import { handleError } from "@/utils/forms/errorUtils";
 import dayjs from "dayjs";
 
 const { Option } = Select;
 const { Title } = Typography;
-
-const rolesAllowed = ["SUPER_ADMIN", "OPERATIONS_CLERK"];
 
 const validateMessages = {
   required: "${label} is required",
@@ -345,7 +344,7 @@ export default function PackageIntakePage() {
   };
 
   return (
-    <AuthGuard requiredRoles={rolesAllowed}>
+    <AuthGuard requiredRoles={PACKAGE_INTAKE_ACCESS_ROLES}>
       <AppLayout>
         <div className="px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
           {/* Top Heading */}

@@ -15,6 +15,26 @@ import {
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  CUSTOMER_ACCESS_ROLES,
+  CUSTOMER_LEAGUE_REPORT_ACCESS_ROLES,
+  DEBTOR_REPORT_ACCESS_ROLES,
+  END_OF_DAY_REPORT_ACCESS_ROLES,
+  EXCHANGE_RATE_ACCESS_ROLES,
+  GENERAL_REPORT_ACCESS_ROLES,
+  INVOICE_ACCESS_ROLES,
+  PACKAGE_INTAKE_ACCESS_ROLES,
+  PACKAGE_PICKUP_ACCESS_ROLES,
+  PACKING_LIST_ACCESS_ROLES,
+  PACKING_LIST_REPORT_ACCESS_ROLES,
+  PAYMENT_ACCESS_ROLES,
+  PAYMENT_REPORT_ACCESS_ROLES,
+  PICKUP_LIST_ACCESS_ROLES,
+  PICKUP_REPORT_ACCESS_ROLES,
+  REPORTS_MENU_ACCESS_ROLES,
+  SHIPPING_METHOD_REPORT_ACCESS_ROLES,
+  WAREHOUSE_REPORT_ACCESS_ROLES,
+} from "@/lib/access-control";
 import type { ReactNode } from "react";
 import { UserRole } from "@/types/common";
 
@@ -45,19 +65,19 @@ export const menuItems: Array<MenuItem> = [
     key: "/package-intake",
     icon: <BoxPlotOutlined />,
     label: "Package Intake",
-    roles: ["SUPER_ADMIN", "PAYMENT_CLERK", "OPERATIONS_CLERK"],
+    roles: PACKAGE_INTAKE_ACCESS_ROLES,
   },
   {
     key: "/package-delivery",
     icon: <BoxPlotOutlined />,
     label: "Package Pickup",
-    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
+    roles: PACKAGE_PICKUP_ACCESS_ROLES,
   },
   {
     key: "/pickups",
     icon: <BoxPlotOutlined />,
     label: "Pickups List",
-    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK", "FINANCE_MANAGER"],
+    roles: PICKUP_LIST_ACCESS_ROLES,
   },
 
   // Group: Packages, Packing Lists, Warehouse, Containers
@@ -71,7 +91,7 @@ export const menuItems: Array<MenuItem> = [
     key: "/packing-lists",
     icon: <FileTextOutlined />,
     label: "Packing Lists",
-    roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
+    roles: PACKING_LIST_ACCESS_ROLES,
   },
   {
     key: "/warehouse",
@@ -91,12 +111,7 @@ export const menuItems: Array<MenuItem> = [
     key: "/customers",
     icon: <TeamOutlined />,
     label: "Customers",
-    roles: [
-      "SUPER_ADMIN",
-      "OPERATIONS_CLERK",
-      "FINANCE_MANAGER",
-      "PAYMENT_CLERK",
-    ],
+    roles: CUSTOMER_ACCESS_ROLES,
   },
   {
     key: "/cities",
@@ -116,74 +131,74 @@ export const menuItems: Array<MenuItem> = [
     key: "/payments",
     icon: <FileTextOutlined />,
     label: "Payments",
-    roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "PAYMENT_CLERK"],
+    roles: PAYMENT_ACCESS_ROLES,
   },
   {
     key: "/invoices",
     icon: <FileTextOutlined />,
     label: "Invoices",
-    roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "PAYMENT_CLERK"],
+    roles: INVOICE_ACCESS_ROLES,
   },
   // Reports submenu
   {
     key: "/reports",
     icon: <BarChartOutlined />,
     label: "Reports",
-    roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+    roles: REPORTS_MENU_ACCESS_ROLES,
     children: [
       {
         key: "/reports/payments",
         icon: <FileTextOutlined />,
         label: "Payments Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+        roles: PAYMENT_REPORT_ACCESS_ROLES,
       },
       {
         key: "/reports/packing-lists",
         icon: <FileTextOutlined />,
         label: "Packing List Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+        roles: PACKING_LIST_REPORT_ACCESS_ROLES,
       },
       {
         key: "/reports/customer-league",
         icon: <FileTextOutlined />,
         label: "Customer League Report",
-        roles: ["SUPER_ADMIN", "OPERATIONS_CLERK", "FINANCE_MANAGER"],
+        roles: CUSTOMER_LEAGUE_REPORT_ACCESS_ROLES,
       },
       {
         key: "/reports/shipping-method",
         icon: <FileTextOutlined />,
         label: "Shipping Method Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+        roles: SHIPPING_METHOD_REPORT_ACCESS_ROLES,
       },
       {
         key: "/reports/general",
         icon: <FileTextOutlined />,
         label: "General Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+        roles: GENERAL_REPORT_ACCESS_ROLES,
       },
       {
         key: "/reports/pickups",
         icon: <FileTextOutlined />,
         label: "Pickup Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+        roles: PICKUP_REPORT_ACCESS_ROLES,
       },
       {
         key: "/reports/warehouses",
         icon: <FileTextOutlined />,
         label: "Warehouse Report",
-        roles: ["SUPER_ADMIN", "OPERATIONS_CLERK"],
+        roles: WAREHOUSE_REPORT_ACCESS_ROLES,
       },
       {
         key: "/reports/debtors",
         icon: <FileTextOutlined />,
         label: "Debtors Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+        roles: DEBTOR_REPORT_ACCESS_ROLES,
       },
       {
         key: "/reports/end-of-day",
         icon: <FileTextOutlined />,
         label: "End of Day Report",
-        roles: ["SUPER_ADMIN", "FINANCE_MANAGER", "OPERATIONS_CLERK"],
+        roles: END_OF_DAY_REPORT_ACCESS_ROLES,
       },
     ],
   },
@@ -191,7 +206,7 @@ export const menuItems: Array<MenuItem> = [
     key: "/exchange-rate",
     icon: <SettingOutlined />,
     label: "Rate Management",
-    roles: ["SUPER_ADMIN", "FINANCE_MANAGER"],
+    roles: EXCHANGE_RATE_ACCESS_ROLES,
   },
   // Group: Notifications, Audit Logs, Settings
   {

@@ -1,0 +1,109 @@
+import type { UserRole } from "@/types/common";
+
+export const CUSTOMER_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+  "PAYMENT_CLERK",
+];
+
+export const INVOICE_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "PAYMENT_CLERK",
+];
+
+export const PAYMENT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "PAYMENT_CLERK",
+];
+
+export const PACKAGE_INTAKE_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+];
+
+export const PACKAGE_PICKUP_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+  "PAYMENT_CLERK",
+];
+
+export const PICKUP_LIST_ACCESS_ROLES: UserRole[] = [
+  ...PACKAGE_PICKUP_ACCESS_ROLES,
+];
+
+export const PACKING_LIST_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+  "PAYMENT_CLERK",
+];
+
+export const PACKING_LIST_MANAGEMENT_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+];
+
+export const EXCHANGE_RATE_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+];
+
+export const PAYMENT_REPORT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+];
+
+export const PACKING_LIST_REPORT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+];
+
+export const CUSTOMER_LEAGUE_REPORT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+];
+
+export const SHIPPING_METHOD_REPORT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+];
+
+export const GENERAL_REPORT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+];
+
+export const PICKUP_REPORT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+];
+
+export const WAREHOUSE_REPORT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+];
+
+export const DEBTOR_REPORT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+];
+
+export const END_OF_DAY_REPORT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+];
+
+export const REPORTS_MENU_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+];

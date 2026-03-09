@@ -31,6 +31,7 @@ import {
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { END_OF_DAY_REPORT_ACCESS_ROLES } from "@/lib/access-control";
 import { useEndOfDayReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useWarehouses } from "@/hooks/useWarehouse";
@@ -374,7 +375,7 @@ export default function EndOfDayReportPage() {
   }));
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={END_OF_DAY_REPORT_ACCESS_ROLES}>
       <AppLayout>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           {/* Header */}

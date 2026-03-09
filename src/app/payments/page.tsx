@@ -67,6 +67,7 @@ import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { handleError } from "@/utils/forms/errorUtils";
 import { Payment } from "@/types/payment";
 import { useAuth } from "@/hooks/useAuth";
+import { PAYMENT_ACCESS_ROLES } from "@/lib/access-control";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -507,7 +508,7 @@ export default function PaymentsPage() {
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={PAYMENT_ACCESS_ROLES}>
       <AppLayout>
         <div className="p-6">
           <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">

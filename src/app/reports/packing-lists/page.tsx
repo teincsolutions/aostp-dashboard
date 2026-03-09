@@ -27,6 +27,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { usePackingListsReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useWarehouses } from "@/hooks/useWarehouse";
+import { PACKING_LIST_REPORT_ACCESS_ROLES } from "@/lib/access-control";
 import { ReportFilters, PackingListReportItem } from "@/types/report";
 import { Warehouse } from "@/types/warehouse";
 import dayjs from "dayjs";
@@ -163,7 +164,7 @@ export default function PackingListsReportPage() {
   ];
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={PACKING_LIST_REPORT_ACCESS_ROLES}>
       <AppLayout>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Row justify="space-between" align="middle">

@@ -22,6 +22,7 @@ import { useGeneralReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useWarehouses } from "@/hooks/useWarehouse";
 import { useCustomers } from "@/hooks/useCustomers";
+import { GENERAL_REPORT_ACCESS_ROLES } from "@/lib/access-control";
 import { ReportFilters, GeneralReportCustomer } from "@/types/report";
 import dayjs from "dayjs";
 
@@ -157,7 +158,7 @@ export default function GeneralReportPage() {
   ];
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={GENERAL_REPORT_ACCESS_ROLES}>
       <AppLayout>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Row justify="space-between" align="middle">

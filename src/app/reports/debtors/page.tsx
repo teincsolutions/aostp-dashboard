@@ -30,6 +30,7 @@ import {
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { DEBTOR_REPORT_ACCESS_ROLES } from "@/lib/access-control";
 import { useDebtorsReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useWarehouses } from "@/hooks/useWarehouse";
@@ -381,7 +382,7 @@ export default function DebtorsReportPage() {
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={DEBTOR_REPORT_ACCESS_ROLES}>
       <AppLayout>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           {/* Header */}

@@ -36,6 +36,7 @@ import { ReportFilters, PaymentReportItem } from "@/types/report";
 import { Warehouse } from "@/types/warehouse";
 import { Customer } from "@/types/customer";
 import { User } from "@/types/user";
+import { PAYMENT_REPORT_ACCESS_ROLES } from "@/lib/access-control";
 import { toast } from "sonner";
 import dayjs from "dayjs";
 
@@ -398,7 +399,7 @@ export default function PaymentsReportPage() {
   ];
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={PAYMENT_REPORT_ACCESS_ROLES}>
       <AppLayout>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Row justify="space-between" align="middle">

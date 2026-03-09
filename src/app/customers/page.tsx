@@ -40,6 +40,7 @@ import {
   Customer,
 } from "@/types/customer";
 import { getCustomerColumns } from "@/app/customers/columns";
+import { CUSTOMER_ACCESS_ROLES } from "@/lib/access-control";
 import { toast } from "sonner";
 import { handleError } from "@/utils/forms/errorUtils";
 
@@ -262,7 +263,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={CUSTOMER_ACCESS_ROLES}>
       <AppLayout>
         <div className="px-4 md:px-6 lg:px-8 py-4 w-full mx-auto space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">

@@ -34,10 +34,9 @@ import { useShippingRates } from "@/hooks/useShippingRates";
 import { useCities } from "@/hooks/useCities";
 import { useState, useEffect } from "react";
 import dayjs from "dayjs";
+import { EXCHANGE_RATE_ACCESS_ROLES } from "@/lib/access-control";
 import { toast } from "sonner";
 import { getServerValidationErrors } from "@/utils/forms/errorUtils";
-
-const ROLES_ALLOWED = ["FINANCE_MANAGER", "SUPER_ADMIN"];
 
 const exchangeRateValidationSchema = Yup.object().shape({
   rate: Yup.number()
@@ -356,7 +355,7 @@ export default function RateManagementPage() {
   ];
 
   return (
-    <AuthGuard requiredRoles={ROLES_ALLOWED}>
+    <AuthGuard requiredRoles={EXCHANGE_RATE_ACCESS_ROLES}>
       <AppLayout>
         <div className="px-4 md:px-6 lg:px-8 py-4 max-w-7xl mx-auto space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">

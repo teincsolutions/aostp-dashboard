@@ -23,6 +23,7 @@ import {
 } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { WAREHOUSE_REPORT_ACCESS_ROLES } from "@/lib/access-control";
 import { useWarehouseReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useWarehouses } from "@/hooks/useWarehouse";
@@ -103,7 +104,7 @@ export default function WarehouseReportPage() {
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={WAREHOUSE_REPORT_ACCESS_ROLES}>
       <AppLayout>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Row justify="space-between" align="middle">

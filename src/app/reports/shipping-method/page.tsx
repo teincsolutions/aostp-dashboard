@@ -17,6 +17,7 @@ import type { ColumnsType } from "antd/es/table";
 import { RocketOutlined, CarOutlined } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { SHIPPING_METHOD_REPORT_ACCESS_ROLES } from "@/lib/access-control";
 import { useShippingMethodReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useWarehouses } from "@/hooks/useWarehouse";
@@ -85,7 +86,7 @@ export default function ShippingMethodReportPage() {
   ];
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={SHIPPING_METHOD_REPORT_ACCESS_ROLES}>
       <AppLayout>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Row justify="space-between" align="middle">

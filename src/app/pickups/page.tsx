@@ -32,11 +32,11 @@ import type { RangePickerProps } from "antd/es/date-picker";
 import type { ColumnsType } from "antd/es/table";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { PICKUP_LIST_ACCESS_ROLES } from "@/lib/access-control";
 import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import { useAllPackageDeliveries } from "@/hooks/usePackageDelivery";
 import { useWarehouses } from "@/hooks/useWarehouse";
 import { PackageDelivery, GetPackageDeliveriesParams } from "@/types/package";
-import { Role } from "@/types/user";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 
@@ -331,7 +331,7 @@ export default function PickupsListPage() {
   ];
 
   return (
-    <AuthGuard requiredRoles={[Role.SUPER_ADMIN, Role.OPERATIONS_CLERK, Role.FINANCE_MANAGER]}>
+    <AuthGuard requiredRoles={PICKUP_LIST_ACCESS_ROLES}>
       <AppLayout>
         <div className="p-6">
           {/* Header */}

@@ -19,11 +19,11 @@ export const packingListStatusColors = {
 };
 
 export const getPackingListColumns = (
-  onEditPackingList: (packingList: PackingList) => void,
-  onDeletePackingList: (id: string) => void,
+  onEditPackingList: ((packingList: PackingList) => void) | undefined,
+  onDeletePackingList: ((id: string) => void) | undefined,
   onViewDetails: (packingList: PackingList) => void,
   isDeleting: boolean,
-  onManagePackages?: (packingList: PackingList) => void
+  onManagePackages?: (packingList: PackingList) => void,
 ): ColumnsType<PackingList> => [
   {
     title: "Name",
@@ -114,13 +114,15 @@ export const getPackingListColumns = (
             />
           </Tooltip>
 
-          <Tooltip title="Edit Packing List">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => onEditPackingList(record)}
-            />
-          </Tooltip>
+          {onEditPackingList && (
+            <Tooltip title="Edit Packing List">
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => onEditPackingList(record)}
+              />
+            </Tooltip>
+          )}
           {onManagePackages && (
             <Tooltip title="Manage Packages">
               <Button
@@ -131,22 +133,24 @@ export const getPackingListColumns = (
             </Tooltip>
           )}
 
-          <Tooltip title="Delete Packing List">
-            <Popconfirm
-              title="Are you sure you want to delete this packing list? This action cannot be undone."
-              onConfirm={() => onDeletePackingList(record.id)}
-              okText="Yes"
-              cancelText="No"
-              okButtonProps={{ danger: true }}
-            >
-              <Button
-                type="text"
-                icon={<DeleteOutlined />}
-                loading={isDeleting}
-                danger
-              />
-            </Popconfirm>
-          </Tooltip>
+          {onDeletePackingList && (
+            <Tooltip title="Delete Packing List">
+              <Popconfirm
+                title="Are you sure you want to delete this packing list? This action cannot be undone."
+                onConfirm={() => onDeletePackingList(record.id)}
+                okText="Yes"
+                cancelText="No"
+                okButtonProps={{ danger: true }}
+              >
+                <Button
+                  type="text"
+                  icon={<DeleteOutlined />}
+                  loading={isDeleting}
+                  danger
+                />
+              </Popconfirm>
+            </Tooltip>
+          )}
         </Space>
       );
     },

@@ -18,6 +18,7 @@ import type { ColumnsType } from "antd/es/table";
 import { ShoppingOutlined } from "@ant-design/icons";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { PICKUP_REPORT_ACCESS_ROLES } from "@/lib/access-control";
 import { usePickupsReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -164,7 +165,7 @@ export default function PickupsReportPage() {
   ];
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRoles={PICKUP_REPORT_ACCESS_ROLES}>
       <AppLayout>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Row justify="space-between" align="middle">
