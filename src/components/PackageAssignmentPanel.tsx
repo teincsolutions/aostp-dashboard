@@ -577,6 +577,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     {
       title: "Actions",
       key: "actions",
+      fixed: "right" as const,
       width: 160,
       render: (_: any, record: Package) => (
         <Space>
@@ -724,6 +725,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     {
       title: "Actions",
       key: "actions",
+      fixed: "right" as const,
       width: 150,
       render: (_: any, record: Package) => (
         <Space>
@@ -850,6 +852,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
     {
       title: "Actions",
       key: "actions",
+      fixed: "right" as const,
       width: 100,
       render: (_: any, record: Package) => (
         <Button
@@ -984,7 +987,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                 showSizeChanger: false,
                 showQuickJumper: false,
               }}
-              scroll={{ y: 400 }}
+              scroll={{ x: "max-content", y: 400 }}
               size="small"
             />
           ) : (
@@ -1059,7 +1062,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
                   setUnassignedPage(page);
                 },
               }}
-              scroll={{ y: 400 }}
+              scroll={{ x: "max-content", y: 400 }}
               size="small"
             />
           </div>
@@ -1076,7 +1079,7 @@ export const PackageAssignmentPanel: React.FC<PackageAssignmentProps> = ({
               dataSource={selectedPackages}
               rowKey="id"
               pagination={false}
-              scroll={{ y: 400 }}
+              scroll={{ x: "max-content", y: 400 }}
               size="small"
             />
           </div>
