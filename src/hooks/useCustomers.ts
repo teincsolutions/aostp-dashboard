@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customerService } from "@/services/customerService";
 import {
   CustomerCreatePayload,
+  CustomerForceDeletePayload,
   CustomerUpdatePayload,
   CustomerStatsResponse,
 } from "@/types/customer";
@@ -130,6 +131,20 @@ export function useCustomerMutations() {
     },
   });
 
+  const forceDeleteCustomer = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CustomerForceDeletePayload;
+    }) => customerService.forceDeleteCustomer(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+    },
+  });
+
   const toggleCustomerStatus = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       customerService.toggleCustomerStatus(id, isActive),
@@ -142,10 +157,12 @@ export function useCustomerMutations() {
     createCustomer: createCustomer.mutateAsync,
     updateCustomer: updateCustomer.mutateAsync,
     deleteCustomer: deleteCustomer.mutateAsync,
+    forceDeleteCustomer: forceDeleteCustomer.mutateAsync,
     toggleCustomerStatus: toggleCustomerStatus.mutateAsync,
     isCreating: createCustomer.status === "pending",
     isUpdating: updateCustomer.status === "pending",
     isDeleting: deleteCustomer.status === "pending",
+    isForceDeleting: forceDeleteCustomer.status === "pending",
     isTogglingStatus: toggleCustomerStatus.status === "pending",
   };
 }

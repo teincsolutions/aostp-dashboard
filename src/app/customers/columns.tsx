@@ -9,6 +9,7 @@ import {
   BarChartOutlined,
   ExportOutlined,
   DeleteOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import { Customer } from "@/types/customer";
 import { Role } from "@/types/user";
@@ -19,11 +20,13 @@ interface CustomerActions {
   onViewStats: (customer: Customer) => void;
   onExport: (id: string) => void;
   onDelete?: (id: string) => void;
+  onForceDelete?: (customer: Customer) => void;
   userRole?: string;
   loading?: {
     toggling?: boolean;
     exporting?: boolean;
     deleting?: boolean;
+    forceDeleting?: boolean;
   };
 }
 
@@ -94,7 +97,7 @@ export function getCustomerColumns(
     {
       title: "Actions",
       key: "actions",
-      width: 220,
+      width: 260,
       render: (_: unknown, record: Customer) => (
         <div style={{ display: "flex", gap: 8 }}>
           <Tooltip title="Edit">
@@ -133,14 +136,14 @@ export function getCustomerColumns(
           </Tooltip>
           {actions.userRole === Role.SUPER_ADMIN && actions.onDelete && (
             <Popconfirm
-              title="Delete Customer"
-              description="Are you sure you want to delete this customer? This action cannot be undone."
+              title="Soft Delete Customer"
+              description="This will deactivate the customer while preserving records."
               onConfirm={() => actions.onDelete!(record.id)}
               okText="Yes"
               cancelText="No"
               okButtonProps={{ danger: true }}
             >
-              <Tooltip title="Delete">
+              <Tooltip title="Soft Delete">
                 <Button
                   icon={<DeleteOutlined />}
                   size="small"
@@ -149,6 +152,18 @@ export function getCustomerColumns(
                 />
               </Tooltip>
             </Popconfirm>
+          )}
+          {actions.userRole === Role.SUPER_ADMIN && actions.onForceDelete && (
+            <Tooltip title="Force Delete Permanently">
+              <Button
+                icon={<WarningOutlined />}
+                size="small"
+                danger
+                type="primary"
+                loading={actions.loading?.forceDeleting}
+                onClick={() => actions.onForceDelete!(record)}
+              />
+            </Tooltip>
           )}
         </div>
       ),

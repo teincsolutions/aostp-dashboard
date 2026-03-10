@@ -66,6 +66,24 @@ export interface CustomerUpdatePayload {
   isActive?: boolean;
 }
 
+export interface CustomerForceDeletePayload {
+  confirmName: string;
+}
+
+export interface CustomerForceDeleteSummary {
+  packageDeliveries: number;
+  payments: number;
+  notifications: number;
+  invoices: number;
+  packageItems: number;
+  packages: number;
+}
+
+export interface CustomerForceDeleteResponse {
+  deleted: boolean;
+  summary: CustomerForceDeleteSummary;
+}
+
 export interface CustomerStats {
   totalPackages: number;
   pendingPackages: number;

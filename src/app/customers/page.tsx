@@ -8,11 +8,12 @@ import {
   Select,
   Space,
   Form,
-  message,
   Card,
   Row,
   Col,
   Statistic,
+  Modal,
+  Alert,
 } from "antd";
 import { CustomerModal } from "@/components/CustomerModal";
 import { CustomerDetailsModal } from "@/components/CustomerDetailsModal";
@@ -36,6 +37,7 @@ import {
 } from "@/hooks/useCustomers";
 import {
   CustomerCreatePayload,
+  CustomerForceDeleteResponse,
   CustomerUpdatePayload,
   Customer,
 } from "@/types/customer";
@@ -43,6 +45,7 @@ import { getCustomerColumns } from "@/app/customers/columns";
 import { CUSTOMER_ACCESS_ROLES } from "@/lib/access-control";
 import { toast } from "sonner";
 import { handleError } from "@/utils/forms/errorUtils";
+import { Role } from "@/types/user";
 
 const { Option } = Select;
 
@@ -66,6 +69,12 @@ export default function CustomersPage() {
   const [pageSize, setPageSize] = useState(10);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
+  const [isForceDeleteModalVisible, setIsForceDeleteModalVisible] =
+    useState(false);
+  const [forceDeleteTarget, setForceDeleteTarget] = useState<Customer | null>(
+    null,
+  );
+  const [forceDeleteConfirmName, setForceDeleteConfirmName] = useState("");
 
   // Formik handles forms internally
 
@@ -86,10 +95,12 @@ export default function CustomersPage() {
     createCustomer,
     updateCustomer,
     deleteCustomer,
+    forceDeleteCustomer,
     toggleCustomerStatus,
     isCreating,
     isUpdating,
     isDeleting,
+    isForceDeleting,
     isTogglingStatus,
   } = useCustomerMutations();
 
@@ -165,7 +176,50 @@ export default function CustomersPage() {
   const handleDeleteCustomer = async (id: string) => {
     try {
       await deleteCustomer(id);
-      toast.success("Customer deleted successfully");
+      toast.success("Customer soft-deleted successfully");
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  const getCustomerDisplayName = (customer: Customer) =>
+    [customer.firstName, customer.lastName].filter(Boolean).join(" ").trim();
+
+  const openForceDeleteModal = (customer: Customer) => {
+    setForceDeleteTarget(customer);
+    setForceDeleteConfirmName("");
+    setIsForceDeleteModalVisible(true);
+  };
+
+  const closeForceDeleteModal = () => {
+    setIsForceDeleteModalVisible(false);
+    setForceDeleteTarget(null);
+    setForceDeleteConfirmName("");
+  };
+
+  const handleForceDeleteCustomer = async () => {
+    if (!forceDeleteTarget) return;
+
+    try {
+      const result = (await forceDeleteCustomer({
+        id: forceDeleteTarget.id,
+        payload: { confirmName: forceDeleteConfirmName.trim() },
+      })) as CustomerForceDeleteResponse;
+
+      const summary = result.summary;
+      const deletedRecords = [
+        summary.packageDeliveries,
+        summary.payments,
+        summary.notifications,
+        summary.invoices,
+        summary.packageItems,
+        summary.packages,
+      ].reduce((total, count) => total + count, 0);
+
+      toast.success(
+        `Customer permanently deleted. Removed ${deletedRecords} related record${deletedRecords === 1 ? "" : "s"}.`,
+      );
+      closeForceDeleteModal();
     } catch (error) {
       handleError(error);
     }
@@ -240,11 +294,13 @@ export default function CustomersPage() {
       }
     },
     onDelete: handleDeleteCustomer,
+    onForceDelete: openForceDeleteModal,
     userRole: user?.role,
     loading: {
       toggling: isTogglingStatus,
       exporting: exportLoading,
       deleting: isDeleting,
+      forceDeleting: isForceDeleting,
     },
   });
 
@@ -437,6 +493,56 @@ export default function CustomersPage() {
             }}
             customer={selectedCustomer}
           />
+
+          <Modal
+            title="Force Delete Customer"
+            open={isForceDeleteModalVisible}
+            onCancel={closeForceDeleteModal}
+            onOk={handleForceDeleteCustomer}
+            okText="Permanently Delete"
+            okButtonProps={{
+              danger: true,
+              disabled:
+                !forceDeleteTarget ||
+                forceDeleteConfirmName.trim() !==
+                  getCustomerDisplayName(forceDeleteTarget),
+              loading: isForceDeleting,
+            }}
+            cancelButtonProps={{ disabled: isForceDeleting }}
+            destroyOnHidden
+          >
+            <div className="space-y-4">
+              <Alert
+                type="error"
+                showIcon
+                message="This action is irreversible"
+                description="The customer and all associated deliveries, payments, notifications, invoices, package items, and packages will be permanently deleted."
+              />
+
+              {forceDeleteTarget && (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-700">
+                    Type the exact customer name to confirm permanent deletion.
+                  </p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Expected: {getCustomerDisplayName(forceDeleteTarget)}
+                  </p>
+                  <Input
+                    autoFocus
+                    placeholder="Enter full customer name"
+                    value={forceDeleteConfirmName}
+                    onChange={(e) => setForceDeleteConfirmName(e.target.value)}
+                    disabled={isForceDeleting}
+                  />
+                  {user?.role === Role.SUPER_ADMIN && (
+                    <p className="text-xs text-gray-500">
+                      Only SUPER_ADMIN can perform this action.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </Modal>
         </div>
       </AppLayout>
     </AuthGuard>

@@ -5,6 +5,8 @@ import { apiService } from "./api";
 import {
   Customer,
   CustomerCreatePayload,
+  CustomerForceDeletePayload,
+  CustomerForceDeleteResponse,
   CustomerUpdatePayload,
   CustomerStats,
   CustomerStatsResponse,
@@ -43,6 +45,17 @@ export const customerService = {
 
   deleteCustomer: async (id: string) =>
     (await apiService.delete(`/customers/${id}`)).data,
+
+  forceDeleteCustomer: async (
+    id: string,
+    payload: CustomerForceDeletePayload,
+  ) =>
+    (
+      await apiService.delete<CustomerForceDeleteResponse>(
+        `/customers/${id}/force`,
+        { data: payload },
+      )
+    ).data,
 
   exportCustomers: (params: Record<string, unknown>, format: "pdf" | "excel") =>
     apiService.get<Blob>(`/customers/export`, {
