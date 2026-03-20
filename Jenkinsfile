@@ -14,6 +14,7 @@ pipeline {
         NODE_ENV = 'production'
         NEXT_PUBLIC_APP_ENV = 'production'
         NEXT_PUBLIC_API_BASE_URL = 'https://api.akomapacargo.com'
+        NEXT_PUBLIC_API_BASE_URL_TEST = 'https://test-api.akomapacargo.com'
         PRODUCTION_DOMAIN = 'aostp.akomapacargo.com'
         TEST_DOMAIN = 'test-aostp.akomapacargo.com'
     }
@@ -119,8 +120,8 @@ pipeline {
                  ]) {
                     sh '''
                      # extract and set up .env.test
-                    if [ -f .env.template ]; then
-                        envsubst < .env.template > .env.test
+                    if [ -f .env.template-test ]; then
+                        envsubst < .env.template-test > .env.test
                     fi
                     docker compose -f docker-compose.test.yml down || true
                     docker compose -f docker-compose.test.yml up -d
