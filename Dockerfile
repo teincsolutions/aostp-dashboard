@@ -1,13 +1,17 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Accept build-time environment variables
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+
 # Copy package.json and package-lock.json to leverage Docker's caching
 COPY package*.json ./
 RUN npm install
 
 # Copy the rest of the application files
 COPY . .
-# Set the placeholder variable directly during the build command
+# Build with the environment-specific API URL
 RUN npm run build
 
 #Create a lightweight runtime image

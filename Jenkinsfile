@@ -13,8 +13,8 @@ pipeline {
         DOCKER_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'unknown'}"
         NODE_ENV = 'production'
         NEXT_PUBLIC_APP_ENV = 'production'
-        NEXT_PUBLIC_API_BASE_URL = 'https://api.akomapacargo.com'
-        NEXT_PUBLIC_API_BASE_URL_TEST = 'https://test-api.akomapacargo.com'
+        NEXT_PUBLIC_API_BASE_URL = 'https://api.akomapacargo.com/api/v1'
+        NEXT_PUBLIC_API_BASE_URL_TEST = 'https://test-api.akomapacargo.com/api/v1'
         PRODUCTION_DOMAIN = 'aostp.akomapacargo.com'
         TEST_DOMAIN = 'test-aostp.akomapacargo.com'
     }
@@ -37,13 +37,19 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo '🐳 Building Docker image...'
-                sh """
-                    docker build --network=host --target production \\
-                        --tag "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}" \\
-                        --tag "${DOCKER_IMAGE_NAME}:latest" \\
-                        .
-                    docker images "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
-                """
+                script {
+                    def apiBaseUrl = (env.GIT_BRANCH == 'test')
+                        ? "${NEXT_PUBLIC_API_BASE_URL_TEST}"
+                        : "${NEXT_PUBLIC_API_BASE_URL}"
+                    sh """
+                        docker build --network=host --target production \\
+                            --build-arg NEXT_PUBLIC_API_BASE_URL=${apiBaseUrl} \\
+                            --tag "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}" \\
+                            --tag "${DOCKER_IMAGE_NAME}:latest" \\
+                            .
+                        docker images "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                    """
+                }
             }
         }
 
