@@ -156,7 +156,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             {filename || "View document"}
           </a>
         )}
-        {message.text && (
+        {message.messageType === "text" && message.text && (
           <div className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
             {message.text}
           </div>
@@ -304,7 +304,6 @@ export default function MessageArea({ conversation }: MessageAreaProps) {
       const result = await uploadChatMedia(file);
       await sendMutation.mutateAsync({
         to: activeConversationId,
-        text: file.name,
         type: type as any,
         mediaUrl: result.url,
         filename: file.name,
