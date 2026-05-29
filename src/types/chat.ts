@@ -58,6 +58,7 @@ export interface WebSocketMessage {
   toNumber: string;
   direction: 'INBOUND' | 'OUTBOUND';
   text: string | null;
+  content?: Record<string, unknown>;
   messageType: string;
   status: string;
   createdAt: string;

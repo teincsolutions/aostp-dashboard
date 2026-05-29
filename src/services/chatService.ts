@@ -54,8 +54,6 @@ export const uploadChatMedia = async (
     key: string;
     bucket: string;
     size: number;
-  }>("/uploads/generic", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  }>("/uploads/generic", formData);
   return res.data;
 };
