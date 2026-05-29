@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { io, Socket } from "socket.io-client";
 import {
@@ -8,9 +8,12 @@ import {
   sendMessage as sendMessageApi,
 } from "@/services/chatService";
 import type {
+  ChatMessage,
   SendMessagePayload,
   WebSocketMessage,
 } from "@/types/chat";
+
+const MESSAGES_PER_PAGE = 50;
 
 export function useConversations(params?: {
   page?: number;
@@ -20,19 +23,46 @@ export function useConversations(params?: {
   return useQuery({
     queryKey: ["chatConversations", params],
     queryFn: () => getConversations(params),
+    staleTime: 30_000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
-export function useMessages(
-  conversationId: string | null,
-  params?: { page?: number; limit?: number },
-) {
+export function useMessages(conversationId: string | null) {
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+
   const query = useQuery({
-    queryKey: ["chatMessages", conversationId, params],
-    queryFn: () => getConversationMessages(conversationId!, params),
+    queryKey: ["chatMessages", conversationId, page],
+    queryFn: () =>
+      getConversationMessages(conversationId!, {
+        page,
+        limit: MESSAGES_PER_PAGE,
+      }),
     enabled: !!conversationId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
+
+  useEffect(() => {
+    if (!query.data) return;
+    const newMsgs = [...query.data.messages].reverse();
+    if (page === 1) {
+      setAllMessages(newMsgs);
+    } else {
+      setAllMessages((prev) => [...newMsgs, ...prev]);
+    }
+    setHasMore(query.data.page < query.data.totalPages);
+  }, [query.data, page]);
+
+  useEffect(() => {
+    setPage(1);
+    setAllMessages([]);
+    setHasMore(true);
+  }, [conversationId]);
 
   useEffect(() => {
     if (query.data) {
@@ -40,7 +70,20 @@ export function useMessages(
     }
   }, [query.data, queryClient]);
 
-  return query;
+  const loadMore = useCallback(() => {
+    if (!hasMore || query.isFetching) return;
+    setPage((p) => p + 1);
+  }, [hasMore, query.isFetching]);
+
+  return {
+    messages: allMessages,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    hasMore,
+    loadMore,
+    page,
+    refetch: query.refetch,
+  };
 }
 
 export function useSendMessage() {
@@ -61,6 +104,8 @@ export function useUnreadCount() {
     queryKey: ["chatUnreadCount"],
     queryFn: getUnreadCount,
     refetchInterval: 30_000,
+    staleTime: 10_000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
@@ -98,17 +143,13 @@ export function useChatSocket(conversationId: string | null) {
     });
     socketRef.current = socket;
 
-    socket.on("connect", () => {
-      console.debug("Chat WebSocket connected");
-    });
-
     socket.on("new-message", (message: WebSocketMessage) => {
       queryClient.invalidateQueries({ queryKey: ["chatMessages"] });
       queryClient.invalidateQueries({ queryKey: ["chatConversations"] });
     });
 
-    socket.on("disconnect", () => {
-      console.debug("Chat WebSocket disconnected");
+    socket.on("unread-count", (data: { total: number }) => {
+      queryClient.setQueryData(["chatUnreadCount"], { total: data.total });
     });
 
     return () => {
