@@ -38,6 +38,11 @@ export const sendMessage = async (
   return res.data;
 };
 
+export const getUnreadCount = async (): Promise<{ total: number }> => {
+  const res = await apiService.get<{ total: number }>("/chat/unread-count");
+  return res.data;
+};
+
 export const uploadChatMedia = async (
   file: File,
 ): Promise<{ url: string; key: string; bucket: string; size: number }> => {

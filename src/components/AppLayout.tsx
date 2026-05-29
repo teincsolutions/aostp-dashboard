@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   DashboardOutlined,
   TeamOutlined,
@@ -13,9 +13,12 @@ import {
   BarChartOutlined,
   MessageOutlined,
 } from "@ant-design/icons";
+import { Badge, Button, Tooltip } from "antd";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { useAuth } from "@/hooks/useAuth";
+import { useUnreadCount, useUnreadCountSocket } from "@/hooks/useChat";
 import {
   CHAT_ACCESS_ROLES,
   CUSTOMER_ACCESS_ROLES,
@@ -43,7 +46,7 @@ import { UserRole } from "@/types/common";
 export type MenuItem = {
   key: string;
   icon: ReactNode;
-  label: string;
+  label: ReactNode;
   roles: UserRole[];
   children?: MenuItem[];
 };
@@ -246,7 +249,12 @@ export const menuItems: Array<MenuItem> = [
 export function AppLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const router = useRouter();
   const { user } = useAuth();
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.total ?? 0;
+  useUnreadCountSocket();
+  const isChatAuthorized = CHAT_ACCESS_ROLES.includes(user?.role as UserRole);
 
   // Filter menu items by role and remove 'roles' property for AntD Menu
   const filteredMenuItems = menuItems
@@ -266,7 +274,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
       }
       return rest;
     })
-    .filter((item): item is Exclude<typeof item, null> => item !== null);
+    .filter((item): item is Exclude<typeof item, null> => item !== null)
+    .map((item) => {
+      if (item.key === "/chat") {
+        return {
+          ...item,
+          label: unreadCount > 0
+            ? <span className="flex items-center justify-between w-full"><span>Chat</span><Badge count={unreadCount} size="small" /></span>
+            : "Chat",
+        };
+      }
+      return item;
+    });
 
   // Close Drawer on route change
   // (You may want to use useRouter/usePathname for this in production)
@@ -301,6 +320,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* PageHeader slot could go here */}
         {children}
       </main>
+
+      {isChatAuthorized && (
+        <Tooltip title="Support Chat" placement="left">
+          <Badge count={unreadCount} size="small" offset={[-5, 8]}>
+            <Button
+              type="primary"
+              shape="circle"
+              size="large"
+              icon={<MessageOutlined />}
+              onClick={() => router.push("/chat")}
+              className="fixed bottom-6 right-6 z-50 shadow-lg"
+              style={{ width: 48, height: 48 }}
+            />
+          </Badge>
+        </Tooltip>
+      )}
     </div>
   );
 }

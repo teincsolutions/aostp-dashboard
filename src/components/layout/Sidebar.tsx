@@ -20,7 +20,7 @@ export function Sidebar({
   mobile?: boolean;
   onClose?: () => void;
   open?: boolean;
-  menuItems?: { key: string; icon: React.ReactNode; label: string }[];
+  menuItems?: { key: string; icon: React.ReactNode; label: React.ReactNode }[];
 }) {
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLDivElement>(null);
