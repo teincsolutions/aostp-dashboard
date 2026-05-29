@@ -3,16 +3,22 @@ import { ColumnsType } from "antd/es/table";
 import { Button, Popconfirm, Space, Tooltip } from "antd";
 import { Payment } from "@/types/payment";
 import { UserRole } from "@/types/common";
-import { DeleteOutlined, EyeOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 
 export const getPaymentColumns = ({
   handleDelete,
   handleView,
+  handleEdit,
   userRole,
 }: {
   handleDelete: (id: string) => void;
   handleView: (payment: Payment) => void;
+  handleEdit: (payment: Payment) => void;
   userRole?: UserRole;
 }) => {
   const columns: ColumnsType<Payment> = [
@@ -76,12 +82,11 @@ export const getPaymentColumns = ({
         { text: "Paid in China", value: "PAID_IN_CHINA" },
       ],
     },
-    // Add actions column if needed
     {
       title: "Actions",
       key: "actions",
       fixed: "right",
-      width: 150,
+      width: 200,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="View Receipt">
@@ -94,7 +99,17 @@ export const getPaymentColumns = ({
               View
             </Button>
           </Tooltip>
-          {userRole === "SUPER_ADMIN" && (
+          <Tooltip title="Edit Payment">
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            >
+              Edit
+            </Button>
+          </Tooltip>
+          {(userRole === "SUPER_ADMIN") && (
             <Tooltip title="Delete Payment">
               <Popconfirm
                 title="Delete Payment"

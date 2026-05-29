@@ -83,6 +83,8 @@ export default function PaymentsPage() {
   const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const [isReceiptDrawerVisible, setIsReceiptDrawerVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [currentPayment, setCurrentPayment] = useState<Payment | null>(null);
   const [paymentModalStep, setPaymentModalStep] = useState<"currency" | "form">(
     "currency"
@@ -150,7 +152,7 @@ export default function PaymentsPage() {
     customerId: filterCustomerId || undefined,
   });
 
-  const { makePayment, isProcessingPayment, deletePayment } =
+  const { makePayment, isProcessingPayment, deletePayment, updatePayment } =
     usePaymentMutations();
 
   // Hook for single payment detail - to be used when viewing
@@ -330,6 +332,31 @@ export default function PaymentsPage() {
       } else {
         toast.error("Failed to open receipt");
       }
+    }
+  };
+
+  const handleEditPayment = (payment: Payment) => {
+    setEditingPayment(payment);
+    setIsEditModalVisible(true);
+  };
+
+  const handleEditSubmit = async (values: any) => {
+    if (!editingPayment) return;
+    try {
+      await updatePayment({
+        id: editingPayment.id,
+        data: {
+          reference: values.reference || undefined,
+          notes: values.notes || undefined,
+          paymentMethod: values.paymentMethod || undefined,
+          referenceDocumentKey: values.referenceDocumentKey || undefined,
+        },
+      });
+      toast.success("Payment updated successfully");
+      setIsEditModalVisible(false);
+      setEditingPayment(null);
+    } catch (error) {
+      handleError(error);
     }
   };
 
@@ -1015,6 +1042,7 @@ export default function PaymentsPage() {
                   setCurrentPayment(payment);
                   setIsReceiptDrawerVisible(true);
                 },
+                handleEdit: handleEditPayment,
                 userRole: user?.role,
               })}
               dataSource={allPaymentsData}
@@ -1648,6 +1676,64 @@ export default function PaymentsPage() {
                 * {allPaymentsData?.length || 0} rows will be exported
               </div>
             </div>
+          </Modal>
+
+          {/* Edit Payment Modal */}
+          <Modal
+            title={`Edit Payment ${editingPayment?.paymentCode || ""}`}
+            open={isEditModalVisible}
+            onCancel={() => {
+              setIsEditModalVisible(false);
+              setEditingPayment(null);
+            }}
+            footer={null}
+            width={500}
+            destroyOnClose
+          >
+            {editingPayment && (
+              <Form
+                layout="vertical"
+                onFinish={handleEditSubmit}
+                initialValues={{
+                  reference: editingPayment.reference || "",
+                  notes: editingPayment.notes || "",
+                  paymentMethod: editingPayment.paymentMethod || "",
+                }}
+              >
+                <Form.Item label="Payment Method" name="paymentMethod">
+                  <Select placeholder="Select payment method" allowClear>
+                    <Option value="CASH">Cash</Option>
+                    <Option value="BANK_TRANSFER">Bank Transfer</Option>
+                    <Option value="MOBILE_MONEY">Mobile Money</Option>
+                    <Option value="CARD">Card</Option>
+                    <Option value="DIRECT_MOMO_TRANSFER">
+                      Direct Momo Transfer
+                    </Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item label="Reference Number" name="reference">
+                  <Input placeholder="Transaction reference number" />
+                </Form.Item>
+                <Form.Item label="Notes" name="notes">
+                  <TextArea rows={3} placeholder="Additional notes" />
+                </Form.Item>
+                <Form.Item>
+                  <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+                    <Button
+                      onClick={() => {
+                        setIsEditModalVisible(false);
+                        setEditingPayment(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="primary" htmlType="submit">
+                      Save Changes
+                    </Button>
+                  </Space>
+                </Form.Item>
+              </Form>
+            )}
           </Modal>
         </div>
       </AppLayout>

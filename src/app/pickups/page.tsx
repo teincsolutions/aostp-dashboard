@@ -126,6 +126,7 @@ export default function PickupsListPage() {
     { label: "Description", value: "description" },
     { label: "Quantity", value: "quantity" },
     { label: "Receiver Name", value: "receiverName" },
+    { label: "Picked By", value: "pickedBy" },
     { label: "Warehouse", value: "warehouse" },
     { label: "Container", value: "container" },
     { label: "Release Date", value: "releaseDate" },
@@ -159,6 +160,11 @@ export default function PickupsListPage() {
             break;
           case "receiverName":
             row["Receiver Name"] = d.receiverName || "N/A";
+            break;
+          case "pickedBy":
+            row["Picked By"] = d.createdBy
+              ? `${d.createdBy.firstName} ${d.createdBy.lastName || ""}`
+              : "N/A";
             break;
           case "warehouse":
             row["Warehouse"] = d.package?.warehouse?.name || "N/A";
@@ -267,6 +273,15 @@ export default function PickupsListPage() {
       key: "receiverName",
       width: 150,
       render: (v: string) => v || "N/A",
+    },
+    {
+      title: "Picked By",
+      key: "createdBy",
+      width: 150,
+      render: (_, r) =>
+        r.createdBy
+          ? `${r.createdBy.firstName} ${r.createdBy.lastName || ""}`
+          : "N/A",
     },
     {
       title: "Warehouse",
@@ -530,6 +545,11 @@ export default function PickupsListPage() {
                 </Descriptions.Item>
                 <Descriptions.Item label="Receiver Name">
                   {selectedDelivery.receiverName || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Picked By">
+                  {selectedDelivery.createdBy
+                    ? `${selectedDelivery.createdBy.firstName} ${selectedDelivery.createdBy.lastName || ""}`
+                    : "N/A"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Warehouse">
                   {selectedDelivery.package?.warehouse?.name || "N/A"}

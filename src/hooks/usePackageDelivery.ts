@@ -5,6 +5,7 @@ import {
   createPackageDelivery,
   getAllPackageDeliveries,
   getDeliveriesByInvoice,
+  getDeliveriesByInvoices,
   getDeliveriesByCustomer,
   getDeliveryById,
 } from "@/services/packageDeliveryService";
@@ -58,6 +59,15 @@ export function useDeliveriesByInvoice(invoiceId: string | null) {
     queryKey: [QUERY_KEYS.deliveryByInvoice, invoiceId],
     queryFn: () => getDeliveriesByInvoice(invoiceId!),
     enabled: !!invoiceId,
+  });
+}
+
+// Hook for fetching deliveries by multiple invoices
+export function useDeliveriesByInvoices(invoiceIds: string[]) {
+  return useQuery<PackageDelivery[]>({
+    queryKey: [QUERY_KEYS.deliveryByInvoice, invoiceIds],
+    queryFn: () => getDeliveriesByInvoices(invoiceIds),
+    enabled: invoiceIds.length > 0,
   });
 }
 

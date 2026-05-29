@@ -198,9 +198,34 @@ export const usePaymentMutations = () => {
     },
   });
 
+  const updatePaymentMutation = useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        reference?: string;
+        notes?: string;
+        paymentMethod?: string;
+        referenceDocumentKey?: string;
+      };
+    }) => {
+      return await paymentService.updatePayment(id, data);
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: paymentKeys.detail(data.id),
+      });
+      queryClient.invalidateQueries({ queryKey: paymentKeys.stats({}) });
+    },
+  });
+
   return {
     makePayment: makePaymentMutation.mutateAsync,
     deletePayment: deletePaymentMutation.mutateAsync,
+    updatePayment: updatePaymentMutation.mutateAsync,
     // Loading states
     isProcessingPayment: makePaymentMutation.isPending,
 

@@ -22,9 +22,9 @@ import { CustomerSearchSelect } from "@/components/CustomerSearchSelect";
 import { packageDeliveryColumns } from "@/app/package-delivery/columns";
 import {
   usePackageDelivery,
-  useDeliveriesByInvoice,
+  useDeliveriesByInvoices,
 } from "@/hooks/usePackageDelivery";
-import { useCustomerInvoices } from "@/hooks/useInvoices";
+import { usePendingInvoices } from "@/hooks/useInvoices";
 import { uploadPackageFiles } from "@/services/packageService";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -71,6 +71,7 @@ export default function PackageDeliveryPage() {
   const [tablePage, setTablePage] = useState(1);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
+  const [invoiceSearch, setInvoiceSearch] = useState("");
   const [deliveryDetailsModalVisible, setDeliveryDetailsModalVisible] =
     useState(false);
   const [selectedDelivery, setSelectedDelivery] =
@@ -79,16 +80,19 @@ export default function PackageDeliveryPage() {
   // Get current user
   const { user } = useAuth();
 
-  // Customer invoices - fetch when customer is selected
+  // Customer pending invoices - fetch when customer is selected
   const { data: customerInvoices, isLoading: invoicesLoading } =
-    useCustomerInvoices(selectedCustomerId, { limit: 100 });
+    usePendingInvoices({
+      customerId: selectedCustomerId,
+      search: invoiceSearch || undefined,
+    });
 
-  // Deliveries by selected invoices (use first invoice for display)
+  // Deliveries by selected invoices
   const {
     data: invoiceDeliveries = [],
     isLoading: deliveriesLoading,
     refetch: refetchDeliveries,
-  } = useDeliveriesByInvoice(selectedInvoiceIds[0] || null);
+  } = useDeliveriesByInvoices(selectedInvoiceIds);
 
   const { createDelivery, isCreating } = usePackageDelivery();
 
@@ -397,13 +401,14 @@ export default function PackageDeliveryPage() {
                       disabled={!selectedCustomerId}
                       onChange={(values) => setSelectedInvoiceIds(values)}
                       showSearch
+                      onSearch={(value) => setInvoiceSearch(value)}
                       filterOption={(input, option) =>
                         String(option?.children || "")
                           ?.toLowerCase()
                           .indexOf(input.toLowerCase()) >= 0
                       }
                     >
-                      {customerInvoices?.data?.map((invoice: any) => (
+                      {customerInvoices?.map((invoice: any) => (
                         <Option key={invoice.id} value={invoice.id}>
                           {invoice.invoiceNumber} -{" "}
                           {invoice.status.replace(/_/g, " ")} (

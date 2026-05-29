@@ -38,6 +38,22 @@ export const getDeliveriesByInvoice = async (
   return res.data;
 };
 
+export const getDeliveriesByInvoices = async (
+  invoiceIds: string[]
+): Promise<PackageDelivery[]> => {
+  if (invoiceIds.length === 0) return [];
+  const results = await Promise.all(
+    invoiceIds.map((id) => getDeliveriesByInvoice(id))
+  );
+  const merged = results.flat();
+  const seen = new Set<string>();
+  return merged.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+};
+
 export const getDeliveriesByCustomer = async (
   customerId: string
 ): Promise<PackageDelivery[]> => {

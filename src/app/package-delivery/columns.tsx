@@ -59,6 +59,15 @@ export const packageDeliveryColumns: ColumnsType<
     render: (value: string) => value || "N/A",
   },
   {
+    title: "Picked By",
+    key: "createdBy",
+    width: 150,
+    render: (_, record) =>
+      record.createdBy
+        ? `${record.createdBy.firstName} ${record.createdBy.lastName || ""}`
+        : "N/A",
+  },
+  {
     title: "Warehouse",
     key: "warehouse",
     width: 120,

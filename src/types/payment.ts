@@ -12,6 +12,7 @@ export interface Payment {
   paymentMethod: string;
   paymentSource?: "PAID_IN_GHANA" | "PAID_IN_CHINA";
   reference?: string;
+  notes?: string;
   referenceDocumentKey?: string;
   processedAt: string;
   processedBy: {

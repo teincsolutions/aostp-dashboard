@@ -171,6 +171,20 @@ export const paymentService = {
     await apiService.delete(`/payments/${id}`);
   },
 
+  // Update a payment (reference, notes, payment method)
+  async updatePayment(
+    id: string,
+    data: {
+      reference?: string;
+      notes?: string;
+      paymentMethod?: string;
+      referenceDocumentKey?: string;
+    }
+  ): Promise<Payment> {
+    const response = await apiService.patch<Payment>(`/payments/${id}`, data);
+    return response.data;
+  },
+
   // Upload payment reference document
   async uploadPaymentDocument(
     file: File,

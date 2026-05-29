@@ -207,6 +207,12 @@ export interface PackageDelivery {
     description?: string;
     warehouse?: Warehouse;
   };
+  createdBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 export interface CreatePackageDeliveryPayload {

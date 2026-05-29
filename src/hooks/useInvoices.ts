@@ -50,7 +50,10 @@ export const useInvoice = (invoiceId: string) => {
   });
 };
 
-export const usePendingInvoices = (params?: { customerId?: string }) => {
+export const usePendingInvoices = (params?: {
+  customerId?: string;
+  search?: string;
+}) => {
   return useQuery({
     queryKey: ["pending-invoices", params],
     queryFn: () => getPendingInvoices(params),

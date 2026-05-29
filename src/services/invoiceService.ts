@@ -25,6 +25,7 @@ export const getInvoice = async (invoiceId: string): Promise<Invoice> => {
 
 export const getPendingInvoices = async (params?: {
   customerId?: string;
+  search?: string;
 }): Promise<Invoice[]> => {
   const res = await apiService.get("/invoices/pending", { params });
   return res.data;
