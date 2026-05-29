@@ -3,7 +3,9 @@ WORKDIR /app
 
 # Accept build-time environment variables
 ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_WS_URL
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+ENV NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL}
 
 # Copy package.json and package-lock.json to leverage Docker's caching
 COPY package*.json ./
