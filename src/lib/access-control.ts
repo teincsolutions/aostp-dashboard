@@ -102,6 +102,12 @@ export const END_OF_DAY_REPORT_ACCESS_ROLES: UserRole[] = [
   "FINANCE_MANAGER",
 ];
 
+export const CHAT_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "FINANCE_MANAGER",
+  "OPERATIONS_CLERK",
+];
+
 export const REPORTS_MENU_ACCESS_ROLES: UserRole[] = [
   "SUPER_ADMIN",
   "FINANCE_MANAGER",

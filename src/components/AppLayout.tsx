@@ -11,11 +11,13 @@ import {
   ContainerOutlined,
   GlobalOutlined,
   BarChartOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  CHAT_ACCESS_ROLES,
   CUSTOMER_ACCESS_ROLES,
   CUSTOMER_LEAGUE_REPORT_ACCESS_ROLES,
   DEBTOR_REPORT_ACCESS_ROLES,
@@ -209,6 +211,12 @@ export const menuItems: Array<MenuItem> = [
     roles: EXCHANGE_RATE_ACCESS_ROLES,
   },
   // Group: Notifications, Audit Logs, Settings
+  {
+    key: "/chat",
+    icon: <MessageOutlined />,
+    label: "Chat",
+    roles: CHAT_ACCESS_ROLES,
+  },
   {
     key: "/notifications",
     icon: <FileTextOutlined />,
