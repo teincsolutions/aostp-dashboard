@@ -118,7 +118,7 @@ export function useUnreadCountSocket() {
       process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3000";
 
     const socket = io(wsUrl + "/chat", {
-      transports: ["polling", "websocket"],
+      transports: ["websocket", "polling"],
     });
 
     socket.on("unread-count", (data: { total: number }) => {
@@ -140,7 +140,7 @@ export function useChatSocket(conversationId: string | null) {
       process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3000";
 
     const socket = io(wsUrl + "/chat", {
-      transports: ["polling", "websocket"],
+      transports: ["websocket", "polling"],
     });
     socketRef.current = socket;
 

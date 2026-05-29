@@ -16,9 +16,6 @@ class ApiService {
     const config = baseUrl || NEXT_PUBLIC_API_BASE_URL;
     this.axiosInstance = axios.create({
       baseURL: config,
-      headers: {
-        "Content-Type": "application/json",
-      },
     });
 
     if (!publicMode) {
