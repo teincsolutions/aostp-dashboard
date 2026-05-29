@@ -113,6 +113,15 @@ function DayDivider({ dateStr }: { dateStr: string }) {
   );
 }
 
+function renderWhatsAppText(text: string): string {
+  return text
+    .replace(/```(.+?)```/g, "<code>$1</code>")
+    .replace(/\*(.+?)\*/g, "<strong>$1</strong>")
+    .replace(/_(.+?)_/g, "<em>$1</em>")
+    .replace(/~(.+?)~/g, "<del>$1</del>")
+    .replace(/\n/g, "<br/>");
+}
+
 function StatusIcon({ status }: { status: string }) {
   switch (status) {
     case "pending":
@@ -279,9 +288,10 @@ function MessageBubble({
             </div>
           )}
           {message.messageType === "text" && message.text && (
-            <div className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
-              {message.text}
-            </div>
+            <div
+              className="text-[14px] leading-relaxed break-words"
+              dangerouslySetInnerHTML={{ __html: renderWhatsAppText(message.text) }}
+            />
           )}
           <div
             className={`text-[10px] mt-0.5 flex items-center gap-1.5 ${
