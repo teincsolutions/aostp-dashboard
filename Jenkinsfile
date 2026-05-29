@@ -15,6 +15,8 @@ pipeline {
         NEXT_PUBLIC_APP_ENV = 'production'
         NEXT_PUBLIC_API_BASE_URL = 'https://api.akomapacargo.com/api/v1'
         NEXT_PUBLIC_API_BASE_URL_TEST = 'https://test-api.akomapacargo.com/api/v1'
+        NEXT_PUBLIC_WS_URL = 'wss://api.akomapacargo.com/ws'
+        NEXT_PUBLIC_WS_URL_TEST = 'wss://test-api.akomapacargo.com/ws'
         PRODUCTION_DOMAIN = 'aostp.akomapacargo.com'
         TEST_DOMAIN = 'test-aostp.akomapacargo.com'
     }
@@ -41,9 +43,13 @@ pipeline {
                     def apiBaseUrl = (env.GIT_BRANCH == 'test')
                         ? "${NEXT_PUBLIC_API_BASE_URL_TEST}"
                         : "${NEXT_PUBLIC_API_BASE_URL}"
+                     def wsUrl = (env.GIT_BRANCH == 'test')
+                        ? "${NEXT_PUBLIC_WS_URL_TEST}"
+                        : "${NEXT_PUBLIC_WS_URL}"
                     sh """
                         docker build --network=host --target production \\
                             --build-arg NEXT_PUBLIC_API_BASE_URL=${apiBaseUrl} \\
+                            --build-arg NEXT_PUBLIC_WS_URL=${wsUrl} \\
                             --tag "${DOCKER_IMAGE_NAME}:${DOCKER_TAG}" \\
                             --tag "${DOCKER_IMAGE_NAME}:latest" \\
                             .
