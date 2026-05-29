@@ -5,6 +5,7 @@ import {
   getConversations,
   getConversationMessages,
   getUnreadCount,
+  getSignedMediaUrls,
   sendMessage as sendMessageApi,
 } from "@/services/chatService";
 import type {
@@ -117,7 +118,7 @@ export function useUnreadCountSocket() {
       process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3000";
 
     const socket = io(wsUrl + "/chat", {
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
     });
 
     socket.on("unread-count", (data: { total: number }) => {
@@ -139,7 +140,7 @@ export function useChatSocket(conversationId: string | null) {
       process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3000";
 
     const socket = io(wsUrl + "/chat", {
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
     });
     socketRef.current = socket;
 
@@ -158,4 +159,17 @@ export function useChatSocket(conversationId: string | null) {
   }, [queryClient]);
 
   return socketRef;
+}
+
+export function useSignedMediaUrls(
+  items: { key: string; bucket?: string }[],
+) {
+  const keyString = JSON.stringify(items);
+  return useQuery({
+    queryKey: ["signedMediaUrls", keyString],
+    queryFn: () => getSignedMediaUrls(items),
+    enabled: items.length > 0,
+    staleTime: 25 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 }

@@ -43,6 +43,16 @@ export const getUnreadCount = async (): Promise<{ total: number }> => {
   return res.data;
 };
 
+export const getSignedMediaUrls = async (
+  items: { key: string; bucket?: string }[],
+): Promise<Record<string, string>> => {
+  const res = await apiService.post<Record<string, string>>(
+    "/chat/media/signed-urls",
+    { items },
+  );
+  return res.data;
+};
+
 export const uploadChatMedia = async (
   file: File,
 ): Promise<{ url: string; key: string; bucket: string; size: number }> => {

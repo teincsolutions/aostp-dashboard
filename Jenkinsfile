@@ -15,8 +15,8 @@ pipeline {
         NEXT_PUBLIC_APP_ENV = 'production'
         NEXT_PUBLIC_API_BASE_URL = 'https://api.akomapacargo.com/api/v1'
         NEXT_PUBLIC_API_BASE_URL_TEST = 'https://test-api.akomapacargo.com/api/v1'
-        NEXT_PUBLIC_WS_URL = 'wss://api.akomapacargo.com/ws'
-        NEXT_PUBLIC_WS_URL_TEST = 'wss://test-api.akomapacargo.com/ws'
+        NEXT_PUBLIC_WS_URL = 'wss://api.akomapacargo.com'
+        NEXT_PUBLIC_WS_URL_TEST = 'wss://test-api.akomapacargo.com'
         PRODUCTION_DOMAIN = 'aostp.akomapacargo.com'
         TEST_DOMAIN = 'test-aostp.akomapacargo.com'
     }

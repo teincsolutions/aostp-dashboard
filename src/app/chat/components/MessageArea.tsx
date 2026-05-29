@@ -20,7 +20,12 @@ import {
   LoadingOutlined,
   MessageOutlined,
 } from "@ant-design/icons";
-import { useMessages, useSendMessage, useChatSocket } from "@/hooks/useChat";
+import {
+  useMessages,
+  useSendMessage,
+  useChatSocket,
+  useSignedMediaUrls,
+} from "@/hooks/useChat";
 import { useChatStore } from "@/store/chatStore";
 import { uploadChatMedia } from "@/services/chatService";
 import LazyImage from "@/app/chat/components/LazyImage";
@@ -97,9 +102,18 @@ function DayDivider({ dateStr }: { dateStr: string }) {
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({
+  message,
+  signedUrls,
+}: {
+  message: ChatMessage;
+  signedUrls: Record<string, string>;
+}) {
   const isInbound = message.direction === "INBOUND";
-  const mediaUrl = message.content?.mediaUrl as string | undefined;
+  const mediaKey = message.content?.key as string | undefined;
+  const mediaUrl = mediaKey && signedUrls[mediaKey]
+    ? signedUrls[mediaKey]
+    : (message.content?.mediaUrl as string | undefined);
   const filename = message.content?.filename as string | undefined;
   const isSystem = !isInbound && !message.repliedBy;
   const senderName = message.repliedBy
@@ -223,6 +237,15 @@ export default function MessageArea({ conversation }: MessageAreaProps) {
   const sendMutation = useSendMessage();
   useChatSocket(activeConversationId);
 
+  const mediaKeys = messages
+    .map((m) => {
+      const key = m.content?.key as string | undefined;
+      const bucket = m.content?.bucket as string | undefined;
+      return key ? { key, bucket } : null;
+    })
+    .filter(Boolean) as { key: string; bucket?: string }[];
+  const { data: signedUrlsMap = {} } = useSignedMediaUrls(mediaKeys);
+
   const handleScroll = useCallback(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -307,6 +330,8 @@ export default function MessageArea({ conversation }: MessageAreaProps) {
         type: type as any,
         mediaUrl: result.url,
         filename: file.name,
+        key: result.key,
+        bucket: result.bucket,
       });
     } catch {
       toast.error("Failed to upload or send media");
@@ -394,7 +419,7 @@ export default function MessageArea({ conversation }: MessageAreaProps) {
                 return (
                   <div key={msg.id}>
                     {showDay && <DayDivider dateStr={msg.createdAt} />}
-                    <MessageBubble message={msg} />
+                    <MessageBubble message={msg} signedUrls={signedUrlsMap} />
                   </div>
                 );
               })}

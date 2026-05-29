@@ -49,6 +49,8 @@ export interface SendMessagePayload {
   type?: 'text' | 'image' | 'document' | 'audio' | 'video';
   mediaUrl?: string;
   filename?: string;
+  key?: string;
+  bucket?: string;
 }
 
 export interface WebSocketMessage {
