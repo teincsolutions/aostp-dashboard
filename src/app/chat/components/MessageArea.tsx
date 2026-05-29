@@ -8,6 +8,10 @@ import {
   Upload,
   Space,
   Tooltip,
+  Image,
+  Modal,
+  Checkbox,
+  Popconfirm,
 } from "antd";
 import {
   SendOutlined,
@@ -19,16 +23,23 @@ import {
   RobotOutlined,
   LoadingOutlined,
   MessageOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  ExclamationCircleOutlined,
+  ReloadOutlined,
+  DeleteOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import {
   useMessages,
   useSendMessage,
   useChatSocket,
   useSignedMediaUrls,
+  useRetryMessage,
+  useDeleteMessages,
 } from "@/hooks/useChat";
 import { useChatStore } from "@/store/chatStore";
 import { uploadChatMedia } from "@/services/chatService";
-import LazyImage from "@/app/chat/components/LazyImage";
 import { toast } from "sonner";
 import type { ChatMessage, ChatConversation } from "@/types/chat";
 
@@ -102,12 +113,35 @@ function DayDivider({ dateStr }: { dateStr: string }) {
   );
 }
 
+function StatusIcon({ status }: { status: string }) {
+  switch (status) {
+    case "pending":
+      return <ClockCircleOutlined className="text-yellow-500 text-[10px]" />;
+    case "sent":
+      return <CheckCircleOutlined className="text-green-500 text-[10px]" />;
+    case "failed":
+      return <ExclamationCircleOutlined className="text-red-500 text-[10px]" />;
+    default:
+      return null;
+  }
+}
+
 function MessageBubble({
   message,
   signedUrls,
+  onRetry,
+  retrying,
+  selected,
+  selectionMode,
+  onSelect,
 }: {
   message: ChatMessage;
   signedUrls: Record<string, string>;
+  onRetry?: (id: string) => void;
+  retrying?: boolean;
+  selected?: boolean;
+  selectionMode?: boolean;
+  onSelect?: (id: string, longPress?: boolean) => void;
 }) {
   const isInbound = message.direction === "INBOUND";
   const mediaKey = message.content?.key as string | undefined;
@@ -116,9 +150,36 @@ function MessageBubble({
     : (message.content?.mediaUrl as string | undefined);
   const filename = message.content?.filename as string | undefined;
   const isSystem = !isInbound && !message.repliedBy;
+  const isPending = message.status === "pending";
+  const isFailed = message.status === "failed";
   const senderName = message.repliedBy
     ? `${message.repliedBy.firstName}${message.repliedBy.lastName ? ` ${message.repliedBy.lastName}` : ""}`
     : "System";
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const longPressTimer = useRef<number | null>(null);
+
+  const handlePointerDown = useCallback(() => {
+    longPressTimer.current = window.setTimeout(() => {
+      onSelect?.(message.id, true);
+    }, 400);
+  }, [message.id, onSelect]);
+
+  const handlePointerUp = useCallback(() => {
+    if (longPressTimer.current !== null) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const handleClick = useCallback(() => {
+    if (selectionMode) {
+      onSelect?.(message.id);
+    }
+  }, [selectionMode, message.id, onSelect]);
+
+  const handleCheckboxChange = useCallback(() => {
+    onSelect?.(message.id);
+  }, [message.id, onSelect]);
 
   return (
     <div className={`flex flex-col ${isInbound ? "items-start" : "items-end"} mb-1.5 px-3`}>
@@ -132,55 +193,127 @@ function MessageBubble({
           <Text type="secondary" className="text-[10px] leading-none">{senderName}</Text>
         </div>
       )}
-      <div
-        className={`max-w-[75%] rounded-lg px-3 py-1.5 ${
-          isInbound
-            ? "bg-white text-gray-900 shadow-sm border border-gray-100"
-            : "bg-[#d9fdd3] text-gray-900"
-        }`}
-      >
-        {message.messageType === "image" && mediaUrl && (
-          <LazyImage
-            src={mediaUrl}
-            alt={filename || "Shared image"}
-            className="mb-1 -mx-3 -mt-1.5 rounded-t-lg"
-            style={{ maxHeight: 300, minWidth: 180, borderRadius: 0 }}
-            onClick={() => window.open(mediaUrl, "_blank")}
-          />
-        )}
-        {message.messageType === "video" && mediaUrl && (
-          <video
-            src={mediaUrl}
-            controls
-            className="max-w-full rounded mb-1 -mx-3 -mt-1.5"
-            style={{ maxHeight: 300 }}
-            preload="metadata"
-          />
-        )}
-        {message.messageType === "audio" && mediaUrl && (
-          <audio src={mediaUrl} controls className="w-full mb-1 h-8" preload="none" />
-        )}
-        {message.messageType === "document" && mediaUrl && (
-          <a
-            href={mediaUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline text-sm block mb-1"
-          >
-            {filename || "View document"}
-          </a>
-        )}
-        {message.messageType === "text" && message.text && (
-          <div className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
-            {message.text}
+      <div className={`flex items-center gap-2 ${isInbound ? "flex-row" : "flex-row-reverse"}`}>
+        {(selectionMode || selected) && (
+          <div className="flex-shrink-0">
+            <Checkbox
+              checked={selected}
+              onChange={handleCheckboxChange}
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         )}
         <div
-          className={`text-[10px] mt-0.5 flex items-center gap-1 ${
-            isInbound ? "text-gray-400" : "text-gray-500"
-          }`}
+          className={`max-w-[75%] rounded-lg px-3 py-1.5 select-none ${
+            isInbound
+              ? "bg-white text-gray-900 shadow-sm border border-gray-100"
+              : "bg-[#d9fdd3] text-gray-900"
+          } ${isFailed ? "border border-red-200" : ""} ${
+            selected ? "ring-2 ring-blue-400" : ""
+          } ${selectionMode ? "cursor-pointer" : ""}`}
+          onMouseDown={selectionMode ? undefined : handlePointerDown}
+          onMouseUp={selectionMode ? undefined : handlePointerUp}
+          onMouseLeave={selectionMode ? undefined : handlePointerUp}
+          onTouchStart={selectionMode ? undefined : handlePointerDown}
+          onTouchEnd={selectionMode ? undefined : handlePointerUp}
+          onClick={handleClick}
         >
-          <span>{formatDate(message.createdAt)}</span>
+          {message.messageType === "image" && mediaUrl && (
+            <div className="mb-1 -mx-3 -mt-1.5 overflow-hidden rounded-t-lg">
+              <Image
+                src={mediaUrl}
+                alt={filename || "Shared image"}
+                style={{ maxHeight: 300, objectFit: "contain" }}
+                className="w-full"
+                preview={{ mask: null }}
+                placeholder={
+                  <div className="flex items-center justify-center" style={{ minHeight: 80 }}>
+                    <PictureOutlined className="text-gray-300 text-xl" />
+                  </div>
+                }
+                fallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='80'%3E%3Crect fill='%23f3f4f6' width='100' height='80'/%3E%3Ctext x='50' y='45' text-anchor='middle' fill='%239ca3af' font-size='14'%3EImage%3C/text%3E%3C/svg%3E"
+              />
+            </div>
+          )}
+          {message.messageType === "video" && mediaUrl && (
+            <>
+              <div
+                className="mb-1 -mx-3 -mt-1.5 overflow-hidden rounded-t-lg relative cursor-pointer"
+                style={{ maxHeight: 300 }}
+                onClick={(e) => {
+                  if (selectionMode) return;
+                  setVideoModalOpen(true);
+                }}
+              >
+                <video
+                  src={mediaUrl}
+                  className="w-full"
+                  style={{ maxHeight: 300 }}
+                  preload="metadata"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <div className="w-12 h-12 rounded-full bg-white/80 flex items-center justify-center">
+                    <VideoCameraOutlined className="text-xl text-gray-700 ml-0.5" />
+                  </div>
+                </div>
+              </div>
+              <Modal
+                title={filename || "Video"}
+                open={videoModalOpen}
+                onCancel={() => setVideoModalOpen(false)}
+                footer={null}
+                width={800}
+                destroyOnClose
+              >
+                <video src={mediaUrl} controls className="w-full" style={{ maxHeight: "70vh" }} />
+              </Modal>
+            </>
+          )}
+          {message.messageType === "audio" && mediaUrl && (
+            <audio src={mediaUrl} controls className="w-full mb-1 h-8" preload="none" />
+          )}
+          {message.messageType === "document" && mediaUrl && (
+            <div className="text-sm text-gray-700 mb-1 flex items-center gap-1.5">
+              <PaperClipOutlined />
+              <span>{filename || "Document"}</span>
+            </div>
+          )}
+          {message.messageType === "text" && message.text && (
+            <div className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
+              {message.text}
+            </div>
+          )}
+          <div
+            className={`text-[10px] mt-0.5 flex items-center gap-1.5 ${
+              isInbound ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            <span>{formatDate(message.createdAt)}</span>
+            {!isInbound && (
+              <>
+                {isPending ? (
+                  <Spin size="small" style={{ fontSize: 8 }} />
+                ) : (
+                  <StatusIcon status={message.status} />
+                )}
+                {isFailed && onRetry && (
+                  <Button
+                    type="text"
+                    size="small"
+                    danger
+                    icon={<ReloadOutlined />}
+                    loading={retrying}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRetry(message.id);
+                    }}
+                    className="text-[10px] h-auto p-0 leading-none"
+                    style={{ fontSize: 10, height: 16, minWidth: 0 }}
+                  />
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -230,12 +363,58 @@ export default function MessageArea({ conversation }: MessageAreaProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const [initialScrollDone, setInitialScrollDone] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const activeConversationId = useChatStore((s) => s.activeConversationId);
   const { messages, isLoading, isFetching, hasMore, page, loadMore } =
     useMessages(activeConversationId);
   const sendMutation = useSendMessage();
+  const retryMutation = useRetryMessage();
+  const deleteMutation = useDeleteMessages();
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  const selectionMode = selectedIds.size > 0;
   useChatSocket(activeConversationId);
+
+  const handleRetry = useCallback(async (id: string) => {
+    setRetryingId(id);
+    try {
+      await retryMutation.mutateAsync(id);
+    } catch {
+      toast.error("Failed to retry message");
+    } finally {
+      setRetryingId(null);
+    }
+  }, [retryMutation]);
+
+  const handleSelect = useCallback((id: string, longPress?: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (longPress && next.size === 0) {
+        next.add(id);
+      } else if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    try {
+      await deleteMutation.mutateAsync(ids);
+      setSelectedIds(new Set());
+      setDeleteOpen(false);
+    } catch {
+      toast.error("Failed to delete messages");
+    }
+  }, [selectedIds, deleteMutation]);
 
   const mediaKeys = messages
     .map((m) => {
@@ -357,19 +536,56 @@ export default function MessageArea({ conversation }: MessageAreaProps) {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="px-4 py-2.5 border-b border-gray-200 bg-white flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
-        <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-          <UserOutlined className="text-gray-500 text-sm" />
-        </div>
-        <div className="min-w-0">
-          <Text strong className="text-sm block truncate">
-            {conversation.customerName || conversation.phoneNumber}
-          </Text>
-          {conversation.customerCode && (
-            <Text type="secondary" className="text-[11px]">
-              {conversation.customerCode}
+        {selectionMode ? (
+          <>
+            <Button
+              type="text"
+              icon={<CloseOutlined />}
+              onClick={handleClearSelection}
+              className="flex-shrink-0"
+            />
+            <Text strong className="text-sm">
+              {selectedIds.size} selected
             </Text>
-          )}
-        </div>
+            <div className="ml-auto">
+              <Popconfirm
+                title="Delete messages"
+                description={`Delete ${selectedIds.size} message(s)?`}
+                open={deleteOpen}
+                onConfirm={handleDelete}
+                onCancel={() => setDeleteOpen(false)}
+                okText="Delete"
+                okButtonProps={{ danger: true }}
+                cancelText="Cancel"
+              >
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  loading={deleteMutation.isPending}
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  Delete
+                </Button>
+              </Popconfirm>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+              <UserOutlined className="text-black text-sm" />
+            </div>
+            <div className="min-w-0">
+              <Text strong className="text-sm block truncate">
+                {conversation.customerName || conversation.phoneNumber}
+              </Text>
+              {conversation.customerCode && (
+                <Text type="secondary" className="text-[11px]">
+                  {conversation.customerCode}
+                </Text>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div
@@ -419,7 +635,15 @@ export default function MessageArea({ conversation }: MessageAreaProps) {
                 return (
                   <div key={msg.id}>
                     {showDay && <DayDivider dateStr={msg.createdAt} />}
-                    <MessageBubble message={msg} signedUrls={signedUrlsMap} />
+                    <MessageBubble
+                      message={msg}
+                      signedUrls={signedUrlsMap}
+                      onRetry={handleRetry}
+                      retrying={retryingId === msg.id}
+                      selected={selectedIds.has(msg.id)}
+                      selectionMode={selectionMode}
+                      onSelect={handleSelect}
+                    />
                   </div>
                 );
               })}

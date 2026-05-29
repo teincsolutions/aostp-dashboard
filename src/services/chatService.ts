@@ -43,6 +43,24 @@ export const getUnreadCount = async (): Promise<{ total: number }> => {
   return res.data;
 };
 
+export const deleteMessages = async (
+  ids: string[],
+): Promise<{ deleted: number }> => {
+  const res = await apiService.delete<{ deleted: number }>("/chat/messages", {
+    data: { ids },
+  });
+  return res.data;
+};
+
+export const retryMessage = async (
+  id: string,
+): Promise<SendMessageResponse> => {
+  const res = await apiService.post<SendMessageResponse>(
+    `/chat/messages/${id}/retry`,
+  );
+  return res.data;
+};
+
 export const getSignedMediaUrls = async (
   items: { key: string; bucket?: string }[],
 ): Promise<Record<string, string>> => {

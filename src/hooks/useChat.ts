@@ -7,11 +7,14 @@ import {
   getUnreadCount,
   getSignedMediaUrls,
   sendMessage as sendMessageApi,
+  retryMessage as retryMessageApi,
+  deleteMessages as deleteMessagesApi,
 } from "@/services/chatService";
 import type {
   ChatMessage,
   SendMessagePayload,
   WebSocketMessage,
+  PaginatedMessages,
 } from "@/types/chat";
 
 const MESSAGES_PER_PAGE = 50;
@@ -100,6 +103,30 @@ export function useSendMessage() {
   });
 }
 
+export function useDeleteMessages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteMessagesApi(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chatMessages"] });
+      queryClient.invalidateQueries({ queryKey: ["chatConversations"] });
+    },
+  });
+}
+
+export function useRetryMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => retryMessageApi(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["chatMessages", data.conversationId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["chatConversations"] });
+    },
+  });
+}
+
 export function useUnreadCount() {
   return useQuery({
     queryKey: ["chatUnreadCount"],
@@ -151,6 +178,36 @@ export function useChatSocket(conversationId: string | null) {
 
     socket.on("unread-count", (data: { total: number }) => {
       queryClient.setQueryData(["chatUnreadCount"], { total: data.total });
+    });
+
+    socket.on("message-status", (data: { messageId: string; status: string }) => {
+      queryClient.setQueriesData<PaginatedMessages>(
+        { queryKey: ["chatMessages"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            messages: old.messages.map((m) =>
+              m.id === data.messageId ? { ...m, status: data.status } : m,
+            ),
+          };
+        },
+      );
+    });
+
+    socket.on("messages-deleted", (data: { messageIds: string[] }) => {
+      const ids = new Set(data.messageIds);
+      queryClient.setQueriesData<PaginatedMessages>(
+        { queryKey: ["chatMessages"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            messages: old.messages.filter((m) => !ids.has(m.id)),
+            total: old.total - data.messageIds.length,
+          };
+        },
+      );
     });
 
     return () => {
