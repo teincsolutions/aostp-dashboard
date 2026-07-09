@@ -1,0 +1,76 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to rollback to (leave empty for previous tag)
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  DOCKER_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/aostp-dashboard
+
+jobs:
+  rollback:
+    name: Rollback to Previous Version
+    runs-on: [self-hosted, aostp-runner]
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Determine rollback tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            FILE="/tmp/aostp-dashboard-previous-tag.txt"
+            if [ -f "$FILE" ]; then
+              TAG=$(cat "$FILE")
+              echo "tag=$TAG" >> $GITHUB_OUTPUT
+            else
+              echo "::error::No previous tag file found at $FILE"
+              exit 1
+            fi
+          fi
+
+      - name: Pull rollback image
+        run: docker pull "${DOCKER_IMAGE_NAME}:${{ steps.tag.outputs.tag }}"
+
+      - name: Stop existing containers
+        run: |
+          docker compose -f docker-compose.production.yml down --remove-orphans 2>/dev/null || true
+          docker rm -f aostp-dashboard-prod 2>/dev/null || true
+
+      - name: Deploy with docker-compose
+        env:
+          DOCKER_TAG: ${{ steps.tag.outputs.tag }}
+          DOCKER_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/aostp-dashboard
+        run: |
+          docker compose -f docker-compose.production.yml pull
+          docker compose -f docker-compose.production.yml up -d
+
+      - name: Wait for container readiness
+        run: sleep 20
+
+      - name: Health check
+        run: |
+          for i in {1..5}; do
+            if curl -f http://localhost:8080 > /dev/null 2>&1; then
+              echo "✅ Rollback health check passed"
+              break
+            fi
+            if [ $i -eq 5 ]; then
+              echo "❌ Health check failed after 5 attempts"
+              docker logs aostp-dashboard-prod || true
+              exit 1
+            fi
+            echo "Waiting... (attempt $i/5)"
+            sleep 10
+          done
